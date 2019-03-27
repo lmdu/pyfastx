@@ -1,6 +1,9 @@
 #include <zlib.h>
+#include <sqlite3.h>
 #include <Python.h>
 #include "kseq.h"
+//#include "zran.c"
+
 KSEQ_INIT(gzFile, gzread)
 
 kseq_t *SEQ;
@@ -159,9 +162,9 @@ typedef struct {
 	PyObject_HEAD
 	gzFile fp;
 	kseq_t *sequence;
-} FastaState;
+} FastxState;
 
-static PyObject *fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
+static PyObject *fastx_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 	char *fasta_path;
 	if (!PyArg_ParseTuple(args, "s", &fasta_path)){
 		return NULL;
@@ -172,7 +175,7 @@ static PyObject *fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 	fp = gzopen(fasta_path, "rb");
 	sequence = kseq_init(fp);
 	
-	FastaState *fstate = (FastaState *)type->tp_alloc(type, 0);
+	FastxState *fstate = (FastxState *)type->tp_alloc(type, 0);
 	if (!fstate){
 		return NULL;
 	}
@@ -182,18 +185,14 @@ static PyObject *fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 	return (PyObject *)fstate;
 }
 
-static void fasta_dealloc(FastaState *fstate){
+static void fastx_tp_dealloc(FastxState *fstate){
 	kseq_destroy(fstate->sequence);
 	gzclose(fstate->fp);
 	Py_TYPE(fstate)->tp_free(fstate);
 }
 
-static PyObject *fasta_next(FastaState *fstate){
+static PyObject *fastx_tp_next(FastxState *fstate){
 	int l;
-	//if((l=kseq_read(fstate->sequence))>=0){
-	//	upper_string(fstate->sequence->seq.s);
-	//	return Py_BuildValue("(ss)", fstate->sequence->name.s, fstate->sequence->seq.s);
-	//}
 	if((l=kseq_read(fstate->sequence))>=0){
 		upper_string(fstate->sequence->seq.s);
 		return Py_BuildValue("(ss)", fstate->sequence->name.s, fstate->sequence->seq.s);
@@ -202,12 +201,22 @@ static PyObject *fasta_next(FastaState *fstate){
 	return NULL;
 }
 
-PyTypeObject PyFasta_Type = {
+static PyMethodDef fastx_methods[] = {
+	{"build_index", build_index, METH_VARARGS},
+	{"open_fasta", open_fasta, METH_VARARGS},
+	{"close_fasta", close_fasta, METH_VARARGS},
+	{"iter_seq", iter_seq, METH_VARARGS},
+	{"clean_seq", clean_seq, METH_VARARGS},
+	{"sub_seq", sub_seq, METH_VARARGS},
+	{NULL, NULL, 0, NULL}
+};
+
+PyTypeObject PyFastx_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "fasta",                        /* tp_name */
-    sizeof(FastaState),             /* tp_basicsize */
+    "fastx",                        /* tp_name */
+    sizeof(FastxState),             /* tp_basicsize */
     0,                              /* tp_itemsize */
-    (destructor)fasta_dealloc,      /* tp_dealloc */
+    (destructor)fastx_tp_dealloc,   /* tp_dealloc */
     0,                              /* tp_print */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
@@ -229,8 +238,8 @@ PyTypeObject PyFasta_Type = {
     0,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
     PyObject_SelfIter,              /* tp_iter */
-    (iternextfunc)fasta_next,       /* tp_iternext */
-    0,                              /* tp_methods */
+    (iternextfunc)fastx_tp_next,    /* tp_iternext */
+    fastx_methods,                  /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
     0,                              /* tp_base */
@@ -240,25 +249,16 @@ PyTypeObject PyFasta_Type = {
     0,                              /* tp_dictoffset */
     0,                              /* tp_init */
     PyType_GenericAlloc,            /* tp_alloc */
-    fasta_new,                      /* tp_new */
+    fastx_tp_new,                   /* tp_new */
 };
 
-static PyMethodDef kseq_methods[] = {
-	{"build_index", build_index, METH_VARARGS},
-	{"open_fasta", open_fasta, METH_VARARGS},
-	{"close_fasta", close_fasta, METH_VARARGS},
-	{"iter_seq", iter_seq, METH_VARARGS},
-	{"clean_seq", clean_seq, METH_VARARGS},
-	{"sub_seq", sub_seq, METH_VARARGS},
-	{NULL, NULL, 0, NULL}
-};
 
 static struct PyModuleDef kseq_definition = {
 	PyModuleDef_HEAD_INIT,
 	"pyfastx",
 	"",
 	-1,
-	kseq_methods,
+	//kseq_methods,
 };
 
 PyMODINIT_FUNC PyInit_pyfastx(void){
@@ -267,10 +267,10 @@ PyMODINIT_FUNC PyInit_pyfastx(void){
     	return NULL;
     }
 
-    if(PyType_Ready(&PyFasta_Type) < 0){
+    if(PyType_Ready(&PyFastx_Type) < 0){
     	return NULL;
     }
-    Py_INCREF((PyObject *)&PyFasta_Type);
-    PyModule_AddObject(module, "fasta", (PyObject *)&PyFasta_Type);
+    Py_INCREF((PyObject *)&PyFastx_Type);
+    PyModule_AddObject(module, "fastx", (PyObject *)&PyFastx_Type);
     return module;
 }
