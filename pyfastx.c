@@ -2,12 +2,27 @@
 #include <sqlite3.h>
 #include <Python.h>
 #include "kseq.h"
-//#include "zran.c"
+//#include "structmember.h"
 
 KSEQ_INIT(gzFile, gzread)
 
-kseq_t *SEQ;
+//make sequence iterator
+typedef struct {
+	PyObject_HEAD
+	gzFile gzfp;
+	kseq_t* kseqs;
+	sqlite3* db;
+	char* file_path;
+} FastxObject;
 
+int file_exists(char *filename){
+	FILE *fp;
+	if((fp=fopen(filename, "r"))){
+		fclose(fp);
+		return 1;
+	}
+	return 0;
+}
 
 static char upper(char c){
 	if(c>='a' && c<='z'){
@@ -23,24 +38,6 @@ static int upper_string(char *str){
 		str[i] = upper(str[i]);
 	}
 	return i;
-}
-
-static PyObject *open_fasta(PyObject *self, PyObject *args){
-	char *fasta_path;
-	if (!PyArg_ParseTuple(args, "s", &fasta_path)){
-		return NULL;
-	}
-	gzFile fp;
-	fp = gzopen(fasta_path, "rb");
-	SEQ = kseq_init(fp);
-	return Py_BuildValue("i", 1);
-}
-
-static PyObject *close_fasta(PyObject *self, PyObject *args){
-	if(SEQ){
-		kseq_destroy(SEQ);
-	}
-	return Py_BuildValue("i", 1);
 }
 
 static PyObject *clean_seq(PyObject *self, PyObject *args){
@@ -92,20 +89,56 @@ static PyObject *sub_seq(PyObject *self, PyObject *args){
 	return Py_BuildValue("s", seq);
 }
 
-static PyObject *iter_seq(PyObject *self, PyObject *args){
-	int l;
-	while((l=kseq_read(SEQ))>=0){
-		upper_string(SEQ->seq.s);
-		return Py_BuildValue("(ss)", SEQ->name.s, SEQ->seq.s);
-	}
-	return Py_BuildValue("");
-}
-
-static PyObject *build_index(PyObject *self, PyObject *args){
-	char *fasta_path;
+static PyObject *build_index(FastxObject *self, PyObject *args){
+	/*char *fasta_path;
 	if (!PyArg_ParseTuple(args, "s", &fasta_path)){
 		return NULL;
+	}*/
+	char *index_path = malloc(strlen(self->file_path) + 4);
+	strcpy(index_path, self->file_path);
+	strcat(index_path, ".db");
+
+	//check index file exists
+	int index_status = file_exists(index_path);
+	if(index_status){
+		return Py_BuildValue("i", 1);
 	}
+
+	printf("%s\n", "open database");
+	int ret = sqlite3_open(index_path, &self->db);
+	if(ret != SQLITE_OK){
+		return Py_BuildValue("i", -1);
+	}
+
+	//char *zerrmsg = NULL;
+	const char *create_sql = "CREATE TABLE sequence (\
+		seqname TEXTPRIMARY KEY,\
+		start INTEGER,\
+		end INTEGER,\
+		seqlen INTEGER,\
+		gc INTEGER,\
+		ns INTEGER);";
+	ret = sqlite3_exec(self->db, create_sql, NULL, NULL, NULL);
+	if(ret != SQLITE_OK){
+		printf("%s\n", "create table error");
+	}
+
+	ret = sqlite3_exec(self->db, "begin;", NULL, NULL, NULL);
+	if(ret != SQLITE_OK){
+		printf("%s\n", "begin error");
+	}
+
+	ret = sqlite3_exec(self->db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL);
+	if(ret != SQLITE_OK){
+		printf("%s\n", "pragma");
+	}
+
+	printf("%s\n", "Start insertion");
+
+	char *insert_sql = "INSERT INTO sequence VALUES (?,?,?,?,?,?)";
+	sqlite3_stmt *stmt;
+	sqlite3_prepare_v2(self->db, insert_sql, -1, &stmt, NULL);
+
 	int position = 0;
 	int start = 0;
 	int seqlen = 0;
@@ -115,19 +148,28 @@ static PyObject *build_index(PyObject *self, PyObject *args){
 	kseq_t *seq;
 	kstream_t *ks;
 	gzFile fp;
-	PyObject *result = PyList_New(0);
-	PyObject *tmp;
+	//PyObject *result = PyList_New(0);
+	//PyObject *tmp;
 	
-	fp = gzopen(fasta_path, "rb");
+	//fp = gzopen(fasta_path, "rb");
+	fp = gzopen(self->file_path, "rb");
 	seq = kseq_init(fp);
 	ks = seq->f;
 	while((c=ks_getc(ks))!=-1){
 		position++;
 		if(c == 62){
 			if(start){
-				tmp = Py_BuildValue("(siiiii)", seq->name.s, start, position-start-1, seqlen, gc, ns);
+				/*tmp = Py_BuildValue("(siiiii)", seq->name.s, start, position-start-1, seqlen, gc, ns);
 				PyList_Append(result, tmp);
-				Py_DECREF(tmp);
+				Py_DECREF(tmp);*/
+				sqlite3_bind_text(stmt, 1, seq->name.s, seq->name.l, NULL);
+				sqlite3_bind_int(stmt, 2, start);
+				sqlite3_bind_int(stmt, 3, position-start-1);
+				sqlite3_bind_int(stmt, 4, seqlen);
+				sqlite3_bind_int(stmt, 5, gc);
+				sqlite3_bind_int(stmt, 6, ns);
+				sqlite3_step(stmt);
+				sqlite3_reset(stmt);
 			}
 			position += ks_getuntil(ks, 0, &seq->name, &c);
 			position++;
@@ -151,70 +193,104 @@ static PyObject *build_index(PyObject *self, PyObject *args){
 			}
 		}
 	}
+
+	sqlite3_bind_text(stmt, 1, seq->name.s, seq->name.l, NULL);
+	sqlite3_bind_int(stmt, 2, start);
+	sqlite3_bind_int(stmt, 3, position-start-1);
+	sqlite3_bind_int(stmt, 4, seqlen);
+	sqlite3_bind_int(stmt, 5, gc);
+	sqlite3_bind_int(stmt, 6, ns);
+	sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+
+	sqlite3_exec(self->db, "commit;", NULL, NULL, NULL);
+	/*
 	tmp = Py_BuildValue("(siiiii)", seq->name.s, start, position-start, seqlen, gc, ns);
 	PyList_Append(result, tmp);
 	Py_DECREF(tmp);
 	return result;
+	*/
+	return Py_BuildValue("i", 1);
 }
 
-//make sequence iterator
-typedef struct {
-	PyObject_HEAD
-	gzFile fp;
-	kseq_t *sequence;
-} FastxState;
+static PyObject *test(FastxObject *self, PyObject *args, PyObject *kwargs){
+	static char* keywords[] = {"a", "b", "c", NULL};
+	int a;
+	int b;
+	int c = 0;
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "ii|p", keywords, &a, &b, &c)){
+		return NULL;
+	}
+
+	printf("%s\n", self->file_path);
+
+	if(c){
+		return Py_BuildValue("i", a+b);
+	} else {
+		return Py_BuildValue("i", a-b);
+	}
+}
 
 static PyObject *fastx_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
-	char *fasta_path;
-	if (!PyArg_ParseTuple(args, "s", &fasta_path)){
+	char *file_path;
+	if (!PyArg_ParseTuple(args, "s", &file_path)){
 		return NULL;
 	}
-	gzFile fp;
-	kseq_t *sequence;
+	gzFile gzfp;
+	kseq_t *kseqs;
 
-	fp = gzopen(fasta_path, "rb");
-	sequence = kseq_init(fp);
+	gzfp = gzopen(file_path, "rb");
+	kseqs = kseq_init(gzfp);
 	
-	FastxState *fstate = (FastxState *)type->tp_alloc(type, 0);
-	if (!fstate){
+	FastxObject *self = (FastxObject *)type->tp_alloc(type, 0);
+	if (!self){
 		return NULL;
 	}
-	fstate->fp = fp;
-	fstate->sequence = sequence;
+	self->file_path = (char *)malloc(strlen(file_path)+1);
+	strcpy(self->file_path, file_path);
+	self->gzfp = gzfp;
+	self->kseqs = kseqs;
+	self->db = NULL;
 
-	return (PyObject *)fstate;
+	printf("%s\n", self->file_path);
+
+	return (PyObject *)self;
 }
 
-static void fastx_tp_dealloc(FastxState *fstate){
-	kseq_destroy(fstate->sequence);
-	gzclose(fstate->fp);
-	Py_TYPE(fstate)->tp_free(fstate);
+static void fastx_tp_dealloc(FastxObject *slef){
+	kseq_destroy(slef->kseqs);
+	gzclose(slef->gzfp);
+	Py_TYPE(slef)->tp_free(slef);
 }
 
-static PyObject *fastx_tp_next(FastxState *fstate){
+static PyObject *fastx_tp_next(FastxObject *slef){
 	int l;
-	if((l=kseq_read(fstate->sequence))>=0){
-		upper_string(fstate->sequence->seq.s);
-		return Py_BuildValue("(ss)", fstate->sequence->name.s, fstate->sequence->seq.s);
+	if((l=kseq_read(slef->kseqs))>=0){
+		upper_string(slef->kseqs->seq.s);
+		return Py_BuildValue("(ss)", slef->kseqs->name.s, slef->kseqs->seq.s);
 	}
 
 	return NULL;
 }
 
+/*
+static PyMemberDef fastx_members[] = {
+	{"file_path", T_STRING, offsetof(FastxObject, file_path), 0, "file path"},
+	{NULL}
+};*/
+
 static PyMethodDef fastx_methods[] = {
-	{"build_index", build_index, METH_VARARGS},
-	{"open_fasta", open_fasta, METH_VARARGS},
-	{"close_fasta", close_fasta, METH_VARARGS},
-	{"iter_seq", iter_seq, METH_VARARGS},
+	{"build_index", (PyCFunction)build_index, METH_VARARGS},
 	{"clean_seq", clean_seq, METH_VARARGS},
 	{"sub_seq", sub_seq, METH_VARARGS},
+	{"test", (PyCFunction)test, METH_VARARGS|METH_KEYWORDS},
 	{NULL, NULL, 0, NULL}
 };
 
 PyTypeObject PyFastx_Type = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "fastx",                        /* tp_name */
-    sizeof(FastxState),             /* tp_basicsize */
+    sizeof(FastxObject),             /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)fastx_tp_dealloc,   /* tp_dealloc */
     0,                              /* tp_print */

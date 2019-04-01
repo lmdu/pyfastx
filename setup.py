@@ -6,7 +6,7 @@ from distutils.core import setup, Extension
 #from Cython.Build import cythonize
 
 extensions = [
-	Extension('pyfastx', ['pyfastx.c'], extra_link_args=['-lz']),
+	Extension('pyfastx', ['pyfastx.c', 'zran.c'], extra_link_args=['-lz', '-lsqlite3']),
 ]
 
 setup(
