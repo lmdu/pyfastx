@@ -2,6 +2,7 @@
 #include <sqlite3.h>
 #include <Python.h>
 #include "kseq.h"
+#include "zran.h"
 //#include "structmember.h"
 
 KSEQ_INIT(gzFile, gzread)
@@ -213,22 +214,48 @@ static PyObject *build_index(FastxObject *self, PyObject *args){
 	return Py_BuildValue("i", 1);
 }
 
-static PyObject *test(FastxObject *self, PyObject *args, PyObject *kwargs){
-	static char* keywords[] = {"a", "b", "c", NULL};
-	int a;
-	int b;
-	int c = 0;
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "ii|p", keywords, &a, &b, &c)){
+static PyObject *test(PyObject *self, PyObject *args){
+	/*static char* keywords[] = {"fasta", NULL};
+	char* fasta;
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s", keywords, &fasta)){
+		return NULL;
+	}*/
+	char *fasta_path;
+	if (!PyArg_ParseTuple(args, "s", &fasta_path)){
 		return NULL;
 	}
 
-	printf("%s\n", self->file_path);
+	printf("%s\n", fasta_path);
+	FILE *fp = fopen(fasta_path, "rb");
+	FILE *fd = fopen("idex.idx", "wb");
 
+	zran_index_t *index = (zran_index_t *)malloc(sizeof(zran_index_t));
+
+	zran_init(index, fp, 0, 0, 0, 0);
+	zran_build_index(index, 0, 0);
+	zran_export_index(index, fd);
+
+	sqlite3 *db = NULL;
+	sqlite3_open("index.db", &db);
+	sqlite3_exec(db, "CREATE TABLE seqidx (content blob);", NULL, NULL, NULL);
+	sqlite3_stmt *stmt;
+	sqlite3_prepare_v2(db, "INSERT INTO seqidx VALUES (?)", -1, &stmt, NULL);
+	sqlite3_bind_blob(stmt, 1, index, sizeof(index), NULL);
+	sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	sqlite3_close(db);
+	
+	fclose(fp);
+	fclose(fd);
+	
+	return Py_BuildValue("i", 1);
+
+	/*
 	if(c){
 		return Py_BuildValue("i", a+b);
 	} else {
 		return Py_BuildValue("i", a-b);
-	}
+	}*/
 }
 
 static PyObject *fastx_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
@@ -283,7 +310,12 @@ static PyMethodDef fastx_methods[] = {
 	{"build_index", (PyCFunction)build_index, METH_VARARGS},
 	{"clean_seq", clean_seq, METH_VARARGS},
 	{"sub_seq", sub_seq, METH_VARARGS},
-	{"test", (PyCFunction)test, METH_VARARGS|METH_KEYWORDS},
+	{NULL, NULL, 0, NULL}
+};
+
+static PyMethodDef module_methods[] = {
+	//{"test", test, METH_VARARGS|METH_KEYWORDS},
+	{"test", test, METH_VARARGS},
 	{NULL, NULL, 0, NULL}
 };
 
@@ -334,7 +366,7 @@ static struct PyModuleDef kseq_definition = {
 	"pyfastx",
 	"",
 	-1,
-	//kseq_methods,
+	module_methods,
 };
 
 PyMODINIT_FUNC PyInit_pyfastx(void){
