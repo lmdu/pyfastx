@@ -90,87 +90,146 @@ static PyObject *sub_seq(PyObject *self, PyObject *args){
 	return Py_BuildValue("s", seq);
 }
 
-static PyObject *build_index(FastxObject *self, PyObject *args){
-	/*char *fasta_path;
-	if (!PyArg_ParseTuple(args, "s", &fasta_path)){
-		return NULL;
-	}*/
-	char *index_path = malloc(strlen(self->file_path) + 4);
-	strcpy(index_path, self->file_path);
-	strcat(index_path, ".db");
+//check input file is whether gzip file
+static int is_gzip(FILE *fd){
+	unsigned char magic[4] = {0};
+	int ret;
 
-	//check index file exists
-	int index_status = file_exists(index_path);
-	if(index_status){
-		return Py_BuildValue("i", 1);
+	ret = fread(magic, 1, sizeof(magic), fd);
+	fseek(fd, 0, SEEK_SET);
+
+	if(ret != sizeof(magic)){
+		return 0;
 	}
-
-	printf("%s\n", "open database");
-	int ret = sqlite3_open(index_path, &self->db);
-	if(ret != SQLITE_OK){
-		return Py_BuildValue("i", -1);
+	if(magic[0] != 0x1f || magic[1] != 0x8b || magic[2] != 0x08){
+		return 0;
 	}
+	return 1;
+}
 
-	//char *zerrmsg = NULL;
-	const char *create_sql = "CREATE TABLE sequence (\
-		seqname TEXTPRIMARY KEY,\
-		start INTEGER,\
-		end INTEGER,\
-		seqlen INTEGER,\
-		gc INTEGER,\
-		ns INTEGER);";
-	ret = sqlite3_exec(self->db, create_sql, NULL, NULL, NULL);
-	if(ret != SQLITE_OK){
-		printf("%s\n", "create table error");
-	}
-
-	ret = sqlite3_exec(self->db, "begin;", NULL, NULL, NULL);
-	if(ret != SQLITE_OK){
-		printf("%s\n", "begin error");
-	}
-
-	ret = sqlite3_exec(self->db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL);
-	if(ret != SQLITE_OK){
-		printf("%s\n", "pragma");
-	}
-
-	printf("%s\n", "Start insertion");
-
-	char *insert_sql = "INSERT INTO sequence VALUES (?,?,?,?,?,?)";
+static PyObject *build_index(FastxObject *self, PyObject *args, PyObject *kwargs){
+	static char* keywords[] = {"rebuild", NULL};
+	int rebuild = 0;
+	int ret;
+	char *index_file;
 	sqlite3_stmt *stmt;
-	sqlite3_prepare_v2(self->db, insert_sql, -1, &stmt, NULL);
+	
+	/*1: normal fasta sequence with the same length in line
+	  0: not normal fasta sequence with different length in line*/
+	int seq_normal = 1;
+
+	//1: \n, 2: \r\n
+	int line_end = 1;
+	
+	//length of previous line
+	int line_len = 0;
+
+	//length of current line
+	int temp_len = 0;
+
+	//number of lines that line_len not equal to temp_len
+	int bad_line = 0;
 
 	int position = 0;
 	int start = 0;
-	int seqlen = 0;
+	int seq_len = 0;
 	int gc = 0;
 	int ns = 0;
 	int c;
 	kseq_t *seq;
 	kstream_t *ks;
 	gzFile fp;
-	//PyObject *result = PyList_New(0);
-	//PyObject *tmp;
+
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "|p", keywords, &rebuild)){
+		return NULL;
+	}
+
+	//create index file path
+	index_file = malloc(strlen(self->file_path) + 4);
+	strcpy(index_file, self->file_path);
+	strcat(index_file, ".db");
+
+	//check index file exists, if exists do not build index
+	if(file_exists(index_file)){
+		if(rebuild){
+			if(remove(index_file)==0){
+				printf("removed %s\n", index_file);
+			}
+		} else {
+			return Py_BuildValue("i", 1);
+		}
+	}
+
+	ret = sqlite3_open(index_file, &self->db);
+	if(ret != SQLITE_OK){
+		return Py_BuildValue("i", 0);
+	}
+
+	//create index database
+	const char *create_sql = "\
+		CREATE TABLE seq (\
+			seqid TEXTPRIMARY KEY,\
+			start INTEGER,\
+			end INTEGER,\
+			seqlen INTEGER,\
+			linelen INTEGER,\
+			lineend INTEGER,\
+			normal INTEGER,\
+			gc INTEGER,\
+			ns INTEGER\
+		);\
+		CREATE TABLE gzindex (\
+			ID INTEGER PRIMARY KEY,\
+			content BLOB\
+		);";
+
+	char *errmsg;
+	ret = sqlite3_exec(self->db, create_sql, NULL, NULL, NULL);
+	if(ret != SQLITE_OK){
+		printf("%s\n", "create table error");
+	}
+
+	ret = sqlite3_exec(self->db, "PRAGMA synchronous=OFF", NULL, NULL, &errmsg);
+	if(ret != SQLITE_OK){
+		printf("%s\n", "pragma");
+		printf("%s\n", errmsg);
+	}
+
+	ret = sqlite3_exec(self->db, "begin", NULL, NULL, NULL);
+	if(ret != SQLITE_OK){
+		printf("%s\n", "begin error");
+	}
+
+	char *insert_sql = "INSERT INTO seq VALUES (?,?,?,?,?,?,?,?,?)";
 	
-	//fp = gzopen(fasta_path, "rb");
+	sqlite3_prepare_v2(self->db, insert_sql, -1, &stmt, NULL);
+
 	fp = gzopen(self->file_path, "rb");
 	seq = kseq_init(fp);
 	ks = seq->f;
 	while((c=ks_getc(ks))!=-1){
 		position++;
+		
+		// c is >
 		if(c == 62){
 			if(start){
-				/*tmp = Py_BuildValue("(siiiii)", seq->name.s, start, position-start-1, seqlen, gc, ns);
-				PyList_Append(result, tmp);
-				Py_DECREF(tmp);*/
+
+				//end of sequenc and check whether normal fasta
+				if(bad_line > 1){
+					seq_normal = 0;
+				}
 				sqlite3_bind_text(stmt, 1, seq->name.s, seq->name.l, NULL);
 				sqlite3_bind_int(stmt, 2, start);
 				sqlite3_bind_int(stmt, 3, position-start-1);
-				sqlite3_bind_int(stmt, 4, seqlen);
-				sqlite3_bind_int(stmt, 5, gc);
-				sqlite3_bind_int(stmt, 6, ns);
+				sqlite3_bind_int(stmt, 4, seq_len);
+				sqlite3_bind_int(stmt, 5, line_len);
+				sqlite3_bind_int(stmt, 6, line_end);
+				sqlite3_bind_int(stmt, 7, seq_normal);
+				sqlite3_bind_int(stmt, 8, gc);
+				sqlite3_bind_int(stmt, 9, ns);
 				sqlite3_step(stmt);
 				sqlite3_reset(stmt);
+				printf("%s\n", "yes");
 			}
 			position += ks_getuntil(ks, 0, &seq->name, &c);
 			position++;
@@ -179,38 +238,75 @@ static PyObject *build_index(FastxObject *self, PyObject *args){
 				position++;
 			}
 			start = position;
-			seqlen = 0;
+			seq_len = 0;
 			gc = 0;
 			ns = 0;
-		}else{
-			if(c != 10 && c != 13){
-				seqlen++;
-				c = toupper(c);
-				if(c == 71 || c == 67){
-					gc++;
-				}else if(c == 78){
-					ns++;
-				}
+			temp_len = 0;
+			line_len = 0;
+			line_end = 1;
+			seq_normal = 1;
+		}
+
+ 		// c is \r
+		else if(c == 13){
+			temp_len++;
+
+			if(line_end != 2){
+				line_end = 2;
 			}
 		}
+		
+		// c is \n
+		else if(c == 10){
+			temp_len++;
+			if(line_len){
+				if(line_len != temp_len){
+					bad_line++;
+				}
+			} else {
+				line_len = temp_len;
+			}
+
+		}
+
+		else {
+			seq_len++;
+
+			//temp line length
+			temp_len++;
+
+			c = toupper(c);
+			
+			// c is G or C
+			if(c == 71 || c == 67){
+				gc++;
+			}
+			// c is N, unkown base
+			else if(c == 78){
+				ns++;
+			}
+		}
+	}
+
+	//end of sequenc and check whether normal fasta
+	if(bad_line > 1){
+		seq_normal = 0;
 	}
 
 	sqlite3_bind_text(stmt, 1, seq->name.s, seq->name.l, NULL);
 	sqlite3_bind_int(stmt, 2, start);
 	sqlite3_bind_int(stmt, 3, position-start-1);
-	sqlite3_bind_int(stmt, 4, seqlen);
-	sqlite3_bind_int(stmt, 5, gc);
-	sqlite3_bind_int(stmt, 6, ns);
+	sqlite3_bind_int(stmt, 4, seq_len);
+	sqlite3_bind_int(stmt, 5, line_len);
+	sqlite3_bind_int(stmt, 6, line_end);
+	sqlite3_bind_int(stmt, 7, seq_normal);
+	sqlite3_bind_int(stmt, 8, gc);
+	sqlite3_bind_int(stmt, 9, ns);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
 	sqlite3_exec(self->db, "commit;", NULL, NULL, NULL);
-	/*
-	tmp = Py_BuildValue("(siiiii)", seq->name.s, start, position-start, seqlen, gc, ns);
-	PyList_Append(result, tmp);
-	Py_DECREF(tmp);
-	return result;
-	*/
+	
 	return Py_BuildValue("i", 1);
 }
 
@@ -225,8 +321,13 @@ static PyObject *test(PyObject *self, PyObject *args){
 		return NULL;
 	}
 
-	printf("%s\n", fasta_path);
 	FILE *fp = fopen(fasta_path, "rb");
+
+	int g = is_gzip(fp);
+	printf("is gzip: %d\n", g);
+	return Py_BuildValue("");
+	printf("%s\n", fasta_path);
+	
 	FILE *fd = fopen("idex.idx", "wb");
 
 	zran_index_t *index = (zran_index_t *)malloc(sizeof(zran_index_t));
