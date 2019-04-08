@@ -1,3 +1,4 @@
 import pyfastx
-pyfastx.test('test.fa.gz')
+fasta = pyfastx.fastx('test.fa.gz')
 
+print(fasta.get_sub_seq('seq1', 1, 2))

@@ -46,15 +46,19 @@
 
 #define ks_err(ks) ((ks)->end == -1)
 #define ks_eof(ks) ((ks)->is_eof && (ks)->begin >= (ks)->end)
-#define ks_rewind(ks) ((ks)->is_eof = (ks)->begin = (ks)->end = 0)
+//#define ks_rewind(ks) ((ks)->is_eof = (ks)->begin = (ks)->end = 0)
 
-#define __KS_BASIC(type_t, __bufsize)								\
+#define __KS_BASIC(type_t, __bufsize, __rewind)								\
 	static inline kstream_t *ks_init(type_t f)						\
 	{																\
 		kstream_t *ks = (kstream_t*)calloc(1, sizeof(kstream_t));	\
 		ks->f = f;													\
 		ks->buf = (unsigned char*)malloc(__bufsize);				\
 		return ks;													\
+	}																\
+	static inline void ks_rewind(kstream_t *ks)						\
+	{																\
+		__rewind(ks->f);											\
 	}																\
 	static inline void ks_destroy(kstream_t *ks)					\
 	{																\
@@ -64,8 +68,8 @@
 		}															\
 	}
 
-#define __KS_GETC(__read, __bufsize)						\
-	static inline int ks_getc(kstream_t *ks)				\
+#define __KS_GETC(SCOPE, __read, __bufsize)						\
+	SCOPE int ks_getc(kstream_t *ks)				\
 	{														\
 		if (ks_err(ks)) return -3;							\
 		if (ks->is_eof && ks->begin >= ks->end) return -1;	\
@@ -90,7 +94,7 @@ typedef struct __kstring_t {
 #define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
 #endif
 
-#define __KS_GETUNTIL(__read, __bufsize)								\
+#define __KS_GETUNTIL(SCOPE, __read, __bufsize)								\
 	static int ks_getuntil2(kstream_t *ks, int delimiter, kstring_t *str, int *dret, int append) \
 	{																	\
 		int gotany = 0;													\
@@ -142,16 +146,16 @@ typedef struct __kstring_t {
 		str->s[str->l] = '\0';											\
 		return str->l;													\
 	} \
-	static inline int ks_getuntil(kstream_t *ks, int delimiter, kstring_t *str, int *dret) \
+	SCOPE int ks_getuntil(kstream_t *ks, int delimiter, kstring_t *str, int *dret) \
 	{ return ks_getuntil2(ks, delimiter, str, dret, 0); }
 
-#define KSTREAM_INIT(type_t, __read, __bufsize) \
-	__KS_TYPE(type_t)							\
-	__KS_BASIC(type_t, __bufsize)				\
-	__KS_GETC(__read, __bufsize)				\
-	__KS_GETUNTIL(__read, __bufsize)
+#define KSTREAM_INIT(SCOPE, type_t, __read, __bufsize, __rewind) \
+	/*__KS_TYPE(type_t)*/							\
+	__KS_BASIC(type_t, __bufsize, __rewind)				\
+	__KS_GETC(SCOPE, __read, __bufsize)				\
+	__KS_GETUNTIL(SCOPE, __read, __bufsize)
 
-#define kseq_rewind(ks) ((ks)->last_char = (ks)->f->is_eof = (ks)->f->begin = (ks)->f->end = 0)
+//#define kseq_rewind(ks) ((ks)->last_char = (ks)->f->is_eof = (ks)->f->begin = (ks)->f->end = 0)
 
 #define __KSEQ_BASIC(SCOPE, type_t)										\
 	SCOPE kseq_t *kseq_init(type_t fd)									\
@@ -159,6 +163,12 @@ typedef struct __kstring_t {
 		kseq_t *s = (kseq_t*)calloc(1, sizeof(kseq_t));					\
 		s->f = ks_init(fd);												\
 		return s;														\
+	}																	\
+	SCOPE void kseq_rewind(kseq_t *ks)									\
+	{																	\
+		ks->last_char = 0;												\
+		ks->f->is_eof = ks->f->begin = ks->f->end = 0;					\
+		ks_rewind(ks->f);												\
 	}																	\
 	SCOPE void kseq_destroy(kseq_t *ks)									\
 	{																	\
@@ -224,19 +234,25 @@ typedef struct __kstring_t {
 		kstream_t *f;							\
 	} kseq_t;
 
-#define KSEQ_INIT2(SCOPE, type_t, __read)		\
-	KSTREAM_INIT(type_t, __read, 16384)			\
-	__KSEQ_TYPE(type_t)							\
+#define KSEQ_INIT2(SCOPE, type_t, __read, __rewind)		\
+	KSTREAM_INIT(SCOPE, type_t, __read, 16384, __rewind)			\
+	/*__KSEQ_TYPE(type_t)*/							\
 	__KSEQ_BASIC(SCOPE, type_t)					\
 	__KSEQ_READ(SCOPE)
 
-#define KSEQ_INIT(type_t, __read) KSEQ_INIT2(static, type_t, __read)
+#define KSEQ_INIT(type_t, __read, __rewind) KSEQ_INIT2(static, type_t, __read, __rewind)
 
+/*
 #define KSEQ_DECLARE(type_t) \
 	__KS_TYPE(type_t) \
 	__KSEQ_TYPE(type_t) \
 	extern kseq_t *kseq_init(type_t fd); \
 	void kseq_destroy(kseq_t *ks); \
-	int kseq_read(kseq_t *seq);
+	int kseq_read(kseq_t *seq); \
+	int kseq_rewind(kseq_t *seq);*/
+
+#define KSEQ_DECLARE(type_t) \
+	__KS_TYPE(type_t) \
+	__KSEQ_TYPE(type_t)
 
 #endif
