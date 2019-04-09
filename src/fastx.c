@@ -5,8 +5,49 @@ KSEQ_INIT(gzFile, gzread, gzrewind)
 /*
 static int use_index(FastxObject *self){
 	return 0;
+}*/
+
+static void build_gzip_index(FastxObject *self){
+	sqlite3_stmt *stmt;
+	zran_init(self->gzip_index, self->fd, 0, 0, 0, ZRAN_AUTO_BUILD);
+	zran_build_index(self->gzip_index, 0, 0);
+
+	//create temp gzip index file
+	char *temp_index = malloc(strlen(self->file_name) + 5);
+	strcpy(temp_index, self->file_name);
+	strcat(temp_index, ".tmp");
+	FILE* fd = fopen(temp_index, "wb");
+	zran_export_index(self->gzip_index, fd);
+	
+	long fsize = ftell(fd);
+	fseek(fd, 0, SEEK_SET);
+	char *buff = malloc(fsize + 1);
+	int ret = fread(buff, 1, fsize, fd);
+	fclose(fd);
+	remove(temp_index);
+
+	sqlite3_prepare_v2(self->db, "INSERT INTO gzindex VALUES (NULL, ?)", -1, &stmt, NULL);
+	sqlite3_bind_blob(stmt, 1, buff, strlen(buff), NULL);
+	sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
 }
-*/
+
+static void load_gzip_index(FastxObject *self){
+	sqlite3_stmt *stmt;
+	zran_init(self->gzip_index, self->fd, 0, 0, 0, ZRAN_AUTO_BUILD);
+	char *temp_index = malloc(strlen(self->file_name) + 5);
+	strcpy(temp_index, self->file_name);
+	strcat(temp_index, ".tmp");
+	FILE* fd = fopen(temp_index, "wb+");
+
+	sqlite3_prepare_v2(self->db, "SELECT content FROM gzindex;", -1, &stmt, NULL);
+	sqlite3_step(stmt);
+	const char *buff = sqlite3_column_blob(stmt, 0);
+	fwrite(buff, 1, strlen(buff), fd);
+	fclose(fd);
+	remove(temp_index);
+}
+
 
 PyObject *build_index(FastxObject *self, PyObject *args, PyObject *kwargs){
 	// 1 force rebuild index, 0 for not rebuild index
@@ -80,13 +121,13 @@ PyObject *build_index(FastxObject *self, PyObject *args, PyObject *kwargs){
 	//create index database
 	const char *create_sql = "\
 		CREATE TABLE seq (\
-			seqid TEXTPRIMARY KEY,\
-			start INTEGER,\
-			end INTEGER,\
+			sid TEXTPRIMARY KEY,\
+			offset INTEGER,\
+			blen INTEGER,\
 			slen INTEGER,\
 			llen INTEGER,\
 			elen INTEGER,\
-			standard INTEGER,\
+			norm INTEGER,\
 			a INTEGER,\
 			c INTEGER,\
 			g INTEGER,\
@@ -240,6 +281,7 @@ PyObject *build_index(FastxObject *self, PyObject *args, PyObject *kwargs){
 
 	//create gzip random access index
 	if(self->gzip){
+		/*
 		zran_init(self->gzip_index, self->fd, 0, 0, 0, ZRAN_AUTO_BUILD);
 		zran_build_index(self->gzip_index, 0, 0);
 
@@ -260,7 +302,8 @@ PyObject *build_index(FastxObject *self, PyObject *args, PyObject *kwargs){
 		sqlite3_prepare_v2(self->db, "INSERT INTO gzindex VALUES (NULL, ?)", -1, &stmt, NULL);
 		sqlite3_bind_blob(stmt, 1, buff, strlen(buff), NULL);
 		sqlite3_step(stmt);
-		sqlite3_finalize(stmt);
+		sqlite3_finalize(stmt);*/
+		build_gzip_index(self);
 	}
 	
 	return Py_BuildValue("i", 1);
@@ -325,16 +368,17 @@ PyObject *get_sub_seq(FastxObject *self, PyObject *args, PyObject *kwargs){
 	}
 
 	sqlite3_stmt *stmt;
-	char *sql = "SELECT * FROM seq WHERE name=? LIMIT 1;";
+	char *sql = "SELECT * FROM seq WHERE sid=? LIMIT 1;";
 	if(sqlite3_prepare_v2(self->db, sql, -1, &stmt, NULL) != SQLITE_OK){
-		PyErr_SetString(PyExc_RuntimeError, "prepare sql error");
+		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->db));
+		return NULL;
 	}
 
 	//byte start of sequence in file
-	int byte_start;
+	int byte_offset;
 
 	//byte end of sequence in file
-	int byte_end;
+	int byte_len;
 
 	//sequence length
 	int seq_len;
@@ -360,32 +404,45 @@ PyObject *get_sub_seq(FastxObject *self, PyObject *args, PyObject *kwargs){
 	//read length
 	int read_byte;
 
-	//read sequence
-	char *buff = NULL;
-
 	sqlite3_bind_text(stmt, 1, name, strlen(name), NULL);
-	while(sqlite3_step(stmt) == SQLITE_ROW){
-		byte_start = sqlite3_column_int(stmt, 2);
-		byte_end = sqlite3_column_int(stmt, 3);
-		seq_len = sqlite3_column_int(stmt, 4);
-		line_len = sqlite3_column_int(stmt, 5);
-		end_len = sqlite3_column_int(stmt, 6);
-		standard = sqlite3_column_int(stmt, 7);
-	}
+	sqlite3_step(stmt);
+	byte_offset = sqlite3_column_int(stmt, 1);
+	byte_len = sqlite3_column_int(stmt, 2);
+	seq_len = sqlite3_column_int(stmt, 3);
+	line_len = sqlite3_column_int(stmt, 4);
+	end_len = sqlite3_column_int(stmt, 5);
+	standard = sqlite3_column_int(stmt, 6);
 	sqlite3_finalize(stmt);
 
-	printf("%d\n", line_len);
+	//not standard FASTA format
+	offset = byte_offset;
+	read_byte = byte_len;
 
-	line_num = (end - start + 1) / line_len;
-	tail_num = (end - start + 1) % line_len;
-	offset = byte_start + start + (start % line_len) * end_len - 1;
-	read_byte = line_num * line_len + line_num * end_len + tail_num;
+	if(standard){
+		line_num = (end - start + 1) / (line_len - end_len);
+		tail_num = (end - start + 1) % (line_len - end_len);
+		offset = byte_offset + start + (start / (line_len - end_len)) * end_len - 1;
+		read_byte = line_num * line_len + tail_num;
+	}
 
-	gzseek(self->gzfp, offset, SEEK_SET);
-	gzread(self->gzfp, buff, read_byte);
+	//read sequence
+	char *buff = (char *)malloc(read_byte+1);
+
+	if(self->gzip){
+		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
+		zran_read(self->gzip_index, buff, read_byte);
+	} else {
+		gzseek(self->gzfp, offset, SEEK_SET);
+		gzread(self->gzfp, buff, read_byte);
+	}
+
+	buff[read_byte] = '\0';
+
+	if (!strand){
+		truncate_seq(buff, start, end);
+	}
 
 	return Py_BuildValue("s", buff);
-	
 }
 
 PyObject *fastx_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
@@ -433,13 +490,16 @@ PyObject *fastx_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 	if (file_exists(obj->index_file)) {
 		if(sqlite3_open(obj->index_file, &obj->db) != SQLITE_OK){
 			PyErr_SetString(PyExc_ConnectionError, sqlite3_errmsg(obj->db));
+			return NULL;
 		}
+		load_gzip_index(obj);
 	}
 	return (PyObject *)obj;
 }
 
 void fastx_tp_dealloc(FastxObject *self){
 	kseq_destroy(self->kseqs);
+	//zran_free(self->gzip_index);
 	gzclose(self->gzfp);
 	fclose(self->fd);
 	Py_TYPE(self)->tp_free(self);
@@ -461,6 +521,11 @@ PyObject *fastx_tp_next(FastxObject *self){
 	return NULL;
 }
 
+PyObject *fastx_get_item(FastxObject *self, PyObject *args){
+	printf("%s\n", "hello item");
+	return Py_BuildValue("i", 1);
+}
+
 /*
 static PyMemberDef fastx_members[] = {
 	{"file_path", T_STRING, offsetof(FastxObject, file_path), 0, "file path"},
@@ -472,6 +537,14 @@ static PyMethodDef fastx_methods[] = {
 	{"get_sub_seq", (PyCFunction)get_sub_seq, METH_VARARGS|METH_KEYWORDS},
 	{"test", (PyCFunction)test, METH_VARARGS},
 	{NULL, NULL, 0, NULL}
+};
+
+//as a list
+static PySequenceMethods seq_methods = {
+	0, /*sq_length*/
+	0, /*sq_concat*/
+	0, /*sq_repeat*/
+	(ssizeargfunc)fastx_get_item, /*sq_item*/
 };
 
 PyTypeObject pyfastx_FastxType = {
@@ -486,7 +559,7 @@ PyTypeObject pyfastx_FastxType = {
     0,                              /* tp_reserved */
     0,                              /* tp_repr */
     0,                              /* tp_as_number */
-    0,                              /* tp_as_sequence */
+    &seq_methods,                   /* tp_as_sequence */
     0,                              /* tp_as_mapping */
     0,                              /* tp_hash */
     0,                              /* tp_call */

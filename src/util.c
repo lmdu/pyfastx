@@ -9,15 +9,6 @@ int file_exists(char *file_name){
 	return 0;
 }
 
-/*
-static char upper(char c){
-	if(c>='a' && c<='z'){
-		return 'A'+c-'a';
-	}else{
-		return c;
-	}
-}*/
-
 void upper_string(char *str){
 	int i;
 	for(i=0; str[i]; i++){
@@ -40,6 +31,27 @@ PyObject *clean_seq(PyObject *self, PyObject *args){
 	seq[j] = '\0';
 	return Py_BuildValue("s", seq);
 }
+
+void truncate_seq(char *seq, int start, int end){
+	int len;
+	int i = 0;
+	int j = 0;
+	len = end - start + 1;
+
+	for(i=0; i<strlen(seq); i++){
+		if(isspace(seq[i])){
+			continue;
+		}
+
+		seq[j++] = toupper(seq[i]);
+
+		if(j > len){
+			break;
+		}
+	}
+	seq[j] = '\0';
+}
+
 
 PyObject *sub_seq(PyObject *self, PyObject *args){
 	char *seq;
