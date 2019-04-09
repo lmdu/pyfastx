@@ -48,7 +48,10 @@ PyObject* test(FastxObject *self, PyObject *args);
 PyObject* fastx_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
 PyObject* fastx_tp_iter(FastxObject *self);
 PyObject* fastx_tp_next(FastxObject *self);
-PyObject* fastx_get_item(FastxObject *self, PyObject *args);
+int fastx_get_item(FastxObject *self, PyObject *key);
+PyObject *fastx_get_key(FastxObject *self, PyObject *key);
 void fastx_tp_dealloc(FastxObject *self);
+int fastx_get_len(FastxObject *self);
+int fastx_get_val(FastxObject *self, PyObject *key, PyObject *val);
 
 #endif

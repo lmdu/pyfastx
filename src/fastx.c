@@ -521,10 +521,40 @@ PyObject *fastx_tp_next(FastxObject *self){
 	return NULL;
 }
 
-PyObject *fastx_get_item(FastxObject *self, PyObject *args){
-	printf("%s\n", "hello item");
-	return Py_BuildValue("i", 1);
+int fastx_get_item(FastxObject *self, PyObject *key){
+	if(PyUnicode_Check(key)){
+		return 1;
+	}
+	return 0;
 }
+
+PyObject *fastx_get_key(FastxObject *self, PyObject *key){
+	if(PyLong_Check(key)){
+		int index = PyLong_AsLong(key);
+		return Py_BuildValue("i", index);
+	}
+
+	else if(PyUnicode_Check(key)){
+		char *name = PyUnicode_AsUTF8(key);
+		return Py_BuildValue("s", name);
+	}
+
+	else {
+		PyErr_SetObject(PyExc_KeyError, key);
+		return NULL;
+	}
+}
+
+int fastx_get_len(FastxObject *self){
+	return 123; 
+}
+
+int fastx_get_val(FastxObject *self, PyObject *key, PyObject *val){ 
+	char *name = PyUnicode_AsUTF8(key);
+	return 1;
+}
+
+
 
 /*
 static PyMemberDef fastx_members[] = {
@@ -542,9 +572,21 @@ static PyMethodDef fastx_methods[] = {
 //as a list
 static PySequenceMethods seq_methods = {
 	0, /*sq_length*/
-	0, /*sq_concat*/
+	(binaryfunc) 0, /*sq_concat*/
 	0, /*sq_repeat*/
-	(ssizeargfunc)fastx_get_item, /*sq_item*/
+	0, /*sq_item*/
+	0, /*sq_slice */
+	0, /*sq_ass_item*/
+	0, /*sq_ass_splice*/
+	(objobjproc) fastx_get_item, /*sq_contains*/
+	(binaryfunc) 0, /*sq_inplace_concat*/
+	0,	/*sq_inplace_repeat*/
+};
+
+static PyMappingMethods map_methods = {
+	(lenfunc)fastx_get_len,
+	(binaryfunc)fastx_get_key,
+	(objobjargproc)fastx_get_val,
 };
 
 PyTypeObject pyfastx_FastxType = {
@@ -560,7 +602,7 @@ PyTypeObject pyfastx_FastxType = {
     0,                              /* tp_repr */
     0,                              /* tp_as_number */
     &seq_methods,                   /* tp_as_sequence */
-    0,                              /* tp_as_mapping */
+    &map_methods,                   /* tp_as_mapping */
     0,                              /* tp_hash */
     0,                              /* tp_call */
     0,                              /* tp_str */
