@@ -10,7 +10,7 @@ static PyMethodDef sequence_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
-PyTypeObject pyfastx_SequenceType = {
+PyTypeObject pyfastx_SeqType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "Sequence",                     /* tp_name */
     sizeof(SequenceObject),         /* tp_basicsize */

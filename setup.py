@@ -5,7 +5,7 @@ import sys
 from distutils.core import setup, Extension
 #from Cython.Build import cythonize
 
-sources = ['src/module.c', 'src/fastx.c', 'src/zran.c', 'src/util.c']
+sources = ['src/module.c', 'src/fasta.c', 'src/zran.c', 'src/util.c']
 
 extensions = [
 	Extension('pyfastx', sources, extra_link_args=['-lz', '-lsqlite3']),

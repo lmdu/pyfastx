@@ -1,5 +1,5 @@
-#ifndef PYFASTX_FASTX_H
-#define PYFASTX_FASTX_H
+#ifndef PYFASTX_FASTA_H
+#define PYFASTX_FASTA_H
 #include <zlib.h>
 #include <Python.h>
 #include <sqlite3.h>
@@ -30,18 +30,40 @@ typedef struct {
 	//sqlite3 index file path and name
 	char* index_file;
 
-	//always output capital sequence
-	int capital;
+	//always output uppercase sequence
+	int uppercase;
 
 	//is gzip compressed file
-	int gzip;
+	//0 not gzip file
+	//1 is gzip file
+	int is_gzip;
+
+	//total sequence counts
+	int seq_counts;
+
+	//total sequence length (bp)
+	int seq_length;
+
+	//GC content (%)
+	float gc_content;
+
+	//A T G C N (unknown base) counts in fasta
+	int a_counts;
+	int t_counts;
+	int g_counts;
+	int c_counts;
+	int n_counts;
+
+
+
+
 
 	//gzip random access index
 	zran_index_t *gzip_index;
 
-} FastxObject;
+} FastaObject;
 
-extern PyTypeObject pyfastx_FastxType;
+extern PyTypeObject pyfastx_FastaType;
 
 PyObject* build_index(FastxObject *self, PyObject *args, PyObject *kwargs);
 PyObject* test(FastxObject *self, PyObject *args);

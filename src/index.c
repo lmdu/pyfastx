@@ -1,4 +1,4 @@
-#include "fastx.h"
+#include "fasta.h"
 #include "util.h"
 //#include "structmember.h"
 KSEQ_INIT(gzFile, gzread, gzrewind)
@@ -589,9 +589,9 @@ static PyMappingMethods map_methods = {
 	(objobjargproc)fastx_get_val,
 };
 
-PyTypeObject pyfastx_FastxType = {
+PyTypeObject pyfastx_FastaType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "fastx",                        /* tp_name */
+    "Fasta",                        /* tp_name */
     sizeof(FastxObject),             /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)fastx_tp_dealloc,   /* tp_dealloc */

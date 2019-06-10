@@ -16,6 +16,6 @@ typedef struct {
 
 } SequenceObject;
 
-extern PyTypeObject pyfastx_SequenceType;
+extern PyTypeObject pyfastx_SeqType;
 
 #endif
