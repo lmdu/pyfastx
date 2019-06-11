@@ -3,7 +3,7 @@
 #include <Python.h>
 int file_exists(char *file_name);
 void upper_string(char *str);
-int is_gzip_format(char *file_name);
+int is_gzip_format(FILE* fd);
 void truncate_seq(char *seq, int start, int end);
 
 PyObject* clean_seq(PyObject *self, PyObject *args);

@@ -3,6 +3,7 @@
 #include <zlib.h>
 #include <Python.h>
 #include <sqlite3.h>
+#include <time.h>
 #include "kseq.h"
 #include "zran.h"
 
@@ -69,7 +70,10 @@ int fastx_get_val(pyfastx_Fasta *self, PyObject *key, PyObject *val);
 
 void _pyfastx_build_gzip_index(pyfastx_Fasta *self);
 void _pyfastx_load_gzip_index(pyfastx_Fasta *self);
-PyObject *pyfastx_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
+void _pyfastx_load_index(pyfastx_Fasta *self);
+void _pyfastx_build_index(pyfastx_Fasta *self);
+PyObject *fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
+PyObject *fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
 PyObject *get_sub_seq(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
 
 #endif

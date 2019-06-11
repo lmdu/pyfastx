@@ -1,16 +1,17 @@
 #include "fasta.h"
 #include "util.h"
-//#include "structmember.h"
+#include "structmember.h"
 KSEQ_INIT(gzFile, gzread, gzrewind)
 
 
 void _pyfastx_build_gzip_index(pyfastx_Fasta *self){
 	sqlite3_stmt *stmt;
+
 	zran_init(self->gzip_index, self->fd, 0, 0, 0, ZRAN_AUTO_BUILD);
 	zran_build_index(self->gzip_index, 0, 0);
 
 	//create temp gzip index file
-	char *temp_index = malloc(strlen(self->file_name) + 5);
+	char *temp_index = (char *)malloc(strlen(self->file_name) + 5);
 	strcpy(temp_index, self->file_name);
 	strcat(temp_index, ".tmp");
 	FILE* fd = fopen(temp_index, "wb");
@@ -18,8 +19,12 @@ void _pyfastx_build_gzip_index(pyfastx_Fasta *self){
 	
 	long fsize = ftell(fd);
 	fseek(fd, 0, SEEK_SET);
-	char *buff = malloc(fsize + 1);
-	fread(buff, 1, fsize, fd);
+	char *buff = (char *)malloc(fsize + 1);
+
+	if(fread(buff, 1, fsize, fd) != 0){
+		PyErr_SetString(PyExc_RuntimeError, "Error occured when reading gzip index from temp file.");
+		return;
+	}
 	fclose(fd);
 	remove(temp_index);
 
@@ -32,7 +37,7 @@ void _pyfastx_build_gzip_index(pyfastx_Fasta *self){
 void _pyfastx_load_gzip_index(pyfastx_Fasta *self){
 	sqlite3_stmt *stmt;
 	zran_init(self->gzip_index, self->fd, 0, 0, 0, ZRAN_AUTO_BUILD);
-	char *temp_index = malloc(strlen(self->file_name) + 5);
+	char *temp_index = (char *)malloc(strlen(self->file_name) + 5);
 	strcpy(temp_index, self->file_name);
 	strcat(temp_index, ".tmp");
 	FILE* fd = fopen(temp_index, "wb+");
@@ -85,13 +90,15 @@ void _pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	sqlite3_finalize(stmt);
 
 	//calc GC content
-	self->gc_content = ((g_counts+c_counts)*1.0/(a_counts+c_counts+g_counts+t_counts)*100*100+0.5)/100.0;
+	self->gc_content = (float)(g_counts+c_counts)/(a_counts+c_counts+g_counts+t_counts)*100;
 }
 
-PyObject *pyfastx_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
-	// 1 force rebuild index, 0 for not rebuild index
-	int force = 0;
-	
+void _pyfastx_build_index(pyfastx_Fasta *self){
+	//time
+	time_t start_time, current_time;
+
+	start_time = time(NULL);
+
 	// seqlite3 return value
 	int ret;
 	
@@ -136,29 +143,18 @@ PyObject *pyfastx_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	//reading file for kseq
 	kstream_t *ks;
 
-	//kwargs parameters
-	static char* kwlist[] = {"force", NULL};
-
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "|p", kwlist, &force)){
-		return NULL;
-	}
-
-	//check index file exists, if exists do not build index
-	if(file_exists(self->index_file)){
-		if(force){
-			remove(self->index_file);
-		}
-	}
 
 	ret = sqlite3_open(self->index_file, &self->index_db);
 	if(ret != SQLITE_OK){
-		return Py_BuildValue("i", 0);
+		PyErr_SetString(PyExc_ConnectionError, sqlite3_errmsg(self->index_db));
+		return;
 	}
 
 	//create index database
 	const char *create_sql = " \
 		CREATE TABLE seq ( \
-			sid TEXTPRIMARY KEY, --seq id\n \
+			ID INTEGER PRIMARY KEY, --seq identifier\n \
+			seqid TEXT, --seq name\n \
 			offset INTEGER, --seq offset start\n \
 			blen INTEGER, --seq byte length\n \
 			slen INTEGER, --seq length\n \
@@ -181,19 +177,23 @@ PyObject *pyfastx_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		printf("%s\n", "create table error");
 	}
 
-	ret = sqlite3_exec(self->index_db, "PRAGMA synchronous=OFF", NULL, NULL, NULL);
+	ret = sqlite3_exec(self->index_db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL);
 	if(ret != SQLITE_OK){
 		printf("%s\n", "pragma");
 	}
 
-	ret = sqlite3_exec(self->index_db, "begin", NULL, NULL, NULL);
+	ret = sqlite3_exec(self->index_db, "BEGIN;", NULL, NULL, NULL);
 	if(ret != SQLITE_OK){
 		printf("%s\n", "begin error");
 	}
 
-	char *insert_sql = "INSERT INTO seq VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+	const char *insert_sql = "INSERT INTO seq VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
 	
 	sqlite3_prepare_v2(self->index_db, insert_sql, -1, &stmt, NULL);
+
+	current_time = time(NULL);
+	printf("time: %ld\n", current_time - start_time);
+	start_time = current_time;
 
 	ks = self->kseqs->f;
 	while((c=ks_getc(ks))!=-1){
@@ -207,20 +207,30 @@ PyObject *pyfastx_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 				if(bad_line > 1){
 					seq_normal = 0;
 				}
-				sqlite3_bind_text(stmt, 1, self->kseqs->name.s, self->kseqs->name.l, NULL);
-				sqlite3_bind_int(stmt, 2, start);
-				sqlite3_bind_int(stmt, 3, position-start-1);
-				sqlite3_bind_int(stmt, 4, seq_len);
-				sqlite3_bind_int(stmt, 5, line_len);
-				sqlite3_bind_int(stmt, 6, line_end);
-				sqlite3_bind_int(stmt, 7, seq_normal);
-				sqlite3_bind_int(stmt, 8, a_count);
-				sqlite3_bind_int(stmt, 9, c_count);
-				sqlite3_bind_int(stmt, 10, g_count);
-				sqlite3_bind_int(stmt, 11, t_count);
-				sqlite3_bind_int(stmt, 12, n_count);
+
+				current_time = time(NULL);
+				printf("%ld\n", current_time-start_time);
+				start_time = current_time;
+
+				sqlite3_bind_null(stmt, 1);
+				sqlite3_bind_text(stmt, 2, self->kseqs->name.s, -1, NULL);
+				sqlite3_bind_int(stmt, 3, start);
+				sqlite3_bind_int(stmt, 4, position-start-1);
+				sqlite3_bind_int(stmt, 5, seq_len);
+				sqlite3_bind_int(stmt, 6, line_len);
+				sqlite3_bind_int(stmt, 7, line_end);
+				sqlite3_bind_int(stmt, 8, seq_normal);
+				sqlite3_bind_int(stmt, 9, a_count);
+				sqlite3_bind_int(stmt, 10, c_count);
+				sqlite3_bind_int(stmt, 11, g_count);
+				sqlite3_bind_int(stmt, 12, t_count);
+				sqlite3_bind_int(stmt, 13, n_count);
 				sqlite3_step(stmt);
 				sqlite3_reset(stmt);
+
+				current_time = time(NULL);
+				printf("%ld\n", current_time-start_time);
+				current_time = start_time;
 			}
 			position += ks_getuntil(ks, 0, &self->kseqs->name, &c);
 			position++;
@@ -299,22 +309,23 @@ PyObject *pyfastx_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		seq_normal = 0;
 	}
 
-	sqlite3_bind_text(stmt, 1, self->kseqs->name.s, self->kseqs->name.l, NULL);
-	sqlite3_bind_int(stmt, 2, start);
-	sqlite3_bind_int(stmt, 3, position-start-1);
-	sqlite3_bind_int(stmt, 4, seq_len);
-	sqlite3_bind_int(stmt, 5, line_len);
-	sqlite3_bind_int(stmt, 6, line_end);
-	sqlite3_bind_int(stmt, 7, seq_normal);
-	sqlite3_bind_int(stmt, 8, a_count);
-	sqlite3_bind_int(stmt, 9, c_count);
-	sqlite3_bind_int(stmt, 10, g_count);
-	sqlite3_bind_int(stmt, 11, t_count);
-	sqlite3_bind_int(stmt, 12, n_count);
+	sqlite3_bind_null(stmt, 1);
+	sqlite3_bind_text(stmt, 2, self->kseqs->name.s, -1, NULL);
+	sqlite3_bind_int(stmt, 3, start);
+	sqlite3_bind_int(stmt, 4, position-start-1);
+	sqlite3_bind_int(stmt, 5, seq_len);
+	sqlite3_bind_int(stmt, 6, line_len);
+	sqlite3_bind_int(stmt, 7, line_end);
+	sqlite3_bind_int(stmt, 8, seq_normal);
+	sqlite3_bind_int(stmt, 9, a_count);
+	sqlite3_bind_int(stmt, 10, c_count);
+	sqlite3_bind_int(stmt, 11, g_count);
+	sqlite3_bind_int(stmt, 12, t_count);
+	sqlite3_bind_int(stmt, 13, n_count);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
-	sqlite3_exec(self->index_db, "commit;", NULL, NULL, NULL);
+	sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
 
 	//create gzip random access index
 	if(self->gzip_format){
@@ -323,8 +334,20 @@ PyObject *pyfastx_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 
 	//get attributes
 	_pyfastx_calc_fasta_attrs(self);
-	
-	return Py_BuildValue("i", 1);
+}
+
+//load index from index file
+void _pyfastx_load_index(pyfastx_Fasta *self){
+	if(sqlite3_open(self->index_file, &self->index_db) != SQLITE_OK){
+		PyErr_SetString(PyExc_ConnectionError, sqlite3_errmsg(self->index_db));
+		return;
+	}
+
+	if(self->gzip_format){
+		_pyfastx_load_gzip_index(self);
+	}
+
+	_pyfastx_calc_fasta_attrs(self);
 }
 
 /*
@@ -357,7 +380,7 @@ PyObject *get_sub_seq(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
 	int byte_len;
 
 	//sequence length
-	int seq_len;
+	//int seq_len;
 
 	//line length of fasta
 	int line_len;
@@ -384,7 +407,7 @@ PyObject *get_sub_seq(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
 	sqlite3_step(stmt);
 	byte_offset = sqlite3_column_int(stmt, 1);
 	byte_len = sqlite3_column_int(stmt, 2);
-	seq_len = sqlite3_column_int(stmt, 3);
+	//seq_len = sqlite3_column_int(stmt, 3);
 	line_len = sqlite3_column_int(stmt, 4);
 	end_len = sqlite3_column_int(stmt, 5);
 	standard = sqlite3_column_int(stmt, 6);
@@ -463,7 +486,7 @@ PyObject *fasta_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 
 	//check input file is gzip or not
 	obj->fd = fopen(obj->file_name, "rb");
-	obj->gzip_format = is_gzip_format(obj->file_name);
+	obj->gzip_format = is_gzip_format(obj->fd);
 
 	//create index file path
 	obj->index_file = (char *)malloc(strlen(file_name) + 4);
@@ -475,18 +498,15 @@ PyObject *fasta_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 		obj->gzip_index = (zran_index_t *)malloc(sizeof(zran_index_t));
 	}
 	
+	//index database connection
 	obj->index_db = NULL;
 
 	//if build_index is True
 	if(build_index){
 		if(file_exists(obj->index_file)) {
-			if(sqlite3_open(obj->index_file, &obj->index_db) != SQLITE_OK){
-				PyErr_SetString(PyExc_ConnectionError, sqlite3_errmsg(obj->index_db));
-				return NULL;
-			}
-			_pyfastx_load_gzip_index(obj);
+			_pyfastx_load_index(obj);
 		} else {
-			pyfastx_build_index(obj);
+			_pyfastx_build_index(obj);
 		}
 	}
 	
@@ -522,6 +542,23 @@ PyObject *fasta_tp_next(pyfastx_Fasta *self){
 	return NULL;
 }
 
+PyObject *fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
+	if(file_exists(self->index_file)) {
+		_pyfastx_load_index(self);
+	} else {
+		_pyfastx_build_index(self);
+	}
+	return Py_BuildValue("");
+}
+
+PyObject *fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
+	if(file_exists(self->index_file)){
+		remove(self->index_file);
+	}
+	_pyfastx_build_index(self);
+	return Py_BuildValue("");
+}
+
 int fasta_get_item(pyfastx_Fasta *self, PyObject *key){
 	if(PyUnicode_Check(key)){
 		return 1;
@@ -551,7 +588,7 @@ int fasta_get_len(pyfastx_Fasta *self){
 }
 
 int fasta_get_val(pyfastx_Fasta *self, PyObject *key, PyObject *val){ 
-	char *name = PyUnicode_AsUTF8(key);
+	//char *name = PyUnicode_AsUTF8(key);
 	return 1;
 }
 
@@ -565,9 +602,10 @@ static PyMemberDef fasta_members[] = {
 };
 
 static PyMethodDef fasta_methods[] = {
-	{"build_index", (PyCFunction)pyfastx_build_index, METH_VARARGS|METH_KEYWORDS},
-	{"get_sub_seq", (PyCFunction)get_sub_seq, METH_VARARGS|METH_KEYWORDS},
-	{"test", (PyCFunction)test, METH_VARARGS},
+	{"build_index", (PyCFunction)fasta_build_index, METH_VARARGS},
+	{"rebuild_index", (PyCFunction)fasta_rebuild_index, METH_VARARGS},
+	{"get_sub_seq", (PyCFunction)get_sub_seq, METH_VARARGS},
+	//{"test", (PyCFunction)test, METH_VARARGS},
 	{NULL, NULL, 0, NULL}
 };
 
