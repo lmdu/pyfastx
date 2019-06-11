@@ -86,18 +86,24 @@ PyObject *sub_seq(PyObject *self, PyObject *args){
 	return Py_BuildValue("s", seq);
 }
 
-//check input file is whether gzip file
-int is_gzip(FILE* fd){
+/*check input file is whether gzip file
+@para file_name str, input file path string
+@return bool, 1 is gzip formmat file, 0 is not gzip
+*/
+int is_gzip_format(FILE* fd){
 	int ret;
 	unsigned char magic[4] = {0};
+
 	ret = fread(magic, 1, sizeof(magic), fd);
-	rewind(fd);
+	fseek(fd, 0, SEEK_SET);
 
 	if(ret != sizeof(magic)){
 		return 0;
 	}
+	
 	if(magic[0] != 0x1f || magic[1] != 0x8b || magic[2] != 0x08){
 		return 0;
 	}
+	
 	return 1;
 }
