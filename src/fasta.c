@@ -1,12 +1,13 @@
 #include "fasta.h"
 #include "util.h"
 #include "structmember.h"
-KSEQ_INIT(gzFile, gzread, gzrewind)
 
+KSEQ_INIT(gzFile, gzread, gzrewind)
 
 void _pyfastx_build_gzip_index(pyfastx_Fasta *self){
 	sqlite3_stmt *stmt;
 
+	rewind(self->fd);
 	zran_init(self->gzip_index, self->fd, 0, 0, 0, ZRAN_AUTO_BUILD);
 	zran_build_index(self->gzip_index, 0, 0);
 
@@ -94,11 +95,6 @@ void _pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 }
 
 void _pyfastx_build_index(pyfastx_Fasta *self){
-	//time
-	time_t start_time, current_time;
-
-	start_time = time(NULL);
-
 	// seqlite3 return value
 	int ret;
 	
@@ -191,123 +187,123 @@ void _pyfastx_build_index(pyfastx_Fasta *self){
 	
 	sqlite3_prepare_v2(self->index_db, insert_sql, -1, &stmt, NULL);
 
-	current_time = time(NULL);
-	printf("time: %ld\n", current_time - start_time);
-	start_time = current_time;
-
-	ks = self->kseqs->f;
-	while((c=ks_getc(ks))!=-1){
-		position++;
-		
-		// c is >
-		if(c == 62){
-			if(start){
-
-				//end of sequenc and check whether normal fasta
-				if(bad_line > 1){
-					seq_normal = 0;
-				}
-
-				current_time = time(NULL);
-				printf("%ld\n", current_time-start_time);
-				start_time = current_time;
-
-				sqlite3_bind_null(stmt, 1);
-				sqlite3_bind_text(stmt, 2, self->kseqs->name.s, -1, NULL);
-				sqlite3_bind_int(stmt, 3, start);
-				sqlite3_bind_int(stmt, 4, position-start-1);
-				sqlite3_bind_int(stmt, 5, seq_len);
-				sqlite3_bind_int(stmt, 6, line_len);
-				sqlite3_bind_int(stmt, 7, line_end);
-				sqlite3_bind_int(stmt, 8, seq_normal);
-				sqlite3_bind_int(stmt, 9, a_count);
-				sqlite3_bind_int(stmt, 10, c_count);
-				sqlite3_bind_int(stmt, 11, g_count);
-				sqlite3_bind_int(stmt, 12, t_count);
-				sqlite3_bind_int(stmt, 13, n_count);
-				sqlite3_step(stmt);
-				sqlite3_reset(stmt);
-
-				current_time = time(NULL);
-				printf("%ld\n", current_time-start_time);
-				current_time = start_time;
-			}
-			position += ks_getuntil(ks, 0, &self->kseqs->name, &c);
-			position++;
-			while(c != 10){
-				c = ks_getc(ks);
-				position++;
-			}
-			start = position;
-			seq_len = 0;
-			g_count = 0;
-			c_count = 0;
-			a_count = 0;
-			t_count = 0;
-			n_count = 0;
-			temp_len = 0;
-			line_len = 0;
-			line_end = 1;
-			seq_normal = 1;
-		}
-
- 		// c is \r
-		else if(c == 13){
-			temp_len++;
-
-			if(line_end != 2){
-				line_end = 2;
-			}
-		}
-		
-		// c is \n
-		else if(c == 10){
-			temp_len++;
-			if(line_len){
-				if(line_len != temp_len){
-					bad_line++;
-				}
-			} else {
-				line_len = temp_len;
-			}
-
-		}
-
-		else {
-			seq_len++;
-
-			//temp line length
-			temp_len++;
-
-			c = toupper(c);
-			
-			//calculate base counts in sequence
-			switch(c){
-				case 65:
-					a_count++; break;
-				
-				case 67:
-					c_count++; break;
-				
-				case 71:
-					g_count++; break;
-				
-				case 84:
-					t_count++; break;
-
-				default:
-					n_count++;
-			}
-		}
-	}
-
 	//reset read position of sequence file
 	kseq_rewind(self->kseqs);
 
-	//end of sequenc and check whether normal fasta
-	if(bad_line > 1){
-		seq_normal = 0;
+	ks = self->kseqs->f;
+	while((c=ks_getc(ks)) >= 0){
+		position++;
+	
+		switch(c){
+			// c is >
+			case 62: {
+				if(start > 0){
+
+					//end of sequenc and check whether normal fasta
+					seq_normal = (bad_line > 1) ? 0 : seq_normal;
+
+					sqlite3_bind_null(stmt, 1);
+					sqlite3_bind_text(stmt, 2, self->kseqs->name.s, -1, NULL);
+					sqlite3_bind_int(stmt, 3, start);
+					sqlite3_bind_int(stmt, 4, position-start-1);
+					sqlite3_bind_int(stmt, 5, seq_len);
+					sqlite3_bind_int(stmt, 6, line_len);
+					sqlite3_bind_int(stmt, 7, line_end);
+					sqlite3_bind_int(stmt, 8, seq_normal);
+					sqlite3_bind_int(stmt, 9, a_count);
+					sqlite3_bind_int(stmt, 10, c_count);
+					sqlite3_bind_int(stmt, 11, g_count);
+					sqlite3_bind_int(stmt, 12, t_count);
+					sqlite3_bind_int(stmt, 13, n_count);
+					sqlite3_step(stmt);
+					sqlite3_reset(stmt);
+				}
+
+				position += ks_getuntil(ks, 0, &self->kseqs->name, &c);
+				position++;
+				
+				while(c != 10){
+					c = ks_getc(ks);
+					position++;
+				}
+
+				start = position;
+				seq_len = 0;
+				g_count = 0;
+				c_count = 0;
+				a_count = 0;
+				t_count = 0;
+				n_count = 0;
+				temp_len = 0;
+				line_len = 0;
+				line_end = 1;
+				seq_normal = 1;
+
+				break;
+			}
+
+	 		// c is \r
+			case 13: {
+				temp_len++;
+				line_end = 2;
+				break;
+			}
+			
+			// c is \n
+			case 10: {
+				temp_len++;
+				
+				if(line_len > 0 && line_len != temp_len){
+					bad_line++;
+				} else {
+					line_len = temp_len;
+				}
+				break;
+			}
+
+			default: {
+				seq_len++;
+
+				//temp line length
+				temp_len++;
+
+				//c = toupper(c);
+				
+				//calculate base counts in sequence
+				switch(c){
+					case 65:
+						a_count++; break;
+					
+					case 67:
+						c_count++; break;
+					
+					case 71:
+						g_count++; break;
+					
+					case 84:
+						t_count++; break;
+
+					case 97:
+						a_count++; break;
+
+					case 99:
+						c_count++; break;
+
+					case 103:
+						g_count++; break;
+
+					case 116:
+						t_count++; break;
+
+					default:
+						n_count++;
+				}
+			}
+		}
 	}
+
+	//end of sequenc and check whether normal fasta
+	seq_normal = (bad_line > 1) ? 0 : seq_normal;
 
 	sqlite3_bind_null(stmt, 1);
 	sqlite3_bind_text(stmt, 2, self->kseqs->name.s, -1, NULL);

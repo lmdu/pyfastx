@@ -1,7 +1,11 @@
-#include "seq.h"
+#include "sequence.h"
 
-PyObject* pyfastx_sequence_init(SequenceObject* self, PyObject* args, PyObject* kwargs){
-    return Py_BuildValue("i", 1);
+PyObject *fasta_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
+	char* seq_name;
+	int start;
+	int end;
+
+	
 }
 
 static PyMethodDef sequence_methods[] = {
@@ -10,10 +14,10 @@ static PyMethodDef sequence_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
-PyTypeObject pyfastx_SeqType = {
+PyTypeObject pyfastx_SequenceType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "Sequence",                     /* tp_name */
-    sizeof(SequenceObject),         /* tp_basicsize */
+    sizeof(pyfastx_Sequence),       /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)fastx_tp_dealloc,   /* tp_dealloc */
     0,                              /* tp_print */
