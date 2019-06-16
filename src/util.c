@@ -1,4 +1,3 @@
-#include <zlib.h>
 #include "util.h"
 
 //check file is whether exists in disk
@@ -7,6 +6,16 @@ int file_exists(char *file_name){
 		return 1;
 	}
 	return 0;
+}
+
+void remove_space(char *str){
+	int i, j = 0;
+	for(i=0; str[i]; i++){
+		if(!isspace(str[i])){
+			str[j++] = str[i];
+		}
+	}
+	str[j] = '\0';
 }
 
 void upper_string(char *str){
@@ -90,12 +99,14 @@ PyObject *sub_seq(PyObject *self, PyObject *args){
 @para file_name str, input file path string
 @return bool, 1 is gzip formmat file, 0 is not gzip
 */
-int is_gzip_format(FILE* fd){
+int is_gzip_format(char* file_name){
 	int ret;
+	FILE* fd;
 	unsigned char magic[4] = {0};
 
+	fd = fopen(file_name, "rb");
 	ret = fread(magic, 1, sizeof(magic), fd);
-	fseek(fd, 0, SEEK_SET);
+	fclose(fd);
 
 	if(ret != sizeof(magic)){
 		return 0;

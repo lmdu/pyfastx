@@ -1,6 +1,7 @@
 #ifndef PYFASTX_SEQ_H
 #define PYFASTX_SEQ_H
-#include "fasta.h"
+#include "Python.h"
+#include "index.h"
 
 //make sequence class
 typedef struct {
@@ -15,7 +16,7 @@ typedef struct {
 	//end position
 	int end;
 
-	//sequence length
+	//sequence real length
 	int seq_len;
 
 	//GC content
@@ -24,10 +25,32 @@ typedef struct {
 	//a dict for storing ATGCN counts
 	PyObject* composition;
 
-	pyfastx_Fasta* fasta;
+	//fasta index
+	pyfastx_Index* index;
+
+	//id in db
+	int index_id;
+
+	//start offset in fasta file
+	int offset;
+
+	//byte length for sequence
+	int byte_len;
+
+	//each line length of sequence
+	int line_len;
+
+	//line end length, \n or \r\n
+	int end_len;
+
+	//standard fasta format with same line length
+	int normal;
 
 } pyfastx_Sequence;
 
-extern PyTypeObject pyfastx_SeqType;
+extern PyTypeObject pyfastx_SequenceType;
+
+PyObject *pyfastx_sequence_length(pyfastx_Sequence* self);
+PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item);
 
 #endif
