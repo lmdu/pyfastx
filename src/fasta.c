@@ -124,19 +124,29 @@ int fasta_get_item(pyfastx_Fasta *self, PyObject *key){
 }*/
 
 PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
+	
 	if (PyIndex_Check(item)) {
 		Py_ssize_t i;
 		i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-		
-		if (i == -1 && PyErr_Occurred()){
-			return NULL;
-		}
 
 		if (i < 0) {
 			i += self->seq_counts;
 		}
 
+		if(i >= self->seq_counts){
+			PyErr_SetString(PyExc_IndexError, "index out of range");
+			return NULL;
+		}
+
+		return pyfastx_index_get_seq_by_id(self->index, i+1);
 		
+	} else if (PyUnicode_CheckExact(item)) {
+		char *key = PyUnicode_AsUTF8(item);
+
+		return pyfastx_index_get_seq_by_name(self->index, key);
+
+	} else {
+		return NULL;
 	}
 }
 
@@ -170,7 +180,7 @@ static PySequenceMethods seq_methods = {
 	0, /*sq_slice */
 	0, /*sq_ass_item*/
 	0, /*sq_ass_splice*/
-	(objobjproc) fasta_get_item, /*sq_contains*/
+	(objobjproc) 0, /*sq_contains*/
 	(binaryfunc) 0, /*sq_inplace_concat*/
 	0,	/*sq_inplace_repeat*/
 };

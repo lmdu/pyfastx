@@ -34,20 +34,16 @@ typedef struct {
 
 extern PyTypeObject pyfastx_FastaType;
 
-PyObject* test(pyfastx_Fasta *self, PyObject *args);
-PyObject* fastx_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
-PyObject* fastx_tp_iter(pyfastx_Fasta *self);
-PyObject* fastx_tp_next(pyfastx_Fasta *self);
-int fastx_get_item(pyfastx_Fasta *self, PyObject *key);
-PyObject *fastx_get_key(pyfastx_Fasta *self, PyObject *key);
-void fastx_tp_dealloc(pyfastx_Fasta *self);
-int fastx_get_len(pyfastx_Fasta *self);
-int fastx_get_val(pyfastx_Fasta *self, PyObject *key, PyObject *val);
-
 void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self);
+void pyfastx_fasta_dealloc(pyfastx_Fasta *self);
+int pyfastx_fasta_length(pyfastx_Fasta *self);
 
-PyObject *fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
-PyObject *fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
-//PyObject *get_sub_seq(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
+
+PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
+PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self);
+PyObject *pyfastx_fasta_next(pyfastx_Fasta *self);
+PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
+PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
+PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item);
 
 #endif

@@ -56,10 +56,12 @@ void pyfastx_build_index(pyfastx_Index *self);
 void pyfastx_rewind_index(pyfastx_Index *index);
 void pyfastx_index_free(pyfastx_Index *self);
 
-PyObject* pyfastx_get_next_seq(pyfastx_Index *index);
-PyObject *pyfastx_get_seq_by_name(pyfastx_Index *self, char *name);
+PyObject *pyfastx_get_next_seq(pyfastx_Index *index);
+PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt);
+PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name);
+PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, int id);
 
-pyfastx_Index* pyfastx_init_index(char* file_path, int uppercase);
+pyfastx_Index *pyfastx_init_index(char* file_path, int uppercase);
 char *pyfastx_index_get_seq(pyfastx_Index *self, char *name, int offset, int bytes, int start, int end);
 
 #endif

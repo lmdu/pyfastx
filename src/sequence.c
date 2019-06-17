@@ -7,8 +7,8 @@ PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwa
 	return (PyObject *)obj;
 }
 
-PyObject *pyfastx_sequence_length(pyfastx_Sequence* self){
-	return Py_BuildValue("i", self->seq_len);
+int pyfastx_sequence_length(pyfastx_Sequence* self){
+	return self->seq_len;
 }
 
 PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
@@ -25,12 +25,61 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			i += self->seq_len;
 		}
 
-		//return Py_BuildValue("i", i);
-
 		seq = pyfastx_index_get_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end);
 		return Py_BuildValue("C", *(seq+i));
+	
+	} else if (PySlice_Check(item)) {
+		Py_ssize_t slice_start, slice_stop, slice_step, slice_len;
+
+		if(PySlice_Unpack(item, &slice_start, &slice_stop, &slice_step) < 0) {
+			return NULL;
+		}
+
+		slice_len = PySlice_AdjustIndices(self->seq_len, &slice_start, &slice_stop, slice_step);
+
+		if (slice_len <= 0) {
+			Py_RETURN_NONE;
+		}
+
+		if(slice_step != 1) {
+			Py_RETURN_NONE;
+		}
+
+		//create a new sequence
+		pyfastx_Sequence *seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);
+		if(!seq){
+			return NULL;
+		}
+		
+		seq->name = self->name;
+		seq->start = slice_start + 1;
+		seq->end = slice_stop;	
+		seq->seq_len = slice_stop - slice_start;
+		seq->line_len = self->line_len;
+		seq->end_len = self->end_len;
+		seq->normal = self->normal;
+		seq->offset = self->offset;
+		seq->byte_len = self->byte_len;
+		seq->index = self->index;
+
+		int line_num, tail_num;
+
+		if (self->normal) {
+			line_num = seq->seq_len / (seq->line_len - seq->end_len);
+			tail_num = seq->seq_len % (seq->line_len - seq->end_len);
+			seq->offset = seq->byte_len + seq->start + (seq->start / (seq->line_len - seq->end_len)) * seq->end_len - 1;
+			seq->byte_len = line_num * seq->line_len + tail_num;
+		}
+
+		printf("%d\n", seq->offset);
+		printf("%d\n", seq->byte_len);
+
+		Py_INCREF(seq);
+		return (PyObject *)seq;
+	} else {
+		return NULL;
 	}
-	return NULL;
+
 }
 
 static PyMappingMethods pyfastx_sequence_as_mapping = {
@@ -66,7 +115,9 @@ static PyGetSetDef pyfastx_sequence_getsets[] = {
 
 static PyMemberDef pyfastx_sequence_members[] = {
 	//{"name", T_STRING, offsetof(pyfastx_Sequence, name), READONLY},
-	{"length", T_LONG, offsetof(pyfastx_Sequence, seq_len), READONLY},
+	{"start", T_INT, offsetof(pyfastx_Sequence, start), READONLY},
+	{"end", T_INT, offsetof(pyfastx_Sequence, end), READONLY},
+	//{"length", T_INT, offsetof(pyfastx_Sequence, seq_len), READONLY},
 	{"gc_content", T_FLOAT, offsetof(pyfastx_Sequence, gc_content), READONLY},
 	{"composition", T_OBJECT, offsetof(pyfastx_Sequence, composition), READONLY},
 	{NULL}

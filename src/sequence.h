@@ -29,7 +29,7 @@ typedef struct {
 	pyfastx_Index* index;
 
 	//id in db
-	int index_id;
+	//int index_id;
 
 	//start offset in fasta file
 	int offset;
@@ -50,7 +50,9 @@ typedef struct {
 
 extern PyTypeObject pyfastx_SequenceType;
 
-PyObject *pyfastx_sequence_length(pyfastx_Sequence* self);
+int pyfastx_sequence_length(pyfastx_Sequence* self);
+
+PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
 PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item);
 
 #endif

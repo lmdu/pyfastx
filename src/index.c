@@ -377,31 +377,19 @@ void pyfastx_index_free(pyfastx_Index *self){
 	gzclose(self->gzfd);
 }
 
-
-PyObject *pyfastx_get_seq_by_name(pyfastx_Index *self, char *name){
-	// sqlite3 prepare object
-	sqlite3_stmt *stmt;
-	int a;
-	int c;
-	int g;
-	int t;
-	int n;
-
-	//select sql statement, seqid indicates seq name or chromomsome
-	const char* sql = "SELECT * FROM seq WHERE seqid=? LIMIT 1;";
-	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_text(stmt, 1, name, -1, NULL);
-	if(sqlite3_step(stmt) != SQLITE_ROW){
-		PyErr_SetString(PyExc_KeyError, name);
-	}
+PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
+	int a, c, g, t, n;
+	char* name;
 
 	pyfastx_Sequence *seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);
 	if(!seq){
 		return NULL;
 	}
 
-	seq->index_id = sqlite3_column_int(stmt, 0);
-	seq->name = (char *) sqlite3_column_text(stmt, 1);
+	//seq->index_id = sqlite3_column_int(stmt, 0);
+	name = (char *) sqlite3_column_text(stmt, 1);
+	seq->name = (char *)malloc(strlen(name));
+	strcpy(seq->name, name);
 	seq->offset = sqlite3_column_int(stmt, 2);
 	seq->byte_len = sqlite3_column_int(stmt, 3);
 	seq->seq_len = sqlite3_column_int(stmt, 4);
@@ -433,11 +421,36 @@ PyObject *pyfastx_get_seq_by_name(pyfastx_Index *self, char *name){
 	return (PyObject *)seq;
 }
 
-/*
-PyObject *pyfastx_get_seq_by_id(pyfastx_Index *self, int id){
-	const char* sql = "SELECT * FROM seq WHERE id=? LIMIT 1;";
+PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
+	// sqlite3 prepare object
+	sqlite3_stmt *stmt;
+	
+	//select sql statement, seqid indicates seq name or chromomsome
+	const char* sql = "SELECT * FROM seq WHERE seqid=? LIMIT 1;";
+	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_text(stmt, 1, name, -1, NULL);
+	if(sqlite3_step(stmt) != SQLITE_ROW){
+		PyErr_SetString(PyExc_KeyError, name);
+		return NULL;
+	}
 
-}*/
+	return pyfastx_index_make_seq(self, stmt);
+}
+
+
+PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, int id){
+	sqlite3_stmt *stmt;
+
+	const char* sql = "SELECT * FROM seq WHERE id=? LIMIT 1;";
+	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_int(stmt, 1, id);
+	if(sqlite3_step(stmt) != SQLITE_ROW){
+		PyErr_SetString(PyExc_IndexError, "Index Error");
+		return NULL;
+	}
+
+	return pyfastx_index_make_seq(self, stmt);
+}
 /*
 @param name str, sequence name
 @param start int, one-based start position
@@ -498,7 +511,9 @@ char *pyfastx_index_get_seq(pyfastx_Index *self, char *name, int offset, int byt
 		zran_read(self->gzip_index, buff, bytes);
 	} else {
 		rewind(self->fd);
-		fread(buff, sizeof(char), bytes, self->fd);
+		if(fread(buff, sizeof(char), bytes, self->fd) > bytes){
+			return NULL;
+		}
 	}
 
 	remove_space(buff);
