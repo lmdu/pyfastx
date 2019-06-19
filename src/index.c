@@ -499,7 +499,7 @@ char *pyfastx_index_get_seq(pyfastx_Index *self, char *name, int offset, int byt
 		if((strcmp(name,self->cache_name)==0) && (start>=self->cache_start) && (end<=self->cache_end)){
 			buff = (char *)malloc(seq_len + 1);
 			strncpy(buff, self->cache_seq + (start - self->cache_start), seq_len);
-			buff[seq_len+1] = '\0';
+			buff[seq_len] = '\0';
 			return buff;
 		}
 	}
@@ -515,6 +515,8 @@ char *pyfastx_index_get_seq(pyfastx_Index *self, char *name, int offset, int byt
 			return NULL;
 		}
 	}
+
+	buff[bytes] = '\0';
 
 	remove_space(buff);
 

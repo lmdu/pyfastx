@@ -154,6 +154,20 @@ int pyfastx_fasta_length(pyfastx_Fasta *self){
 	return self->seq_counts;
 }
 
+int pyfastx_fasta_contains(pyfastx_Fasta *self, PyObject *key){
+	sqlite3_stmt *stmt;
+	
+	char *name = PyUnicode_AsUTF8(key);
+
+	sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM seq WHERE seqid=? LIMIT 1;", -1, &stmt, NULL);
+	sqlite3_bind_text(stmt, 1, name, -1, NULL);
+	if(sqlite3_step(stmt) != SQLITE_ROW){
+		return 0;
+	}
+
+	return 1;
+}
+
 static PyMemberDef pyfastx_fasta_members[] = {
 	{"file_name", T_STRING, offsetof(pyfastx_Fasta, file_name), READONLY},
 	{"size", T_LONG, offsetof(pyfastx_Fasta, seq_length), READONLY},
@@ -174,15 +188,15 @@ static PyMethodDef pyfastx_fasta_methods[] = {
 //as a list
 static PySequenceMethods seq_methods = {
 	0, /*sq_length*/
-	(binaryfunc) 0, /*sq_concat*/
+	0, /*sq_concat*/
 	0, /*sq_repeat*/
 	0, /*sq_item*/
 	0, /*sq_slice */
 	0, /*sq_ass_item*/
 	0, /*sq_ass_splice*/
-	(objobjproc) 0, /*sq_contains*/
-	(binaryfunc) 0, /*sq_inplace_concat*/
-	0,	/*sq_inplace_repeat*/
+	(objobjproc)pyfastx_fasta_contains, /*sq_contains*/
+	0, /*sq_inplace_concat*/
+	0, /*sq_inplace_repeat*/
 };
 
 static PyMappingMethods pyfastx_fasta_as_mapping = {

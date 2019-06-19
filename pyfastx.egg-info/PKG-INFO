@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: pyfastx
+Version: 0.1.0
+Summary: pyfastx is a python module for fast random access to FASTA sequences from flat text file or even from gzip compressed file.
+Home-page: https://github.com/lmdu/pyfastx
+Author: Lianming Du
+Author-email: adullb@qq.com
+License: MIT
+Description: pyfastx is a python module for fast random access to FASTA sequences from flat text file or even from gzip compressed file.
+Keywords: fasta sequence bioinformatics
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: Science/Research
+Classifier: Natural Language :: English
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: Unix
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Description-Content-Type: text/markdown
