@@ -51,6 +51,12 @@ typedef struct {
 extern PyTypeObject pyfastx_SequenceType;
 
 int pyfastx_sequence_length(pyfastx_Sequence* self);
+char *pyfastx_sequence_acquire(pyfastx_Sequence* self);
+
+PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure);
+PyObject *pyfastx_sequence_reverse(pyfastx_Sequence* self, void* closure);
+PyObject *pyfastx_sequence_complement(pyfastx_Sequence* self, void* closure);
+PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure);
 
 PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
 PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item);

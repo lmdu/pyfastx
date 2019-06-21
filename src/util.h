@@ -7,6 +7,8 @@ void remove_space(char *str);
 void upper_string(char *str);
 int is_gzip_format(char *file_name);
 void truncate_seq(char *seq, int start, int end);
+void complement_seq(char *seq);
+void reverse_seq(char *seq);
 
 PyObject* clean_seq(PyObject *self, PyObject *args);
 PyObject* sub_seq(PyObject *self, PyObject *args);

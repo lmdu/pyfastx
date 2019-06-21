@@ -1,5 +1,6 @@
 #include "sequence.h"
 #include "structmember.h"
+#include "util.h"
 
 
 PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
@@ -11,14 +12,39 @@ int pyfastx_sequence_length(pyfastx_Sequence* self){
 	return self->seq_len;
 }
 
-PyObject *pyfastx_sequence_get_seq(pyfastx_Sequence* self, void* closure){
-	char *seq;
-	seq = pyfastx_index_get_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end);
+char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
+	char *seq = pyfastx_index_get_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end);
+	char *seq1 = malloc(strlen(seq)+1);
+	strcpy(seq1, seq);
+	return seq1;
+}
+
+PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
+	char *seq = pyfastx_index_get_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end);
+	return Py_BuildValue("s", seq);
+}
+
+PyObject *pyfastx_sequence_reverse(pyfastx_Sequence* self, void* closure){
+	char *seq = pyfastx_sequence_acquire(self);
+	reverse_seq(seq);
+	return Py_BuildValue("s", seq);
+}
+
+PyObject *pyfastx_sequence_complement(pyfastx_Sequence* self, void* closure){
+	char *seq = pyfastx_sequence_acquire(self);
+	complement_seq(seq);
+	return Py_BuildValue("s", seq);
+}
+
+PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure){
+	char *seq = pyfastx_sequence_acquire(self);
+	reverse_seq(seq);
+	complement_seq(seq);
 	return Py_BuildValue("s", seq);
 }
 
 PyObject *pyfastx_sequence_str(pyfastx_Sequence* self){
-	return pyfastx_sequence_get_seq(self, NULL);
+	return pyfastx_sequence_seq(self, NULL);
 }
 
 PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
@@ -113,7 +139,10 @@ PyObject *pyfastx_sequence_get_name(pyfastx_Sequence *self, void* closure){
 
 static PyGetSetDef pyfastx_sequence_getsets[] = {
 	//{"name", (getter)pyfastx_sequence_get_name, NULL, NULL, NULL},
-	{"seq", (getter)pyfastx_sequence_get_seq, NULL, NULL, NULL},
+	{"seq", (getter)pyfastx_sequence_seq, NULL, NULL, NULL},
+	{"reverse", (getter)pyfastx_sequence_reverse, NULL, NULL, NULL},
+	{"complement", (getter)pyfastx_sequence_complement, NULL, NULL, NULL},
+	{"antisense", (getter)pyfastx_sequence_antisense, NULL, NULL, NULL},
 	{NULL}
 };
 

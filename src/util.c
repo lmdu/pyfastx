@@ -25,6 +25,51 @@ void upper_string(char *str){
 	}
 }
 
+void reverse_seq(char *seq){
+	char *p1, *p2;
+
+	if (! seq || ! *seq){
+		return;
+	}
+	for (p1 = seq, p2 = seq + strlen(seq) - 1; p2 > p1; ++p1, --p2){
+		*p1 ^= *p2;
+		*p2 ^= *p1;
+		*p1 ^= *p2;
+	}
+}
+
+void complement_seq(char *seq){
+	int i;
+
+	for(i=0; seq[i]; i++){
+		switch(seq[i]){
+			case 65:
+				seq[i]=84; break;
+			
+			case 67:
+				seq[i]=71; break;
+			
+			case 71:
+				seq[i]=67; break;
+			
+			case 84:
+				seq[i]=65; break;
+
+			case 97:
+				seq[i]=116; break;
+
+			case 99:
+				seq[i]=103; break;
+
+			case 103:
+				seq[i]=99; break;
+
+			case 116:
+				seq[i]=97; break;
+		}
+	}
+}
+
 PyObject *clean_seq(PyObject *self, PyObject *args){
 	char *seq;
 	if (!PyArg_ParseTuple(args, "s", &seq)){
