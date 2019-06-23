@@ -123,19 +123,10 @@ static PyMappingMethods pyfastx_sequence_as_mapping = {
 	0
 };
 
-/*
-PyObject *test(pyfastx_Sequence *self, PyObject *args, PyObject *kwargs){
-	return Py_BuildValue("i", 100);
-}
-
-static PyMethodDef pyfastx_sequence_methods[] = {
-	{"test", (PyCFunction)test, METH_VARARGS},
+/*static PyMethodDef pyfastx_sequence_methods[] = {
+	{"sub_seq", (PyCFunction)pyfastx_sequence_sub_seq, METH_VARARGS},
 	{NULL, NULL, 0, NULL}
-};
-
-PyObject *pyfastx_sequence_get_name(pyfastx_Sequence *self, void* closure){
-	return Py_BuildValue("s", self->name);
-}*/
+};*/
 
 static PyGetSetDef pyfastx_sequence_getsets[] = {
 	//{"name", (getter)pyfastx_sequence_get_name, NULL, NULL, NULL},

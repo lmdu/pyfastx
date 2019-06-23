@@ -1,5 +1,6 @@
 #include "fasta.h"
 #include "util.h"
+#include "identifier.h"
 #include "structmember.h"
 
 /*calculate fasta attributes including sequence count, length,
@@ -96,6 +97,10 @@ PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){
 	return (PyObject *)self;
 }
 
+PyObject  *pyfastx_fasta_repr(pyfastx_Fasta *self){
+	return PyUnicode_FromFormat("Fasta('%s')", self->file_name);
+}
+
 PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 	return pyfastx_get_next_seq(self->index);
 }
@@ -103,7 +108,7 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
 	pyfastx_build_index(self->index);
 	pyfastx_calc_fasta_attrs(self);
-	return Py_BuildValue("");
+	Py_RETURN_NONE;
 }
 
 PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
@@ -112,16 +117,116 @@ PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObj
 	}
 	pyfastx_build_index(self->index);
 	pyfastx_calc_fasta_attrs(self);
-	return Py_BuildValue("");
+	Py_RETURN_NONE;
 }
 
-/*
-int fasta_get_item(pyfastx_Fasta *self, PyObject *key){
-	if(PyUnicode_Check(key)){
-		return 1;
+PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
+	static char* keywords[] = {"name", "intervals", "strand", NULL};
+
+	char *name;
+	char *seq;
+	PyObject *intervals;
+	char *strand = "+";
+	long start;
+	long end;
+	
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|s", keywords, &name, &intervals, &strand)){
+		return NULL;
 	}
-	return 0;
-}*/
+
+	if(!PyTuple_Check(intervals) && !PyList_Check(intervals)){
+		PyErr_SetString(PyExc_ValueError, "Intervals must be list or tuple");
+		return NULL;
+	}
+
+	if(PyList_Check(intervals)){
+		intervals = PyList_AsTuple(intervals);
+	}
+
+	PyObject *item;
+
+	item = PyTuple_GetItem(intervals, 0);
+	Py_ssize_t size = PyTuple_Size(intervals);
+
+	// sqlite3 prepare object
+	sqlite3_stmt *stmt;
+	
+	//select sql statement, seqid indicates seq name or chromomsome
+	const char* sql = "SELECT * FROM seq WHERE seqid=? LIMIT 1;";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_text(stmt, 1, name, -1, NULL);
+	if(sqlite3_step(stmt) != SQLITE_ROW){
+		return PyErr_Format(PyExc_NameError, "Sequence %s does not exists", name);
+	}
+
+	int offset = sqlite3_column_int(stmt, 2);
+	int byte_len = sqlite3_column_int(stmt, 3);
+	int seq_len = sqlite3_column_int(stmt, 4);
+	int len;
+	char *sub_seq;
+
+	seq = pyfastx_index_full_seq(self->index, name, offset, byte_len, seq_len);
+
+	if(size == 2 && PyLong_Check(item)){
+		start = PyLong_AsLong(item);
+		end = PyLong_AsLong(PyTuple_GetItem(intervals, 1));
+
+		if(start > end){
+			PyErr_SetString(PyExc_ValueError, "Start position > end position");
+			return NULL;
+		}
+
+		len = end - start + 1;
+
+		sub_seq = (char *)malloc(len + 1);
+		strncpy(sub_seq, seq+start-1, len);
+		sub_seq[len] = '\0';
+	} else {
+		int i;
+		int j = 0;
+		sub_seq = (char *)malloc(strlen(seq) + 1);
+
+		for(i=0; i<size; i++){
+			item = PyTuple_GetItem(intervals, i);
+			if(PyList_Check(item)){
+				item = PyList_AsTuple(item);
+			}
+			start = PyLong_AsLong(PyTuple_GetItem(item, 0));
+			end = PyLong_AsLong(PyTuple_GetItem(item, 1));
+			len = end - start + 1;
+
+			if(start > end){
+				PyErr_SetString(PyExc_ValueError, "Start position > end position");
+				return NULL;
+			}
+
+			strncpy(sub_seq+j, seq+start-1, len);
+			j += len;
+		}
+		sub_seq[j] = '\0';
+	}
+
+	if(strcmp(strand, "-") == 0){
+		reverse_seq(sub_seq);
+		complement_seq(sub_seq);
+	}
+
+	return Py_BuildValue("s", sub_seq);
+}
+
+PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
+	pyfastx_Identifier *ids = PyObject_New(pyfastx_Identifier, &pyfastx_IdentifierType);
+	if(!ids){
+		return NULL;
+	}
+
+	ids->index_db = self->index->index_db;
+	ids->stmt = NULL;
+	ids->seq_counts = self->seq_counts;
+
+	Py_INCREF(ids);
+	return (PyObject *)ids;
+}
 
 PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
 	
@@ -180,7 +285,8 @@ static PyMemberDef pyfastx_fasta_members[] = {
 static PyMethodDef pyfastx_fasta_methods[] = {
 	{"build_index", (PyCFunction)pyfastx_fasta_build_index, METH_VARARGS},
 	{"rebuild_index", (PyCFunction)pyfastx_fasta_rebuild_index, METH_VARARGS},
-	//{"get_sub_seq", (PyCFunction)get_sub_seq, METH_VARARGS},
+	{"get_seq", (PyCFunction)pyfastx_fasta_fetch, METH_VARARGS|METH_KEYWORDS},
+	{"keys", (PyCFunction)pyfastx_fasta_keys, METH_VARARGS},
 	//{"test", (PyCFunction)test, METH_VARARGS},
 	{NULL, NULL, 0, NULL}
 };
@@ -215,7 +321,7 @@ PyTypeObject pyfastx_FastaType = {
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
     0,                              /* tp_reserved */
-    0,                              /* tp_repr */
+    (reprfunc)pyfastx_fasta_repr,                              /* tp_repr */
     0,                              /* tp_as_number */
     &seq_methods,                   /* tp_as_sequence */
     &pyfastx_fasta_as_mapping,                   /* tp_as_mapping */

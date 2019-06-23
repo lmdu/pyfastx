@@ -5,7 +5,7 @@ import sys
 #from distutils.core import setup, Extension
 from setuptools import setup, Extension, find_packages
 
-sources = ['src/module.c', 'src/fasta.c', 'src/index.c', 'src/sequence.c', 'src/kseq.c', 'src/zran.c', 'src/util.c']
+sources = ['src/module.c', 'src/fasta.c', 'src/index.c', 'src/sequence.c', 'src/kseq.c', 'src/zran.c', 'src/identifier.c', 'src/util.c']
 
 extensions = [
 	Extension('pyfastx', sources, extra_link_args=['-lz', '-lsqlite3']),

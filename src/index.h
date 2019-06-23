@@ -63,5 +63,6 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, int id);
 
 pyfastx_Index *pyfastx_init_index(char* file_path, int uppercase);
 char *pyfastx_index_get_seq(pyfastx_Index *self, char *name, int offset, int bytes, int start, int end);
+char *pyfastx_index_full_seq(pyfastx_Index *self, char *name, int offset, int bytes, int seq_len);
 
 #endif

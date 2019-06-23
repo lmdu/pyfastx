@@ -2,6 +2,7 @@
 #include "fasta.h"
 #include "util.h"
 #include "sequence.h"
+#include "identifier.h"
 
 static PyMethodDef module_methods[] = {
 	//{"test", test, METH_VARARGS|METH_KEYWORDS},
@@ -37,6 +38,13 @@ PyMODINIT_FUNC PyInit_pyfastx(void){
 
 	Py_INCREF((PyObject *)&pyfastx_SequenceType);
 	PyModule_AddObject(module, "Sequence", (PyObject *)&pyfastx_SequenceType);
+
+	if(PyType_Ready(&pyfastx_IdentifierType) < 0){
+		return NULL;
+	}
+
+	Py_INCREF((PyObject *)&pyfastx_IdentifierType);
+	PyModule_AddObject(module, "Identifier", (PyObject *)&pyfastx_IdentifierType);
 
 	return module;
 }

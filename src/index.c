@@ -220,7 +220,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 					seq_normal = (bad_line > 1) ? 0 : seq_normal;
 
 					sqlite3_bind_null(stmt, 1);
-					sqlite3_bind_text(stmt, 2, self->kseqs->name.s, -1, NULL);
+					sqlite3_bind_text(stmt, 2, self->kseqs->name.s, self->kseqs->name.l, NULL);
 					sqlite3_bind_int(stmt, 3, start);
 					sqlite3_bind_int(stmt, 4, position-start-1);
 					sqlite3_bind_int(stmt, 5, seq_len);
@@ -323,7 +323,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	seq_normal = (bad_line > 1) ? 0 : seq_normal;
 
 	sqlite3_bind_null(stmt, 1);
-	sqlite3_bind_text(stmt, 2, self->kseqs->name.s, -1, NULL);
+	sqlite3_bind_text(stmt, 2, self->kseqs->name.s, self->kseqs->name.l, NULL);
 	sqlite3_bind_int(stmt, 3, start);
 	sqlite3_bind_int(stmt, 4, position-start-1);
 	sqlite3_bind_int(stmt, 5, seq_len);
@@ -388,7 +388,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 
 	//seq->index_id = sqlite3_column_int(stmt, 0);
 	name = (char *) sqlite3_column_text(stmt, 1);
-	seq->name = (char *)malloc(strlen(name));
+	seq->name = (char *)malloc(strlen(name) + 1);
 	strcpy(seq->name, name);
 	seq->offset = sqlite3_column_int(stmt, 2);
 	seq->byte_len = sqlite3_column_int(stmt, 3);
@@ -451,14 +451,9 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, int id){
 
 	return pyfastx_index_make_seq(self, stmt);
 }
-/*
-@param name str, sequence name
-@param start int, one-based start position
-@param end int, one-based end position
-@param strand char, default +, - for reverse complement
 
-char *pyfastx_index_full_seq(pyfastx_Index *self, char *name, int offset, int bytes, int start, int end){
-	if((name==self->cache_name) && (start==self->cache_start) && (end==self->cache_end)){
+char *pyfastx_index_full_seq(pyfastx_Index *self, char *name, int offset, int bytes, int seq_len){
+	if((name==self->cache_name) && (1==self->cache_start) && (seq_len==self->cache_end)){
 		return self->cache_seq;
 	}
 
@@ -478,12 +473,12 @@ char *pyfastx_index_full_seq(pyfastx_Index *self, char *name, int offset, int by
 	}
 
 	self->cache_name = name;
-	self->cache_start = start;
-	self->cache_end = end;
+	self->cache_start = 1;
+	self->cache_end = seq_len;
 	self->cache_seq = buff;
 
 	return self->cache_seq;
-}*/
+}
 
 
 char *pyfastx_index_get_seq(pyfastx_Index *self, char *name, int offset, int bytes, int start, int end){
