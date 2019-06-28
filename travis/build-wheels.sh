@@ -1,20 +1,22 @@
 #!/bin/bash
 set -e -x
 
-yum install -y zlib-devel
+# Install a system package required by our library
+yum install -y atlas-devel zlib-devel
 
+# Compile wheels
 for PYBIN in /opt/python/*/bin; do
-	"${PYBIN}/pip" install --upgrade pip wheel
-	"${PYBIN}/pip" install --upgrade setuptools
-	"${PYBIN}/pip" wheel /io/ -w wheelhouse/
+    "${PYBIN}/pip" install -r /io/dev-requirements.txt
+    "${PYBIN}/pip" wheel /io/ -w wheelhouse/
 done
 
+# Bundle external shared libraries into the wheels
 for whl in wheelhouse/*.whl; do
-	auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
+    auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
 done
 
-
-#for PYBIN in /opt/python/*/bin; do
-#	"${PYBIN}/pip" install pyfastx --no-index -f /io/wheelhouse
-#	(cd "$HOME";)
+# Install packages and test
+#for PYBIN in /opt/python/*/bin/; do
+#    "${PYBIN}/pip" install python-manylinux-demo --no-index -f /io/wheelhouse
+#    (cd "$HOME"; "${PYBIN}/nosetests" pymanylinuxdemo)
 #done
