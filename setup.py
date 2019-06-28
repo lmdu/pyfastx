@@ -3,8 +3,8 @@
 import os
 import sys
 import glob
-from distutils.core import setup, Extension
-#from setuptools import setup, Extension, find_packages
+#from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 sources = glob.glob('src/*.c')
 
