@@ -2,11 +2,12 @@
 set -e -x
 
 # Install a system package required by our library
-yum install -y atlas-devel zlib-devel
+yum install -y zlib-devel
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
-    "${PYBIN}/pip" install -r /io/dev-requirements.txt
+    "${PYBIN}/pip" install -U setuptools
+    "${PYBIN}/pip" install -U wheel
     "${PYBIN}/pip" wheel /io/ -w wheelhouse/
 done
 
