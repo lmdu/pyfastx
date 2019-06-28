@@ -8,7 +8,7 @@ yum install -y zlib-devel
 for PYBIN in /opt/python/*/bin; do
 	if [ `${PYBIN}/python -c "import sys; print(1 if sys.version_info[:2] >= (3, 5) else 0)"` -eq 1 ]; then
         "${PYBIN}/pip" install -U setuptools
-        "${PYBIN}/pip" install -U wheel
+        #"${PYBIN}/pip" install -U wheel
         "${PYBIN}/pip" wheel /io/ -w wheelhouse/
 	fi
 done
