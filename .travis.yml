@@ -20,6 +20,9 @@ matrix:
       env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64
            PLAT=manylinux2010_x86_64
 
+before_install:
+  - chmod +x travis/build-wheels.sh
+
 install:
   - docker pull $DOCKER_IMAGE
 
