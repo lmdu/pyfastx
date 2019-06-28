@@ -21,7 +21,7 @@ matrix:
            PLAT=manylinux2010_x86_64
 
 before_install:
-  - chmod +x /io/travis/build-wheels.sh
+  - pwd
 
 install:
   - docker pull $DOCKER_IMAGE
