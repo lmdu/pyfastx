@@ -152,7 +152,8 @@ static PyMemberDef pyfastx_sequence_members[] = {
 };
 
 PyTypeObject pyfastx_SequenceType = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    //PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "Sequence",                     /* tp_name */
     sizeof(pyfastx_Sequence),       /* tp_basicsize */
     0,                              /* tp_itemsize */

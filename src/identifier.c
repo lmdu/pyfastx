@@ -90,7 +90,8 @@ static PySequenceMethods identifier_as_sequence = {
 };
 
 PyTypeObject pyfastx_IdentifierType = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    //PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "Identifier",                     /* tp_name */
     sizeof(pyfastx_Identifier),       /* tp_basicsize */
     0,                              /* tp_itemsize */
