@@ -4,6 +4,7 @@ environment:
 build_script:
   - appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
   - install.bat
+  - SET INCLUDE=%programfiles%\zlib\include\zlib.h;%INCLUDE%
   - pip install -U cibuildwheel
   - cibuildwheel --output-dir wheelhouse
 artifacts:
