@@ -16,10 +16,10 @@ matrix:
 
 before_install:
   - if [ "${TRAVIS_OS_NAME:-}" == "osx" ]; then
-      brew install zlib
+      brew install zlib;
     fi
   - if [ "${TRAVIS_OS_NAME:-}" -ne "osx" ]; then
-      yum install -y zlib-devel
+      yum install -y zlib-devel;
     fi
 
 install:
