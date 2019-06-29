@@ -2,6 +2,9 @@ environment:
   global:
     CIBW_SKIP: cp27-* cp33-* cp34-*
 
+cache:
+  - C:\tools\vcpkg\installed
+
 install:
   #- appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
   #- install.bat
@@ -13,8 +16,8 @@ install:
   - vcpkg install zlib:x64-windows
   - vcpkg install sqlite3:x86-windows
   - vcpkg install sqlite3:x64-windows
-  - dir C:\Tools\vcpkg\packages\zlib_x86-windows
-  - dir C:\Tools\vcpkg\packages\zlib_x86-windows\share\zlib
+  - dir C:\Tools\vcpkg\packages\zlib_x86-windows\include
+  - dir C:\Tools\vcpkg\packages\sqlite3_x64-windows\include
   - pip install -U cibuildwheel
 
 build_script:
