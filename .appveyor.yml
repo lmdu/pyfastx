@@ -18,10 +18,10 @@ install:
   #- SET INCLUDE=%INCLUDE%
   - vcpkg install zlib:"%platform%"-windows
   - vcpkg install sqlite3:"%platform%"-windows
-  - SET INCLUDE=C:\Tools\vcpkg\packages\zlib_"%platform%"-windows\include;%INCLUDE%
-  - SET INCLUDE=C:\Tools\vcpkg\packages\sqlite3_"%platform%"-windows\include;%INCLUDE%
-  - SET LIB=C:\Tools\vcpkg\packages\zlib_"%platform%"-windows\lib;%LIB%
-  - SET LIB=C:\Tools\vcpkg\packages\sqlite3_"%platform%"-windows\lib;%LIB%
+  - SET INCLUDE=C:\Tools\vcpkg\packages\zlib_%platform%-windows\include;%INCLUDE%
+  - SET INCLUDE=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\include;%INCLUDE%
+  - SET LIB=C:\Tools\vcpkg\packages\zlib_%platform%-windows\lib;%LIB%
+  - SET LIB=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\lib;%LIB%
   - pip install -U cibuildwheel
 
 build_script:
