@@ -8,13 +8,13 @@ install:
   #- appveyor DownloadFile https://www.sqlite.org/2019/sqlite-amalgamation-3280000.zip
   #- 7z e sqlite-amalgamation-3280000.zip -oc:\sqlite
   #- SET INCLUDE=%programfiles%\zlib\include;c:\sqlite;%INCLUDE%
-  - dir C:\Tools\vcpkg\packages\zlib_x86-windows
-  - dir C:\Tools\vcpkg\packages\zlib_x86-windows\share\zlib
   #- SET INCLUDE=%INCLUDE%
   - vcpkg install zlib:x86-windows
   - vcpkg install zlib:x64-windows
   - vcpkg install sqlite3:x86-windows
   - vcpkg install sqlite3:x64-windows
+  - dir C:\Tools\vcpkg\packages\zlib_x86-windows
+  - dir C:\Tools\vcpkg\packages\zlib_x86-windows\share\zlib
   - pip install -U cibuildwheel
 
 build_script:
