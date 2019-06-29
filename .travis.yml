@@ -15,7 +15,7 @@ matrix:
       language: generic
 
 before_install:
-  - if [ "${TRAVIS_OS_NAME:-}" -eq "osx" ]; then
+  - if [ "${TRAVIS_OS_NAME:-}" == "osx" ]; then
       brew install zlib
     fi
   - if [ "${TRAVIS_OS_NAME:-}" -ne "osx" ]; then
