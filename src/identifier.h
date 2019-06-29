@@ -23,6 +23,7 @@ PyObject *pyfastx_identifier_new(PyTypeObject *type, PyObject *args, PyObject *k
 PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self);
 PyObject *pyfastx_identifier_next(pyfastx_Identifier *self);
 int pyfastx_identifier_length(pyfastx_Identifier *self);
+PyObject *pyfastx_identifier_repr(pyfastx_Identifier *self);
 PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i);
 int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key);
 

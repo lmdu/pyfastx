@@ -43,6 +43,10 @@ PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure){
 	return Py_BuildValue("s", seq);
 }
 
+PyObject *pyfastx_sequence_repr(pyfastx_Sequence* self){
+	return PyUnicode_FromFormat("<Sequence> %s from %d to %d", self->name, self->start, self->end);
+}
+
 PyObject *pyfastx_sequence_str(pyfastx_Sequence* self){
 	return pyfastx_sequence_seq(self, NULL);
 }
@@ -157,7 +161,7 @@ PyTypeObject pyfastx_SequenceType = {
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
     0,                              /* tp_reserved */
-    0,                              /* tp_repr */
+    (reprfunc)pyfastx_sequence_repr,                              /* tp_repr */
     0,                              /* tp_as_number */
     0,                              /* tp_as_sequence */
     &pyfastx_sequence_as_mapping,   /* tp_as_mapping */

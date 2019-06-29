@@ -32,9 +32,9 @@ int pyfastx_identifier_length(pyfastx_Identifier *self){
 }
 
 
-/*PyObject  *pyfastx_identifier_repr(pyfastx_Identifier *self){
-	return PyUnicode_FromFormat("Fasta('%s')", self->file_name);
-}*/
+PyObject *pyfastx_identifier_repr(pyfastx_Identifier *self){
+	return PyUnicode_FromFormat("<Identifier> contains %d identifiers", self->seq_counts);
+}
 
 PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 	if(i < 0){
@@ -99,7 +99,7 @@ PyTypeObject pyfastx_IdentifierType = {
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
     0,                              /* tp_reserved */
-    0,                              /* tp_repr */
+    (reprfunc)pyfastx_identifier_repr,                              /* tp_repr */
     0,                              /* tp_as_number */
     &identifier_as_sequence,                              /* tp_as_sequence */
     0,   /* tp_as_mapping */

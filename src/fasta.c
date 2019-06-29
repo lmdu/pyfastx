@@ -97,8 +97,8 @@ PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){
 	return (PyObject *)self;
 }
 
-PyObject  *pyfastx_fasta_repr(pyfastx_Fasta *self){
-	return PyUnicode_FromFormat("Fasta('%s')", self->file_name);
+PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self){
+	return PyUnicode_FromFormat("<Fasta> %s contains %d seqs", self->file_name, self->seq_counts);
 }
 
 PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){

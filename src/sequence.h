@@ -61,5 +61,6 @@ PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure);
 PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
 PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item);
 PyObject *pyfastx_sequence_str(pyfastx_Sequence* self);
+PyObject *pyfastx_sequence_repr(pyfastx_Sequence* self);
 
 #endif
