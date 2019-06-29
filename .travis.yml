@@ -3,6 +3,8 @@ language: python
 env:
   global:
     - CIBW_SKIP="cp27-* cp33-* cp34-*"
+    - CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel"
+    - CIBW_BEFORE_BUILD_MACOS="brew install zlib"
     - PIP=pip3
 
 matrix:
@@ -10,13 +12,8 @@ matrix:
     - sudo: required
       services:
         - docker
-      before_install:
-        - apt install -y zlib-dev
-
     - os: osx
       language: generic
-      before_install:
-        - brew install zlib
 
 install:
   - $PIP install -U setuptools
