@@ -1,0 +1,44 @@
+notifications:
+  email: false
+
+matrix:
+  include:
+    - sudo: required
+      language: generic
+      services:
+        - docker
+      env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
+           PLAT=manylinux1_x86_64
+    - sudo: required
+      language: generic
+      services:
+        - docker
+      env: DOCKER_IMAGE=quay.io/pypa/manylinux1_i686
+           PRE_CMD=linux32
+           PLAT=manylinux1_i686
+#    - sudo: required
+#      services:
+#        - docker
+#      env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64
+#           PLAT=manylinux2010_x86_64
+    - os: osx
+      language: generic
+
+before_install:
+  - chmod +x travis/build-wheels-docker.sh
+
+install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull $DOCKER_IMAGE; fi
+
+script:
+  - travis/build-wheels-${TRAVIS_OS_NAME}.sh
+  - ls wheelhouse/
+
+deploy:
+  provider: pypi
+  user: lmdu
+  password:
+    secure: ICuoaaUuYshqmfDJjBq6wG98Vo5PiunoAQCXgbyqeXisSM41/0O1on+s+8UDb01pXfoOB3pfDj1TTm7ieh381onV+1nFZjuT7fCt2ePUw2ACFpq0XYZX3gW2Kc8gC3sNy4juDj3TFNbgNJnq+UZX3Ix8N86OlTIdJhPGAQgarOPlD2/c/BVwwELDbC3MGV6hseVPAh8ICrMvhUUhKAHhaUEYrtunlzqV9Y/Ig/Qu7vS8CnNiU7lHd2jYEaFw5hPOyzoPEvsmX9B6jlx6D6lJwXN2lkeSwVMWu4s7HT78+meG5iGLPAKL46laTEyxRpotzwhI9sRKNR2EENIUZ48uowckXpxmpeHDF7el91QkaoGH/HT//J/an5xZPaXJLT8iM9u7gCz7/+yU5Zq38VSxrbOTBXRAB8Kv21d3wnNbsB6oNTUaKCngb3gCznD910XlNns1gKbVhBkUru0rU6LEvY3JLC53BURQkEFlkXZJ7TP/oQVFUEucXgxVDYI6GJQK79mz2/I4WdMzpBCBqpugyYdgWjqTez2MlQs4DomezZQkes/bS3JPAXp/COtmHORILD/rWp/hv7zqqxCKrQisd++O1uPxkhWQ42gfah+7Pc0fxbX/Git5ZYCf58Tz4MojZCFwCMEZ4V30syYrklqo0U8QOINBgh7COpZtjZgJMHQ=
+  on:
+    branch: master
+    tags: true

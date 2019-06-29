@@ -4,6 +4,8 @@ set -e -x
 # Install a system package required by our library
 yum install -y zlib-devel
 
+cd /io
+
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
 	if [ `${PYBIN}/python -c "import sys; print(1 if sys.version_info[:2] >= (3, 5) else 0)"` -eq 1 ]; then
@@ -16,6 +18,7 @@ done
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/*.whl; do
     auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
+    rm "$whl"
 done
 
 # Install packages and test
