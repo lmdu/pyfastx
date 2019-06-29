@@ -2,7 +2,9 @@
 
 //check file is whether exists in disk
 int file_exists(char *file_name){
-	if(access(file_name, F_OK) != -1){
+	FILE *file;
+	if(file = fopen(file_name, "r")){
+		fclose(file);
 		return 1;
 	}
 	return 0;
