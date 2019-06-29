@@ -10,17 +10,13 @@ matrix:
     - sudo: required
       services:
         - docker
+      before_install:
+        - yum install -y zlib-devel
 
     - os: osx
       language: generic
-
-before_install:
-  - if [ "${TRAVIS_OS_NAME:-}" == "osx" ]; then
-      brew install zlib;
-    fi
-  - if [ "${TRAVIS_OS_NAME:-}" -ne "osx" ]; then
-      yum install -y zlib-devel;
-    fi
+      before_install:
+        - brew install zlib
 
 install:
   - $PIP install -U setuptools
