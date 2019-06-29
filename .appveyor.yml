@@ -5,7 +5,9 @@ environment:
 install:
   - appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
   - install.bat
-  - SET INCLUDE=%programfiles%\zlib\include;%INCLUDE%
+  - appveyor DownloadFile https://www.sqlite.org/2019/sqlite-amalgamation-3280000.zip
+  - 7z e sqlite-amalgamation-3280000.zip -oc:\sqlite
+  - SET INCLUDE=%programfiles%\zlib\include;c:\sqlite;%INCLUDE%
   - pip install -U cibuildwheel
 
 build_script:
