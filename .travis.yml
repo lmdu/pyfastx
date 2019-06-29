@@ -11,7 +11,7 @@ matrix:
       env: PIP=pip2
 
 script:
+  - yum install -y zlib-devel
   - $PIP install -U cibuildwheel
   - cibuildwheel --output-dir wheelhouse
   - ls wheelhouse
-  
