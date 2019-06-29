@@ -2,6 +2,8 @@ environment:
   CIBW_SKIP: cp27-* cp33-* cp34-*
 
 build_script:
+  - appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
+  - install.bat
   - pip install -U cibuildwheel
   - cibuildwheel --output-dir wheelhouse
 artifacts:
