@@ -312,7 +312,7 @@ static PyMappingMethods pyfastx_fasta_as_mapping = {
 };
 
 PyTypeObject pyfastx_FastaType = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "Fasta",                        /* tp_name */
     sizeof(pyfastx_Fasta),          /* tp_basicsize */
     0,                              /* tp_itemsize */
