@@ -13,6 +13,7 @@ install:
   - vcpkg install zlib:x64-windows
   - vcpkg install sqlite3:x86-windows
   - vcpkg install sqlite3:x64-windows
+  - vcpkg export zlib:x86-windows zlib:x64-windows sqlite3:x86-windows sqlite3:x64-windows --raw
   - vcpkg integrate install
   - pip install -U cibuildwheel
 
