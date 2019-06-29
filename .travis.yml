@@ -1,17 +1,30 @@
 language: python
 
+env:
+  global:
+    - CIBW_SKIP="cp27-* cp33-* cp34-*"
+    - PIP=pip3
+
 matrix:
   include:
     - sudo: required
       services:
         - docker
-      env: PIP=pip
+
     - os: osx
       language: generic
-      env: PIP=pip2
 
-script:
-  - yum install -y zlib-devel
+before_install:
+  - if [ "${TRAVIS_OS_NAME:-}" == "osx" ]; then
+      brew install zlib;
+    fi
+  - if [ "${TRAVIS_OS_NAME:-}" -ne "osx" ]; then
+      yum install -y zlib-devel;
+    fi
+
+install:
   - $PIP install -U cibuildwheel
   - cibuildwheel --output-dir wheelhouse
+
+script:
   - ls wheelhouse
