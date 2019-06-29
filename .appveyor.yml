@@ -2,6 +2,10 @@ environment:
   global:
     CIBW_SKIP: cp27-* cp33-* cp34-*
 
+platform:
+  - x64
+  - x86
+
 cache:
   - C:\tools\vcpkg\installed
 
@@ -12,12 +16,10 @@ install:
   #- 7z e sqlite-amalgamation-3280000.zip -oc:\sqlite
   #- SET INCLUDE=%programfiles%\zlib\include;c:\sqlite;%INCLUDE%
   #- SET INCLUDE=%INCLUDE%
-  - vcpkg install zlib:x86-windows
-  - vcpkg install zlib:x64-windows
-  - vcpkg install sqlite3:x86-windows
-  - vcpkg install sqlite3:x64-windows
-  - dir C:\Tools\vcpkg\packages\zlib_x86-windows\include
-  - dir C:\Tools\vcpkg\packages\sqlite3_x64-windows\include
+  - vcpkg install zlib:"%platform%"-windows
+  - vcpkg install sqlite3:"%platform%"-windows
+  - SET INCLUDE=C:\Tools\vcpkg\packages\zlib_"%platform%"-windows\include;%INCLUDE%
+  - SET INCLUDE=C:\Tools\vcpkg\packages\sqlite3_"%platform%"-windows\include;%INCLUDE%
   - pip install -U cibuildwheel
 
 build_script:
