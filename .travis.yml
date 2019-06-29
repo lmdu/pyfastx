@@ -15,14 +15,15 @@ matrix:
       language: generic
 
 before_install:
-  - if [ "${TRAVIS_OS_NAME:-}" == "osx" ]; then
-      brew install zlib;
+  - if [ "${TRAVIS_OS_NAME:-}" -eq "osx" ]; then
+      brew install zlib
     fi
   - if [ "${TRAVIS_OS_NAME:-}" -ne "osx" ]; then
-      yum install -y zlib-devel;
+      yum install -y zlib-devel
     fi
 
 install:
+  - $PIP install -U setuptools
   - $PIP install -U cibuildwheel
   - cibuildwheel --output-dir wheelhouse
 
