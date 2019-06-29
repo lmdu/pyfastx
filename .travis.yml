@@ -11,7 +11,7 @@ matrix:
       services:
         - docker
       before_install:
-        - yum install -y zlib-devel
+        - apt install -y zlib-dev
 
     - os: osx
       language: generic
