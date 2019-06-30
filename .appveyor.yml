@@ -45,13 +45,13 @@ install:
   #- SET PATH=C:\Tools\vcpkg\packages\zlib_%platform%-windows\bin;%PATH%
   #- SET PATH=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\bin;%PATH%
   #- pip install -U cibuildwheel
-  - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH;
+  - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
   - if [%PYTHON_ARCH%] == [32] SET PATH=%MINGW_32%\bin;%PATH%
-  - if [%PYTHON_ARCH%] == [32] SET CPLUS_INCLUDE_PATH=%MINGW_32%\opt\include;%CPLUS_INCLUDE_PATH%
-  - if [%PYTHON_ARCH%] == [32] SET LIBRARY_PATH=%MINGW_32%\opt\lib;%LIBRARY_PATH%
   - if [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
-  - if [%PYTHON_ARCH%] == [64] SET CPLUS_INCLUDE_PATH=%MINGW_64%\opt\include;%CPLUS_INCLUDE_PATH%
-  - if [%PYTHON_ARCH%] == [64] SET LIBRARY_PATH=%MINGW_64%\opt\lib;%LIBRARY_PATH% 
+  - COPY %MINGW_32%\opt\include\sqlite3.h %MINGW_32%\x86_64-w64-mingw32\include\sqlite3.h
+  - COPY %MINGW_32%\opt\lib\libsqlite3.a %MINGW_32%\x86_64-w64-mingw32\lib\libsqlite3.a
+  - COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
+  - COPY %MINGW_64%\opt\lib\libsqlite3.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.a
   - python -m pip install -U pip setuptools wheel
   - python ci\fix_compiler_error.py %PYTHON%
 
