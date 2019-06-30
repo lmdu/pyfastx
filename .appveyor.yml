@@ -1,13 +1,32 @@
 environment:
   global:
-    CIBW_SKIP: cp27-* cp33-* cp34-*
+    MINGW_32: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32
+    MINGW_64: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64
 
-platform:
-  - x64
-  - x86
+matrix:
+  - PYTHON: C:\Python35
+    PYTHON_VERSION: 3.5
+    PYTHON_ARCH: 32
 
-cache:
-  - C:\tools\vcpkg\installed
+  - PYTHON: C:\Python36
+    PYTHON_VERSION: 3.6
+    PYTHON_ARCH: 32
+
+  - PYTHON: C:\Python37
+    PYTHON_VERSION: 3.7
+    PYTHON_ARCH: 32
+
+ - PYTHON: C:\Python35-x64
+    PYTHON_VERSION: 3.5
+    PYTHON_ARCH: 64
+
+  - PYTHON: C:\Python36-x64
+    PYTHON_VERSION: 3.6
+    PYTHON_ARCH: 64
+
+  - PYTHON: C:\Python37-x64
+    PYTHON_VERSION: 3.7
+    PYTHON_ARCH: 64
 
 install:
   #- appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
@@ -16,19 +35,30 @@ install:
   #- 7z e sqlite-amalgamation-3280000.zip -oc:\sqlite
   #- SET INCLUDE=%programfiles%\zlib\include;c:\sqlite;%INCLUDE%
   #- SET INCLUDE=%INCLUDE%
-  - dir C:\mingw-w64
-  - vcpkg install zlib:"%platform%"-windows
-  - vcpkg install sqlite3:"%platform%"-windows
-  - SET INCLUDE=C:\Tools\vcpkg\packages\zlib_%platform%-windows\include;%INCLUDE%
-  - SET INCLUDE=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\include;%INCLUDE%
-  - SET LIB=C:\Tools\vcpkg\packages\zlib_%platform%-windows\lib;%LIB%
-  - SET LIB=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\lib;%LIB%
-  - SET PATH=C:\Tools\vcpkg\packages\zlib_%platform%-windows\bin;%PATH%
-  - SET PATH=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\bin;%PATH%
-  - pip install -U cibuildwheel
+  #- dir C:\mingw-w64
+  #- vcpkg install zlib:"%platform%"-windows
+  #- vcpkg install sqlite3:"%platform%"-windows
+  #- SET INCLUDE=C:\Tools\vcpkg\packages\zlib_%platform%-windows\include;%INCLUDE%
+  #- SET INCLUDE=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\include;%INCLUDE%
+  #- SET LIB=C:\Tools\vcpkg\packages\zlib_%platform%-windows\lib;%LIB%
+  #- SET LIB=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\lib;%LIB%
+  #- SET PATH=C:\Tools\vcpkg\packages\zlib_%platform%-windows\bin;%PATH%
+  #- SET PATH=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\bin;%PATH%
+  #- pip install -U cibuildwheel
+  - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH;
+  - if [%PYTHON_ARCH%] == [32] SET PATH=%MINGW_32%\bin;%PATH%
+  - if [%PYTHON_ARCH%] == [32] SET CPLUS_INCLUDE_PATH=%MINGW_32%\opt\include;%CPLUS_INCLUDE_PATH%
+  - if [%PYTHON_ARCH%] == [32] SET LIBRARY_PATH=%MINGW_32%\opt\lib;%LIBRARY_PATH%
+  - if [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
+  - if [%PYTHON_ARCH%] == [64] SET CPLUS_INCLUDE_PATH=%MINGW_64%\opt\include;%CPLUS_INCLUDE_PATH%
+  - if [%PYTHON_ARCH%] == [64] SET LIBRARY_PATH=%MINGW_64%\opt\lib;%LIBRARY_PATH%
+  - 
+  - python -m pip install -U pip setuptools wheel
 
 build_script:
-  - cibuildwheel --output-dir wheelhouse
+  #- cibuildwheel --output-dir wheelhouse
+  - python setup.py build -c mingw32
+  - pip wheel -v -v -v -w wheelhouse .
 
 artifacts:
   - path: "wheelhouse\\*.whl"
