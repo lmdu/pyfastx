@@ -25,6 +25,10 @@ install:
   - SET LIBPATH=C:\Tools\vcpkg\packages\zlib_%platform%-windows\lib;%LIBPATH%
   - SET LIBPATH=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\lib;%LIBPATH%
   - dir C:\Tools\vcpkg\packages\sqlite3_%platform%-windows
+  - dir C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\lib
+  - dir C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\include
+  - dir C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\bin
+  - dir C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\share
   - pip install -U cibuildwheel
 
 build_script:
