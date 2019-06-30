@@ -16,6 +16,7 @@ install:
   #- 7z e sqlite-amalgamation-3280000.zip -oc:\sqlite
   #- SET INCLUDE=%programfiles%\zlib\include;c:\sqlite;%INCLUDE%
   #- SET INCLUDE=%INCLUDE%
+  - dir C:\mingw-w64
   - vcpkg install zlib:"%platform%"-windows
   - vcpkg install sqlite3:"%platform%"-windows
   - SET INCLUDE=C:\Tools\vcpkg\packages\zlib_%platform%-windows\include;%INCLUDE%

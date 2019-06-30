@@ -9,7 +9,7 @@ from setuptools import setup, Extension
 sources = glob.glob('src/*.c')
 
 extensions = [
-	Extension('pyfastx', sources, extra_link_args=['-lz', '-lsqlite3']),
+	Extension('pyfastx', sources, extra_link_args=['/subsystem:console']),
 ]
 
 description = """pyfastx is a python module for fast random
