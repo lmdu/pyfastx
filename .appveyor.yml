@@ -52,6 +52,8 @@ install:
   - COPY %MINGW_32%\opt\lib\libsqlite3.dll.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.dll.a
   - COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
   - COPY %MINGW_64%\opt\lib\libsqlite3.dll.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.dll.a
+  - gendef %PYTHON%\vcruntime140.dll
+  - dlltool -D %PYTHON%\vcruntime140.dll -d %PYTHON%\vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
   - python -m pip install -U pip setuptools wheel
   - python ci\fix_compiler_error.py %PYTHON%
   - dir %PYTHON%
