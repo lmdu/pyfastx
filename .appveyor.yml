@@ -51,9 +51,9 @@ install:
   - if [%PYTHON_ARCH%] == [32] SET LIBRARY_PATH=%MINGW_32%\opt\lib;%LIBRARY_PATH%
   - if [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
   - if [%PYTHON_ARCH%] == [64] SET CPLUS_INCLUDE_PATH=%MINGW_64%\opt\include;%CPLUS_INCLUDE_PATH%
-  - if [%PYTHON_ARCH%] == [64] SET LIBRARY_PATH=%MINGW_64%\opt\lib;%LIBRARY_PATH%
-  - 
+  - if [%PYTHON_ARCH%] == [64] SET LIBRARY_PATH=%MINGW_64%\opt\lib;%LIBRARY_PATH% 
   - python -m pip install -U pip setuptools wheel
+  - python ci\fix_compiler_error.py
 
 build_script:
   #- cibuildwheel --output-dir wheelhouse
