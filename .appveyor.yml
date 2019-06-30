@@ -3,30 +3,30 @@ environment:
     MINGW_32: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32
     MINGW_64: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64
 
-matrix:
-  - PYTHON: C:\Python35
-    PYTHON_VERSION: 3.5
-    PYTHON_ARCH: 32
+  matrix:
+    - PYTHON: C:\Python35
+      PYTHON_VERSION: 3.5
+      PYTHON_ARCH: 32
 
-  - PYTHON: C:\Python36
-    PYTHON_VERSION: 3.6
-    PYTHON_ARCH: 32
+    - PYTHON: C:\Python36
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 32
 
-  - PYTHON: C:\Python37
-    PYTHON_VERSION: 3.7
-    PYTHON_ARCH: 32
+    - PYTHON: C:\Python37
+      PYTHON_VERSION: 3.7
+      PYTHON_ARCH: 32
 
-  - PYTHON: C:\Python35-x64
-    PYTHON_VERSION: 3.5
-    PYTHON_ARCH: 64
+    - PYTHON: C:\Python35-x64
+      PYTHON_VERSION: 3.5
+      PYTHON_ARCH: 64
 
-  - PYTHON: C:\Python36-x64
-    PYTHON_VERSION: 3.6
-    PYTHON_ARCH: 64
+    - PYTHON: C:\Python36-x64
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 64
 
-  - PYTHON: C:\Python37-x64
-    PYTHON_VERSION: 3.7
-    PYTHON_ARCH: 64
+    - PYTHON: C:\Python37-x64
+      PYTHON_VERSION: 3.7
+      PYTHON_ARCH: 64
 
 install:
   #- appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
