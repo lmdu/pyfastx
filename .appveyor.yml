@@ -54,6 +54,7 @@ install:
   - COPY %MINGW_64%\opt\lib\libsqlite3.dll.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.dll.a
   - python -m pip install -U pip setuptools wheel
   - python ci\fix_compiler_error.py %PYTHON%
+  - dir %PYTHON%
 
 build_script:
   #- cibuildwheel --output-dir wheelhouse
