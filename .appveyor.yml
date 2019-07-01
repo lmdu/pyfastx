@@ -6,7 +6,8 @@ environment:
       secure: 1Szp1iLA7WGoWd1p27WL8A==
     TWINE_PASSWORD:
       secure: R/khkrD1Q53akIsKedjTXQ==
-    TWINE_REPOSITORY: https://test.pypi.org/legacy/
+    TWINE_REPOSITORY: pypi
+    TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
   matrix:
     - PYTHON: C:\Python35
@@ -61,24 +62,13 @@ install:
   - dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
   - python -m pip install -U pip setuptools wheel
   - python ci\fix_compiler_error.py %PYTHON%
+  - pip install -U twine
 
 build_script:
   #- cibuildwheel --output-dir wheelhouse
   - python setup.py build -c mingw32
   - pip wheel -v -w wheelhouse .
-
-before_deploy:
-  - pip install -U twine
-
-after_deploy:
-  - >
-    IF "%APPVEYOR_REPO_BRANCH%" == "master"
-    (
-    IF "%APPVEYOR_REPO_TAG%" == "true"
-    (
-    twine upload "wheelhouse\\*whl" --skip-existing
-    )
-    )
+  - IF "%APPVEYOR_REPO_TAG%" == "true" (twine upload --skip-existing wheelhouse/*.whl)
 
 artifacts:
   - path: "wheelhouse\\*.whl"
