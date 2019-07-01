@@ -2,6 +2,11 @@ environment:
   global:
     MINGW_32: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32
     MINGW_64: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64
+    TWINE_USERNAME:
+      secure: 1Szp1iLA7WGoWd1p27WL8A==
+    TWINE_PASSWORD:
+      secure: R/khkrD1Q53akIsKedjTXQ==
+    TWINE_REPOSITORY: https://test.pypi.org/legacy/
 
   matrix:
     - PYTHON: C:\Python35
@@ -27,6 +32,10 @@ environment:
     - PYTHON: C:\Python37-x64
       PYTHON_VERSION: 3.7
       PYTHON_ARCH: 64
+
+platform:
+  - x64
+  - x86
 
 install:
   #- appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
@@ -61,6 +70,19 @@ build_script:
   #- cibuildwheel --output-dir wheelhouse
   - python setup.py build -c mingw32
   - pip wheel -v -w wheelhouse .
+
+before_deploy:
+  - pip install -U twine
+
+after_deploy:
+  - >
+    IF "%APPVEYOR_REPO_BRANCH%" == "master"
+    (
+    IF "%APPVEYOR_REPO_TAG%" == "true"
+    (
+    twine upload "wheelhouse\\*whl" --skip-existing
+    )
+    )
 
 artifacts:
   - path: "wheelhouse\\*.whl"
