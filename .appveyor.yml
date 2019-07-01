@@ -2,10 +2,6 @@ environment:
   global:
     MINGW_32: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32
     MINGW_64: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64
-    TWINE_USERNAME:
-      secure: 1Szp1iLA7WGoWd1p27WL8A==
-    TWINE_PASSWORD:
-      secure: R/khkrD1Q53akIsKedjTXQ==
     TWINE_REPOSITORY: pypi
     TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
