@@ -6,6 +6,10 @@ env:
     - CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel"
     - CIBW_BEFORE_BUILD_MACOS="brew install zlib"
     - PIP=pip3
+    - "Z9J+3bkNyc2pp7YFwSZdD59/4TVDT2/lZTKCoDixoYLVmlOLdGYLGVlvSe0yN8WhlBc0j5IbaWJ1hZ7y2rFTxquEzHfnOdofdz/eU/RxVI3EodkTrlgH9O9wj/lKhSAqmIIooXUQ7upApVA3qR+1rEphaVd1LDv2oVc1a8Y0iwaY7B2cS7+J2ndcP3wDyx+3iFPft4V6vcm/CpEtaTsshUxqqP8HeWxpP/tR+FprlzQKwpY+Cq7TZK8cDwsnSven/wotJxiDzGBD5AuBq990LvDFjVn6hkQ9osAsWMifAhIbotPA04QcFFCUq7MIG6YYFeGuJMV8nK7QDaE4RND22y+9erYEJKoY0dRg+ootzxQPqE9jqxGNwo5RmfZ22ATAgfqWNatJyVdYmeqOI/pibYmWV41+u1thtvLuMB7MsR2XXeR/7Tmpem2pCrOwM945Uf5nvhdkYNcofJi8Wj2bsDVTBIKvbSHDQ/yKaIAKTPI1qIzuputymC0VivAge4JoW3L1N57t6CP5qp/YPrWNZbfiILexlWeThmdnB8Fl2GNfgo11Aa6ecyV1FtdO/zN5IOhpFTmonuACVYWTr3EHP8Q0b/kthZJfcVs2fgf4GGiZgFTw76mXOc50IwIQXXWUmHdnPb8P6aZFqy/bop4Egjm3h272Qvdwfa4H7RoNN00="
+    - "hPXkeBU3fCFFxIozs31q9YfVbAWn72Rd0F8InXFcvVlzwLoTpG65DhWPH7Af70xZCv/v6pNwNv5rJfo3NZyLxPVR0zBVsce2AHCVjbMiXlBUw2TH9fCGgbVbF730JewqXk1YSSMZc4JCa5/fWhlhlucnSfSV/ki/sUx70GmHGSfVXOJESUy0mgmrtm7Qn6fBp0nYw6HXNiBd3XLEC1lUsC97jSBATXKTsoN0xEL5XoyHlyjR5YNcKbP4FascRGnOFbJmVv9dLyBcDCzu8ixSihYnPiqCLmXr/4cHCCYeeRqgwLPrF2zuKRdwMbkG8DzscXtLydFTOburE+EN8tdzP3/ZSkUwM6ShUclJz6AhgnMXxvfGEhgx1RcVYudNrgAeG8SCHEisgE2D/tCYORYqsJeuuSzSWat06YKu5I5fal8tsK5PFg83SW8EtJrlp3ahDJfH6nD7zN61AZgqfHId5iYXN4q7xJfP/IsB2olMabdu9MV0D5klPBnnoKsfSUKv4QcsUD9X7eHugWkPA1B5Ly3A7qkI4XuUbih9ehOdLyDY9mz4wU1seMKfDQF3Gn6GE3ZBLciCrqoxSB/yLADQFZhepaG3rqj7lK+u/SuT0lPrExOkT++N0AA7qAk5qh2Bxq8XGkC9MNydJhnVOSPmZ4wVi2MPgE4wczqJJaeE0lY="
+    - TWINE_REPOSITORY: pypi
+    - TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
 matrix:
   include:
@@ -22,16 +26,20 @@ install:
 
 script:
   - ls wheelhouse
+  - if [ "$TRAVIS_TAG" != "" ]; then
+      $PIP install -U twine;
+      twine upload --skip-existing wheelhouse/*;
+    fi
 
-deploy:
-  provider: pypi
-  user: lmdu
-  server: https://test.pypi.org/legacy/
-  password:
-     secure: ICuoaaUuYshqmfDJjBq6wG98Vo5PiunoAQCXgbyqeXisSM41/0O1on+s+8UDb01pXfoOB3pfDj1TTm7ieh381onV+1nFZjuT7fCt2ePUw2ACFpq0XYZX3gW2Kc8gC3sNy4juDj3TFNbgNJnq+UZX3Ix8N86OlTIdJhPGAQgarOPlD2/c/BVwwELDbC3MGV6hseVPAh8ICrMvhUUhKAHhaUEYrtunlzqV9Y/Ig/Qu7vS8CnNiU7lHd2jYEaFw5hPOyzoPEvsmX9B6jlx6D6lJwXN2lkeSwVMWu4s7HT78+meG5iGLPAKL46laTEyxRpotzwhI9sRKNR2EENIUZ48uowckXpxmpeHDF7el91QkaoGH/HT//J/an5xZPaXJLT8iM9u7gCz7/+yU5Zq38VSxrbOTBXRAB8Kv21d3wnNbsB6oNTUaKCngb3gCznD910XlNns1gKbVhBkUru0rU6LEvY3JLC53BURQkEFlkXZJ7TP/oQVFUEucXgxVDYI6GJQK79mz2/I4WdMzpBCBqpugyYdgWjqTez2MlQs4DomezZQkes/bS3JPAXp/COtmHORILD/rWp/hv7zqqxCKrQisd++O1uPxkhWQ42gfah+7Pc0fxbX/Git5ZYCf58Tz4MojZCFwCMEZ4V30syYrklqo0U8QOINBgh7COpZtjZgJMHQ=
-  skip_cleanup: true
-  skip_existing: true
-  on:
-    branch: master
-    tags: true
+#deploy:
+#  provider: pypi
+#  user: lmdu
+#  server: https://test.pypi.org/legacy/
+#  password:
+#     secure: ICuoaaUuYshqmfDJjBq6wG98Vo5PiunoAQCXgbyqeXisSM41/0O1on+s+8UDb01pXfoOB3pfDj1TTm7ieh381onV+1nFZjuT7fCt2ePUw2ACFpq0XYZX3gW2Kc8gC3sNy4juDj3TFNbgNJnq+UZX3Ix8N86OlTIdJhPGAQgarOPlD2/c/BVwwELDbC3MGV6hseVPAh8ICrMvhUUhKAHhaUEYrtunlzqV9Y/Ig/Qu7vS8CnNiU7lHd2jYEaFw5hPOyzoPEvsmX9B6jlx6D6lJwXN2lkeSwVMWu4s7HT78+meG5iGLPAKL46laTEyxRpotzwhI9sRKNR2EENIUZ48uowckXpxmpeHDF7el91QkaoGH/HT//J/an5xZPaXJLT8iM9u7gCz7/+yU5Zq38VSxrbOTBXRAB8Kv21d3wnNbsB6oNTUaKCngb3gCznD910XlNns1gKbVhBkUru0rU6LEvY3JLC53BURQkEFlkXZJ7TP/oQVFUEucXgxVDYI6GJQK79mz2/I4WdMzpBCBqpugyYdgWjqTez2MlQs4DomezZQkes/bS3JPAXp/COtmHORILD/rWp/hv7zqqxCKrQisd++O1uPxkhWQ42gfah+7Pc0fxbX/Git5ZYCf58Tz4MojZCFwCMEZ4V30syYrklqo0U8QOINBgh7COpZtjZgJMHQ=
+#  skip_cleanup: true
+#  skip_existing: true
+#  on:
+#    branch: master
+#    tags: true
 
