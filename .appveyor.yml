@@ -33,10 +33,6 @@ environment:
       PYTHON_VERSION: 3.7
       PYTHON_ARCH: 64
 
-platform:
-  - x64
-  - x86
-
 install:
   #- appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
   #- install.bat
