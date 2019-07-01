@@ -1,7 +1,7 @@
 environment:
   global:
-    MINGW_32: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32
-    MINGW_64: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64
+    MINGW_32: C:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32
+    MINGW_64: C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64
     TWINE_REPOSITORY: pypi
     TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
@@ -31,6 +31,8 @@ environment:
       PYTHON_ARCH: 64
 
 install:
+  - call .appveyor-download.cmd https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/8.1.0/threads-posix/dwarf/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z/download -FileName mw32.7z
+  - 7z x -oC:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0 mw32.7z > NUL
   #- appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
   #- install.bat
   #- appveyor DownloadFile https://www.sqlite.org/2019/sqlite-amalgamation-3280000.zip
@@ -51,9 +53,9 @@ install:
   - if [%PYTHON_ARCH%] == [32] SET PATH=%MINGW_32%\bin;%PATH%
   - if [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
   - COPY %MINGW_32%\opt\include\sqlite3.h %MINGW_32%\i686-w64-mingw32\include\sqlite3.h
-  - COPY %MINGW_32%\opt\lib\libsqlite3.dll.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.dll.a
+  - COPY %MINGW_32%\opt\lib\libsqlite3.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.a
   - COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
-  - COPY %MINGW_64%\opt\lib\libsqlite3.dll.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.dll.a
+  - COPY %MINGW_64%\opt\lib\libsqlite3.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.a
   - gendef %PYTHON%\vcruntime140.dll
   - dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
   - python -m pip install -U pip setuptools wheel
