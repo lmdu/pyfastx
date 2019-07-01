@@ -56,12 +56,11 @@ install:
   - dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
   - python -m pip install -U pip setuptools wheel
   - python ci\fix_compiler_error.py %PYTHON%
-  - dir %PYTHON%
 
 build_script:
   #- cibuildwheel --output-dir wheelhouse
   - python setup.py build -c mingw32
-  - pip wheel -v -v -v -w wheelhouse .
+  - pip wheel -v -w wheelhouse .
 
 artifacts:
   - path: "wheelhouse\\*.whl"
