@@ -25,7 +25,7 @@ install:
 script:
   - ls wheelhouse
   - if [ "$TRAVIS_TAG" != "" ]; then
-      $PIP install -U twine;
+      python -m pip install -U twine;
       python -m twine upload --skip-existing wheelhouse/*;
     fi
 
