@@ -31,7 +31,7 @@ environment:
       PYTHON_ARCH: 64
 
 install:
-  - appveyor DownloadFile https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/8.1.0/threads-posix/dwarf/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z/download -FileName mw32.7z
+  - appveyor DownloadFile https://github.com/lmdu/mingw64/raw/master/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z -FileName mw32.7z
   - 7z x -oC:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0 mw32.7z > NUL
   #- appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
   #- install.bat
