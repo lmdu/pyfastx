@@ -13,14 +13,6 @@ pyfastx
 
 *a robust python module for fast random access to FASTA sequences*
 
-* [About](#about)
-* [Installation](#installation)
-* [Usage](#usage)
-* [Acknowledgements](#acknowledgements)
-* [License](#license)
-
-
-
 About
 -----
 
