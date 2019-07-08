@@ -16,7 +16,7 @@ description = """pyfastx is a python module for fast random
 access to FASTA sequences from flat text file or even from
 gzip compressed file."""
 
-with open('README.rst') as fh:
+with open('README.rst', encoding='utf-8') as fh:
 	long_description = fh.read()
 
 with open(os.path.join('src', 'version.h')) as fh:
@@ -42,7 +42,6 @@ setup(
 		'License :: OSI Approved :: MIT License',
 		'Programming Language :: C',
 		'Programming Language :: Python :: 3',
-		'Programming Language :: Python :: 3.4',
 		'Programming Language :: Python :: 3.5',
 		'Programming Language :: Python :: 3.6',
 		'Programming Language :: Python :: 3.7',

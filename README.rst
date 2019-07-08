@@ -1,15 +1,7 @@
 pyfastx
 =======
 
-.. image:: https://travis-ci.org/lmdu/pyfastx.svg?branch=master
-    :target: https://travis-ci.org/lmdu/pyfastx
-.. image:: https://ci.appveyor.com/api/projects/status/7qeurb8wcl0bw993?svg=true
-	:target: https://ci.appveyor.com/project/lmdu/pyfastx/branch/master
-.. image:: https://readthedocs.org/projects/pyfastx/badge/?version=latest
-	:target: https://pyfastx.readthedocs.io/en/latest/?badge=latest
-.. image:: https://img.shields.io/pypi/pyversions/pyfastx.svg
-.. image:: https://img.shields.io/pypi/implementation/pyfastx.svg
-.. image:: https://img.shields.io/pypi/v/pyfastx.svg
+|Travis| |Appveyor| |PyPI| 
 
 *a robust python module for fast random access to FASTA sequences*
 
@@ -50,8 +42,7 @@ Read flat or gzipped FASTA file and build index, support for random access to FA
 	>>> fa
 	<Fasta> test/data/test.fa.gz contains 211 seqs
 
-.. note::
-	Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file.
+Note: Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file.
 
 Get FASTA information
 ---------------------
@@ -155,9 +146,8 @@ Sequence object can be sliced like a python string
 	>>> ss.seq
 	'CCATGTTGGT'
 
-.. note::
-	
-	Slicing start and end coordinates are 0-based. Currently, pyfastx does not support an optional third ``step`` or ``stride`` argument. For example ``ss[::-1]``
+
+Note: Slicing start and end coordinates are 0-based. Currently, pyfastx does not support an optional third ``step`` or ``stride`` argument. For example ``ss[::-1]``
 
 Reverse and complement sequence
 -------------------------------
