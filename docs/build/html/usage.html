@@ -1,0 +1,408 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Usage &mdash; pyfastx 0.1.9 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pyfastx
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#read-fasta-file">Read FASTA file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-fasta-information">Get FASTA information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-sequence-from-fasta">Get sequence from FASTA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-sequence-information">Get sequence information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sequence-slice">Sequence slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reverse-and-complement-sequence">Reverse and complement sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-subsequences">Get subsequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-identifiers">Get identifiers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyfastx</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Usage</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/usage.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="read-fasta-file">
+<h2>Read FASTA file<a class="headerlink" href="#read-fasta-file" title="Permalink to this headline">¶</a></h2>
+<p>The fastest way to parse flat or gzipped FASTA file without building index.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pyfastx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">pyfastx</span><span class="o">.</span><span class="n">Fasta</span><span class="p">(</span><span class="s1">&#39;test/data/test.fa.gz&#39;</span><span class="p">,</span> <span class="n">build_index</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Read flat or gzipped FASTA file and build index, support for random access to FASTA.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pyfastx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span> <span class="o">=</span> <span class="n">pyfastx</span><span class="o">.</span><span class="n">Fasta</span><span class="p">(</span><span class="s1">&#39;test/data/test.fa.gz&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span>
+<span class="go">&lt;Fasta&gt; test/data/test.fa.gz contains 211 seqs</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file.</p>
+</div>
+</div>
+<div class="section" id="get-fasta-information">
+<h2>Get FASTA information<a class="headerlink" href="#get-fasta-information" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># get sequence counts in FASTA</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">fa</span><span class="p">)</span>
+<span class="go">211</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get total sequnce length of FASTA</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span><span class="o">.</span><span class="n">size</span>
+<span class="go">86262</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get GC content of DNA sequence of FASTA</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span><span class="o">.</span><span class="n">gc_content</span>
+<span class="go">43.529014587402344</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get composition of nucleotides in FASTA</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span><span class="o">.</span><span class="n">composition</span>
+<span class="go">{&#39;A&#39;: 24534, &#39;C&#39;: 18694, &#39;G&#39;: 18855, &#39;T&#39;: 24179, &#39;N&#39;: 0}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-sequence-from-fasta">
+<h2>Get sequence from FASTA<a class="headerlink" href="#get-sequence-from-fasta" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># get sequence like dictionary</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s1</span> <span class="o">=</span> <span class="n">fa</span><span class="p">[</span><span class="s1">&#39;JZ822577.1&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s1</span>
+<span class="go">&lt;Sequence&gt; JZ822577.1 with length of 333</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get sequence like list</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s2</span> <span class="o">=</span> <span class="n">fa</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s2</span>
+<span class="go">&lt;Sequence&gt; JZ822579.1 with length of 176</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get last sequence</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s3</span> <span class="o">=</span> <span class="n">fa</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s3</span>
+<span class="go">&lt;Sequence&gt; JZ840318.1 with length of 134</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check name weather in FASTA file</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">&#39;JZ822577.1&#39;</span> <span class="ow">in</span> <span class="n">fa</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-sequence-information">
+<h2>Get sequence information<a class="headerlink" href="#get-sequence-information" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">fa</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span>
+<span class="go">&lt;Sequence&gt; JZ840318.1 with length of 134</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get sequence name</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">name</span>
+<span class="go">&#39;JZ840318.1&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get sequence string</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">seq</span>
+<span class="go">&#39;ACTGGAGGTTCTTCTTCCTGTGGAAAGTAACTTGTTTTGCCTTCACCTGCCTGTTCTTCACATCAACCTTGTTCCCACACAAAACAATGGGAATGTTCTCACACACCCTGCAGAGATCACGATGCCATGTTGGT&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get sequence length</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">134</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get GC content if dna sequence</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">gc_content</span>
+<span class="go">46.26865768432617</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get nucleotide composition if dna sequence</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">composition</span>
+<span class="go">{&#39;A&#39;: 31, &#39;C&#39;: 37, &#39;G&#39;: 25, &#39;T&#39;: 41, &#39;N&#39;: 0}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sequence-slice">
+<h2>Sequence slice<a class="headerlink" href="#sequence-slice" title="Permalink to this headline">¶</a></h2>
+<p>Sequence object can be sliced like a python string</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># get a sub seq from sequence</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span>
+<span class="go">&lt;Sequence&gt; JZ840318.1 from 11 to 30</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span><span class="o">.</span><span class="n">name</span>
+<span class="go">&#39;JZ840318.1:11-30&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span><span class="o">.</span><span class="n">seq</span>
+<span class="go">&#39;CTTCTTCCTGTGGAAAGTAA&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span>
+<span class="go">&lt;Sequence&gt; JZ840318.1 from 125 to 134</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span><span class="o">.</span><span class="n">name</span>
+<span class="go">&#39;JZ840318.1:125-134&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span><span class="o">.</span><span class="n">seq</span>
+<span class="go">&#39;CCATGTTGGT&#39;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Slicing start and end coordinates are 0-based. Currently, pyfastx does not support an optional third <code class="docutils literal notranslate"><span class="pre">step</span></code> or <code class="docutils literal notranslate"><span class="pre">stride</span></code> argument. For example <code class="docutils literal notranslate"><span class="pre">ss[::-1]</span></code></p>
+</div>
+</div>
+<div class="section" id="reverse-and-complement-sequence">
+<h2>Reverse and complement sequence<a class="headerlink" href="#reverse-and-complement-sequence" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># get sliced sequence</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">seq</span>
+<span class="go">&#39;GTCAATTTCC&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get reverse of sliced sequence</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">reverse</span>
+<span class="go">&#39;CCTTTAACTG&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get complement of sliced sequence</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">complement</span>
+<span class="go">&#39;CAGTTAAAGG&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get reversed complement sequence, corresponding to sequence in antisense strand</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">antisense</span>
+<span class="go">&#39;GGAAATTGAC&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-subsequences">
+<h2>Get subsequences<a class="headerlink" href="#get-subsequences" title="Permalink to this headline">¶</a></h2>
+<p>Subseuqneces can be retrieved from FASTA file by using a list of [start, end] coordinates</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># get subsequence with start and end position</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">interval</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span><span class="o">.</span><span class="n">get_seq</span><span class="p">(</span><span class="s1">&#39;JZ822577.1&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span>
+<span class="go">&#39;CTCTAGAGAT&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get subsequences with a list of start and end position</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">intervals</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">60</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span><span class="o">.</span><span class="n">get_seq</span><span class="p">(</span><span class="s1">&#39;JZ822577.1&#39;</span><span class="p">,</span> <span class="n">intervals</span><span class="p">)</span>
+<span class="go">&#39;CTCTAGAGATTTTAGTTTGAC&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get subsequences with reverse strand</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fa</span><span class="o">.</span><span class="n">get_seq</span><span class="p">(</span><span class="s1">&#39;JZ822577.1&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">strand</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+<span class="go">&#39;ATCTCTAGAG&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-identifiers">
+<h2>Get identifiers<a class="headerlink" href="#get-identifiers" title="Permalink to this headline">¶</a></h2>
+<p>Get all identifiers of sequence as a list-like object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ids</span> <span class="o">=</span> <span class="n">fa</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ids</span>
+<span class="go">&lt;Identifier&gt; contains 211 identifiers</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get count of sequence</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span>
+<span class="go">211</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get identifier by index</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">&#39;JZ822577.1&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check identifier where in fasta</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">&#39;JZ822577.1&#39;</span> <span class="ow">in</span> <span class="n">ids</span>
+<span class="go">True</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># iter identifiers</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># convert to a list</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="changelog.html" class="btn btn-neutral float-right" title="Changelog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Lianming Du
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

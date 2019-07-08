@@ -13,14 +13,22 @@ int pyfastx_sequence_length(pyfastx_Sequence* self){
 }
 
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
-	char *seq = pyfastx_index_get_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end);
+	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
 	char *seq1 = malloc(strlen(seq)+1);
 	strcpy(seq1, seq);
 	return seq1;
 }
 
+PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
+	if(self->start == 1 && self->end == self->seq_len){
+		return Py_BuildValue("s", self->name);
+	} else {
+		return PyUnicode_FromFormat("%s:%d-%d", self->name, self->start, self->end);
+	}
+}
+
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
-	char *seq = pyfastx_index_get_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end);
+	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
 	return Py_BuildValue("s", seq);
 }
 
@@ -36,6 +44,7 @@ PyObject *pyfastx_sequence_complement(pyfastx_Sequence* self, void* closure){
 	return Py_BuildValue("s", seq);
 }
 
+//complement reverse sequence
 PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure){
 	char *seq = pyfastx_sequence_acquire(self);
 	reverse_seq(seq);
@@ -44,7 +53,11 @@ PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure){
 }
 
 PyObject *pyfastx_sequence_repr(pyfastx_Sequence* self){
-	return PyUnicode_FromFormat("<Sequence> %s from %d to %d", self->name, self->start, self->end);
+	if(self->start == 1 && self->end == self->seq_len){
+		return PyUnicode_FromFormat("<Sequence> %s with length of %d", self->name, self->seq_len);
+	} else {
+		return PyUnicode_FromFormat("<Sequence> %s from %d to %d", self->name, self->start, self->end);
+	}
 }
 
 PyObject *pyfastx_sequence_str(pyfastx_Sequence* self){
@@ -65,7 +78,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			i += self->seq_len;
 		}
 
-		seq = pyfastx_index_get_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end);
+		seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
 		return Py_BuildValue("C", *(seq+i));
 	
 	} else if (PySlice_Check(item)) {
@@ -94,8 +107,9 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		//seq->name = self->name;
 		seq->start = slice_start + self->start;
 		seq->end = slice_stop + self->start - 1;
-		seq->name = (char *)malloc(strlen(self->name) + 25);
-		sprintf(seq->name, "%s:%d-%d", self->name, seq->start, seq->end);
+		//seq->name = (char *)malloc(strlen(self->name) + 25);
+		seq->name = self->name;
+		//sprintf(seq->name, "%s:%d-%d", self->name, seq->start, seq->end);
 		seq->seq_len = slice_stop - slice_start;
 		seq->line_len = self->line_len;
 		seq->end_len = self->end_len;
@@ -133,7 +147,7 @@ static PyMappingMethods pyfastx_sequence_as_mapping = {
 };*/
 
 static PyGetSetDef pyfastx_sequence_getsets[] = {
-	//{"name", (getter)pyfastx_sequence_get_name, NULL, NULL, NULL},
+	{"name", (getter)pyfastx_sequence_get_name, NULL, NULL, NULL},
 	{"seq", (getter)pyfastx_sequence_seq, NULL, NULL, NULL},
 	{"reverse", (getter)pyfastx_sequence_reverse, NULL, NULL, NULL},
 	{"complement", (getter)pyfastx_sequence_complement, NULL, NULL, NULL},
@@ -142,7 +156,7 @@ static PyGetSetDef pyfastx_sequence_getsets[] = {
 };
 
 static PyMemberDef pyfastx_sequence_members[] = {
-	{"name", T_STRING, offsetof(pyfastx_Sequence, name), READONLY},
+	//{"name", T_STRING, offsetof(pyfastx_Sequence, name), READONLY},
 	{"start", T_INT, offsetof(pyfastx_Sequence, start), READONLY},
 	{"end", T_INT, offsetof(pyfastx_Sequence, end), READONLY},
 	//{"length", T_INT, offsetof(pyfastx_Sequence, seq_len), READONLY},

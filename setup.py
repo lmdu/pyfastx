@@ -16,7 +16,7 @@ description = """pyfastx is a python module for fast random
 access to FASTA sequences from flat text file or even from
 gzip compressed file."""
 
-with open('README.md') as fh:
+with open('README.rst') as fh:
 	long_description = fh.read()
 
 with open(os.path.join('src', 'version.h')) as fh:
@@ -28,7 +28,6 @@ setup(
 	ext_modules = extensions,
 	description = description,
 	long_description = long_description,
-	long_description_content_type = "text/markdown",
 	author = 'Lianming Du',
 	author_email = 'adullb@qq.com',
 	url = 'https://github.com/lmdu/pyfastx',

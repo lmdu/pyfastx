@@ -32,7 +32,7 @@ typedef struct {
 	//int index_id;
 
 	//start offset in fasta file
-	int offset;
+	int64_t offset;
 
 	//byte length for sequence
 	int byte_len;

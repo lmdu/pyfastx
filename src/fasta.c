@@ -127,8 +127,8 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	char *seq;
 	PyObject *intervals;
 	char *strand = "+";
-	long start;
-	long end;
+	int start;
+	int end;
 	
 	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|s", keywords, &name, &intervals, &strand)){
 		return NULL;
@@ -159,13 +159,10 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		return PyErr_Format(PyExc_NameError, "Sequence %s does not exists", name);
 	}
 
-	int offset = sqlite3_column_int(stmt, 2);
-	int byte_len = sqlite3_column_int(stmt, 3);
-	int seq_len = sqlite3_column_int(stmt, 4);
-	int len;
+	int seq_len;
 	char *sub_seq;
 
-	seq = pyfastx_index_full_seq(self->index, name, offset, byte_len, seq_len);
+	seq = pyfastx_index_get_full_seq(self->index, name);
 
 	if(size == 2 && PyLong_Check(item)){
 		start = PyLong_AsLong(item);
@@ -176,11 +173,11 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 			return NULL;
 		}
 
-		len = end - start + 1;
+		seq_len = end - start + 1;
 
-		sub_seq = (char *)malloc(len + 1);
-		strncpy(sub_seq, seq+start-1, len);
-		sub_seq[len] = '\0';
+		sub_seq = (char *)malloc(seq_len + 1);
+		strncpy(sub_seq, seq+start-1, seq_len);
+		sub_seq[seq_len] = '\0';
 	} else {
 		int i;
 		int j = 0;
@@ -193,15 +190,15 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 			}
 			start = PyLong_AsLong(PyTuple_GetItem(item, 0));
 			end = PyLong_AsLong(PyTuple_GetItem(item, 1));
-			len = end - start + 1;
+			seq_len = end - start + 1;
 
 			if(start > end){
 				PyErr_SetString(PyExc_ValueError, "Start position > end position");
 				return NULL;
 			}
 
-			strncpy(sub_seq+j, seq+start-1, len);
-			j += len;
+			strncpy(sub_seq+j, seq+start-1, seq_len);
+			j += seq_len;
 		}
 		sub_seq[j] = '\0';
 	}
@@ -285,7 +282,7 @@ static PyMemberDef pyfastx_fasta_members[] = {
 static PyMethodDef pyfastx_fasta_methods[] = {
 	{"build_index", (PyCFunction)pyfastx_fasta_build_index, METH_VARARGS},
 	{"rebuild_index", (PyCFunction)pyfastx_fasta_rebuild_index, METH_VARARGS},
-	{"get_seq", (PyCFunction)pyfastx_fasta_fetch, METH_VARARGS|METH_KEYWORDS},
+	{"fetch", (PyCFunction)pyfastx_fasta_fetch, METH_VARARGS|METH_KEYWORDS},
 	{"keys", (PyCFunction)pyfastx_fasta_keys, METH_VARARGS},
 	//{"test", (PyCFunction)test, METH_VARARGS},
 	{NULL, NULL, 0, NULL}

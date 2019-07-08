@@ -3,11 +3,17 @@
 #include "util.h"
 #include "sequence.h"
 #include "identifier.h"
+#include "version.h"
+
+PyObject *pyfastx_version(PyObject *self, PyObject *args){
+	return Py_BuildValue("s", PYFASTX_VERSION);
+}
 
 static PyMethodDef module_methods[] = {
 	//{"test", test, METH_VARARGS|METH_KEYWORDS},
 	{"clean_seq", clean_seq, METH_VARARGS},
 	{"sub_seq", sub_seq, METH_VARARGS},
+	{"version", pyfastx_version, METH_VARARGS},
 	{NULL, NULL, 0, NULL}
 };
 
