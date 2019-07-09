@@ -1,1 +1,1 @@
-#define PYFASTX_VERSION "0.1.12"
+#define PYFASTX_VERSION "0.2.0"

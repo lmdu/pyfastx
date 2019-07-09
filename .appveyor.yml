@@ -3,7 +3,7 @@ environment:
     MINGW_32: C:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32
     MINGW_64: C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64
     TWINE_REPOSITORY: pypi
-    TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+    TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
 
   matrix:
     - PYTHON: C:\Python35

@@ -1,12 +1,16 @@
 pyfastx
 =======
 
-.. image:: https://img.shields.io/travis/lmdu/pyfastx.svg
-.. image:: https://img.shields.io/appveyor/ci/lmdu/pyfastx.svg
-.. image:: https://img.shields.io/readthedocs/pyfastx.svg
+.. image:: https://travis-ci.org/lmdu/pyfastx.svg?branch=master
+    :target: https://travis-ci.org/lmdu/pyfastx
+.. image:: https://ci.appveyor.com/api/projects/status/7qeurb8wcl0bw993?svg=true
+    :target: https://ci.appveyor.com/project/lmdu/pyfastx
+.. image:: https://readthedocs.org/projects/pyfastx/badge/?version=latest
+    :target: https://pyfastx.readthedocs.io/en/latest/?badge=latest
 .. image:: https://img.shields.io/pypi/v/pyfastx.svg
 .. image:: https://img.shields.io/pypi/pyversions/pyfastx.svg
 .. image:: https://img.shields.io/pypi/wheel/pyfastx.svg
+
 
 *a robust python module for fast random access to FASTA sequences*
 

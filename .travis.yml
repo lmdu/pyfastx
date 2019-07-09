@@ -7,7 +7,7 @@ env:
     - CIBW_BEFORE_BUILD_MACOS="brew install zlib"
     - PIP=pip3
     - TWINE_REPOSITORY=pypi
-    - TWINE_REPOSITORY_URL=https://test.pypi.org/legacy/
+    - TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
 
 matrix:
   include:
