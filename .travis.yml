@@ -20,6 +20,7 @@ matrix:
 
 before_install:
   - $PIP install cpp-coveralls
+  - $PIP install pyfaidx
 
 install:
   - $PIP install -U setuptools
