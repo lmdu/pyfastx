@@ -83,7 +83,7 @@ int ks_getuntil(kstream_t *ks, int delimiter, kstring_t *str, int *dret)
 		str->m = 1;													
 		str->s = (char*)calloc(1, 1);								
 	}																
-	str->s[str->l] = '0';											
+	str->s[str->l] = '\0';											
 	return str->l;													
 }
 

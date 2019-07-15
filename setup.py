@@ -50,5 +50,6 @@ setup(
             "Operating System :: POSIX :: Linux",
             "Operating System :: Unix",
             "Topic :: Scientific/Engineering :: Bio-Informatics"
-    ]
+    ],
+    test_suite="tests"
 )

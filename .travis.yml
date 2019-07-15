@@ -8,6 +8,7 @@ env:
     - PIP=pip3
     - TWINE_REPOSITORY=pypi
     - TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
+    - CPPFLAGS=--coverage
 
 matrix:
   include:
@@ -16,6 +17,9 @@ matrix:
         - docker
     - os: osx
       language: generic
+
+before_install:
+  - $PIP install cpp-coveralls
 
 install:
   - $PIP install -U setuptools
@@ -28,6 +32,7 @@ script:
       python -m pip install -U twine;
       python -m twine upload --skip-existing wheelhouse/*;
     fi
+  - python setup.py test
 
 deploy:
   provider: pypi
@@ -40,3 +45,7 @@ deploy:
   on:
     branch: master
     tags: true
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+  - coveralls --build-root .

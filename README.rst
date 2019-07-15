@@ -2,17 +2,30 @@ pyfastx
 =======
 
 .. image:: https://travis-ci.org/lmdu/pyfastx.svg?branch=master
-    :target: https://travis-ci.org/lmdu/pyfastx
-.. image:: https://ci.appveyor.com/api/projects/status/7qeurb8wcl0bw993?svg=true
-    :target: https://ci.appveyor.com/project/lmdu/pyfastx
-.. image:: https://readthedocs.org/projects/pyfastx/badge/?version=latest
-    :target: https://pyfastx.readthedocs.io/en/latest/?badge=latest
-.. image:: https://img.shields.io/pypi/v/pyfastx.svg
-.. image:: https://img.shields.io/pypi/pyversions/pyfastx.svg
-.. image:: https://img.shields.io/pypi/wheel/pyfastx.svg
+   :target: https://travis-ci.org/lmdu/pyfastx
+   :alt: Travis CI
 
+.. image:: https://ci.appveyor.com/api/projects/status/7qeurb8wcl0bw993?svg=true
+   :target: https://ci.appveyor.com/project/lmdu/pyfastx
+   :alt: Appveyor CI
+
+.. image:: https://readthedocs.org/projects/pyfastx/badge/?version=latest
+   :target: https://pyfastx.readthedocs.io/en/latest/?badge=latest
+   :alt: Readthedocs
+
+.. image:: https://img.shields.io/pypi/v/pyfastx.svg
+   :alt: PyPI Version
+
+.. image:: https://img.shields.io/pypi/pyversions/pyfastx.svg
+   :alt: Python Version
+
+.. image:: https://img.shields.io/pypi/wheel/pyfastx.svg
+   :alt: Wheel
 
 *a robust python module for fast random access to FASTA sequences*
+
+.. contents:: Table of Contens
+    :depth: 2
 
 About
 -----
@@ -30,8 +43,11 @@ You can install ``pyfastx`` via the Python Package Index (PyPI)
 
     pip install pyfastx
 
+Usage
+-----
+
 Read FASTA file
----------------
+^^^^^^^^^^^^^^^
 
 The fastest way to parse flat or gzipped FASTA file without building index.
 
@@ -53,7 +69,7 @@ Read flat or gzipped FASTA file and build index, support for random access to FA
 Note: Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file.
 
 Get FASTA information
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -74,7 +90,7 @@ Get FASTA information
     {'A': 24534, 'C': 18694, 'G': 18855, 'T': 24179, 'N': 0}
 
 Get sequence from FASTA
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -98,7 +114,7 @@ Get sequence from FASTA
     True
 
 Get sequence information
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -127,7 +143,7 @@ Get sequence information
     {'A': 31, 'C': 37, 'G': 25, 'T': 41, 'N': 0}
 
 Sequence slice
---------------
+^^^^^^^^^^^^^^
 
 Sequence object can be sliced like a python string
 
@@ -158,7 +174,7 @@ Sequence object can be sliced like a python string
 Note: Slicing start and end coordinates are 0-based. Currently, pyfastx does not support an optional third ``step`` or ``stride`` argument. For example ``ss[::-1]``
 
 Reverse and complement sequence
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -179,7 +195,7 @@ Reverse and complement sequence
     'GGAAATTGAC'
 
 Get subsequences
-----------------
+^^^^^^^^^^^^^^^^
 
 Subseuqneces can be retrieved from FASTA file by using a list of [start, end] coordinates
 
@@ -200,7 +216,7 @@ Subseuqneces can be retrieved from FASTA file by using a list of [start, end] co
     'ATCTCTAGAG'
 
 Get identifiers
----------------
+^^^^^^^^^^^^^^^
 
 Get all identifiers of sequence as a list-like object.
 
@@ -228,3 +244,6 @@ Get all identifiers of sequence as a list-like object.
 
     >>> # convert to a list
     >>> list(ids)
+
+Acknowledgement
+---------------
