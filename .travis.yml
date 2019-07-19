@@ -26,6 +26,7 @@ install:
   - $PIP install -U setuptools
   - $PIP install -U cibuildwheel
   - cibuildwheel --output-dir wheelhouse
+  - python3 setup.py sdist --dist-dir wheelhouse
 
 script:
   - ls wheelhouse
