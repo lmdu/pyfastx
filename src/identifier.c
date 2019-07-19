@@ -58,7 +58,7 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 }
 
 int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
-	if(PyUnicode_Check(key)){
+	if(!PyUnicode_Check(key)){
 		return 0;
 	}
 
