@@ -50,6 +50,7 @@ This project was heavily inspired by `@mdshw5 <https://github.com/mdshw5>`_'s pr
    usage
    changelog
    api_reference
+   acknowledgements
 
 
 Indices and tables
