@@ -35,11 +35,11 @@ class FastaTest(unittest.TestCase):
 
 		expect = {'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0}
 		for s in self.faidx:
-			expect['A'] += s.seq.count('A')
-			expect['C'] += s.seq.count('C')
-			expect['G'] += s.seq.count('G')
-			expect['T'] += s.seq.count('T')
-			expect['N'] += s.seq.count('N')
+			expect['A'] += s[:].seq.count('A')
+			expect['C'] += s[:].seq.count('C')
+			expect['G'] += s[:].seq.count('G')
+			expect['T'] += s[:].seq.count('T')
+			expect['N'] += s[:].seq.count('N')
 
 		#composition
 		self.assertEqual(self.fastx.composition, expect)
@@ -121,11 +121,11 @@ class FastaTest(unittest.TestCase):
 		expect = self.faidx[idx]
 
 		content = {'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0}
-		content['A'] += expect.seq.count('A')
-		content['C'] += expect.seq.count('C')
-		content['G'] += expect.seq.count('G')
-		content['T'] += expect.seq.count('T')
-		content['N'] += expect.seq.count('N')
+		content['A'] += expect[:].seq.count('A')
+		content['C'] += expect[:].seq.count('C')
+		content['G'] += expect[:].seq.count('G')
+		content['T'] += expect[:].seq.count('T')
+		content['N'] += expect[:].seq.count('N')
 
 		expect_gc = (content['G']+content['C'])/sum(content.values())
 
