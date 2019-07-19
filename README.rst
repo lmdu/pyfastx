@@ -33,12 +33,17 @@ pyfastx
    :target: https://pypi.org/project/pyfastx
    :alt: Wheel
 
-*a robust python module for fast random access to FASTA sequences*
+*a robust python module for fast random access to sequences from plain and gzipped FASTA file*
+
+.. contents:: Table of Contents
+	:depth: 2
 
 About
 -----
 
-The pyfastx is a lightweight Python C extension that enables you to randomly access FASTA sequences in flat text file, even in gzip compressed file. This module uses `kseq.h <http://lh3lh3.users.sourceforge.net/kseq.shtml>`_ written by Heng Li to parse FASTA file and zran.c written by Paul McCarthy in `indexed_gzip <https://github.com/pauldmccarthy/indexed_gzip>`_ project to index gzipped file.
+The ``pyfastx`` is a lightweight Python C extension that enables users to randomly access to sequences from plain and **gzipped** FASTA files. This module aims to provide simple APIs for users to extract seqeunce from FASTA by identifier and index number. The ``pyfastx`` will build indexes stored in a sqlite3 database file for random access to avoid consuming excessive amount of memory. In addition, the ``pyfastx`` can parse standard (*sequence spread into multiple lines with same length*) and nonstandard (*lines with different length*) FASTA format. This module used `kseq.h <http://lh3lh3.users.sourceforge.net/kseq.shtml>`_ written by `Heng Li <http://lh3lh3.users.sourceforge.net>`_ to parse plain FASTA file and zran.c written by `@pauldmccarthy <https://github.com/pauldmccarthy>`_ in project `indexed_gzip <https://github.com/pauldmccarthy/indexed_gzip>`_ to index gzipped file for random access.
+
+This project was heavily inspired by `@mdshw5 <https://github.com/mdshw5>`_'s project `pyfaidx <https://github.com/mdshw5/pyfaidx>`_ and `@brentp <https://github.com/brentp>`_'s project `pyfasta <https://github.com/brentp/pyfasta>`_.
 
 Installation
 ------------
@@ -50,6 +55,12 @@ You can install ``pyfastx`` via the Python Package Index (PyPI)
 ::
 
     pip install pyfastx
+
+Update ``pyfastx`` module
+
+::
+
+	pip install -U pyfastx
 
 Usage
 -----
@@ -74,7 +85,9 @@ Read flat or gzipped FASTA file and build index, support for random access to FA
     >>> fa
     <Fasta> test/data/test.fa.gz contains 211 seqs
 
-Note: Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file.
+.. note::
+
+	Note: Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file.
 
 Get FASTA information
 ^^^^^^^^^^^^^^^^^^^^^
@@ -85,7 +98,7 @@ Get FASTA information
     >>> len(fa)
     211
 
-    >>> # get total sequnce length of FASTA
+    >>> # get total sequence length of FASTA
     >>> fa.size
     86262
 
@@ -102,12 +115,12 @@ Get sequence from FASTA
 
 .. code:: python
 
-    >>> # get sequence like dictionary
+    >>> # get sequence like a dictionary by identifier
     >>> s1 = fa['JZ822577.1']
     >>> s1
     <Sequence> JZ822577.1 with length of 333
 
-    >>> # get sequence like list
+    >>> # get sequence like a list by index
     >>> s2 = fa[2]
     >>> s2
     <Sequence> JZ822579.1 with length of 176
@@ -117,7 +130,7 @@ Get sequence from FASTA
     >>> s3
     <Sequence> JZ840318.1 with length of 134
 
-    >>> # check name weather in FASTA file
+    >>> # check a sequence name weather in FASTA file
     >>> 'JZ822577.1' in fa
     True
 
@@ -179,7 +192,9 @@ Sequence object can be sliced like a python string
     'CCATGTTGGT'
 
 
-Note: Slicing start and end coordinates are 0-based. Currently, pyfastx does not support an optional third ``step`` or ``stride`` argument. For example ``ss[::-1]``
+.. note::
+
+	Note: Slicing start and end coordinates are 0-based. Currently, pyfastx does not support an optional third ``step`` or ``stride`` argument. For example ``ss[::-1]``
 
 Reverse and complement sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -253,5 +268,16 @@ Get all identifiers of sequence as a list-like object.
     >>> # convert to a list
     >>> list(ids)
 
-Acknowledgement
----------------
+Testing
+-------
+
+The ``pyfaidx`` module was used to test ``pyfastx``. To run the tests:
+
+::
+
+	$ python setup.py test
+
+Acknowledgements
+----------------
+
+`kseq.h <http://lh3lh3.users.sourceforge.net/kseq.shtml>`_ and `zlib <https://www.zlib.net/>`_ was used to parse FASTA format. `Sqlite3 <https://www.sqlite.org/index.html>`_ was used to store built indexes. ``pyfastx`` can randomly access to sequences from gzipped FASTA file mainly attributed to `indexed_gzip <https://github.com/pauldmccarthy/indexed_gzip>`_.
