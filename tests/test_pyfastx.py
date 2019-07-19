@@ -45,9 +45,9 @@ class FastaTest(unittest.TestCase):
 		self.assertEqual(self.fastx.composition, expect)
 
 		#GC content
-		expect = (expect['G']+expect['C'])/sum(expect.values())
+		expect = (expect['G']+expect['C'])/sum(expect.values())*100
 
-		self.assertEqual(self.fastx.gc_content, expect)
+		self.assertEqual(round(self.fastx.gc_content, 3), round(expect, 3))
 
 
 	def test_iter(self):
@@ -127,10 +127,10 @@ class FastaTest(unittest.TestCase):
 		content['T'] += expect[:].seq.count('T')
 		content['N'] += expect[:].seq.count('N')
 
-		expect_gc = (content['G']+content['C'])/sum(content.values())
+		expect_gc = (content['G']+content['C'])/sum(content.values())*100
 
 		self.assertEqual(result.composition, content)
-		self.assertEqual(result.gc_content, expect_gc)
+		self.assertEqual(round(result.gc_content, 3), round(expect_gc, 3))
 
 	def test_get_seq(self):
 		idx = self.get_random_index()
