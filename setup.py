@@ -14,8 +14,8 @@ extensions = [
 
 description = (
     "pyfastx is a python module for fast random"
-    "access to FASTA sequences from flat text file"
-    "or even from gzip compressed file."
+    "access to sequences from plain and gzipped"
+    "FASTA file"
 )
 
 with open('README.rst') as fh:

@@ -38,7 +38,9 @@ Welcome to pyfastx's documentation!
    :target: https://pypi.org/project/pyfastx
    :alt: Wheel
 
-pyfastx is a python module for fast random access to FASTA sequences.
+The ``pyfastx`` is a lightweight Python C extension that enables users to randomly access to sequences from plain and **gzipped** FASTA files. This module aims to provide simple APIs for users to extract seqeunce from FASTA by identifier and index number. The ``pyfastx`` will build indexes stored in a sqlite3 database file for random access to avoid consuming excessive amount of memory. In addition, the ``pyfastx`` can parse standard (*sequence spread into multiple lines with same length*) and nonstandard (*lines with different length*) FASTA format. This module used `kseq.h <http://lh3lh3.users.sourceforge.net/kseq.shtml>`_ written by `Heng Li <http://lh3lh3.users.sourceforge.net>`_ to parse plain FASTA file and zran.c written by `@pauldmccarthy <https://github.com/pauldmccarthy>`_ in project `indexed_gzip <https://github.com/pauldmccarthy/indexed_gzip>`_ to index gzipped file for random access.
+
+This project was heavily inspired by `@mdshw5 <https://github.com/mdshw5>`_'s project `pyfaidx <https://github.com/mdshw5/pyfaidx>`_ and `@brentp <https://github.com/brentp>`_'s project `pyfasta <https://github.com/brentp/pyfasta>`_.
 
 .. toctree::
    :maxdepth: 2
