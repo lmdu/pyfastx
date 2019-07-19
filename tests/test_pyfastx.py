@@ -49,6 +49,12 @@ class FastaTest(unittest.TestCase):
 
 		self.assertEqual(round(self.fastx.gc_content, 3), round(expect, 3))
 
+		#test contains
+		idx = self.get_random_index()
+		name = self.faidx[0].name
+
+		self.assertTrue(name in self.fastx)
+
 
 	def test_iter(self):
 		for name, result in self.fastx:
@@ -68,6 +74,12 @@ class FastaTest(unittest.TestCase):
 		#get id from identifier class
 		self.assertEqual(ids[0], expect[0])
 		self.assertEqual(ids[-1], expect[-1])
+
+		#check contains
+		idx = self.get_random_index()
+		name = self.faidx[idx].name
+
+		self.assertTrue(name in ids)
 
 	def test_seq_by_index(self):
 		#test get seq by index
