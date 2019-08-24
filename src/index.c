@@ -49,6 +49,7 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int uppercase){
 
 void pyfastx_rewind_index(pyfastx_Index *index){
 	kseq_rewind(index->kseqs);
+	gzrewind(index->gzfd);
 }
 
 PyObject* pyfastx_get_next_seq(pyfastx_Index *index){

@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Version 0.2.4 (2019-08-25)
+
+- Fixed fasta iter error after building new index
+
 Version 0.2.3 (2019-08-24)
 --------------------------
 

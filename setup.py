@@ -13,8 +13,8 @@ extensions = [
 ]
 
 description = (
-    "pyfastx is a python module for fast random"
-    "access to sequences from plain and gzipped"
+    "pyfastx is a python module for fast random "
+    "access to sequences from plain and gzipped "
     "FASTA file"
 )
 
