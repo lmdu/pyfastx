@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.2.3 (2019-08-24)
+--------------------------
+
+- Fixed fasta iter error when end of file is not \n
+
 Version 0.2.2 (2019-07-19)
 --------------------------
 
