@@ -97,6 +97,7 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 
 void pyfastx_load_gzip_index(pyfastx_Index *self){
 	sqlite3_stmt *stmt;
+	int bytes = 0;
 	
 	zran_init(self->gzip_index, self->fd, 0, 0, 0, ZRAN_AUTO_BUILD);
 	
@@ -107,10 +108,14 @@ void pyfastx_load_gzip_index(pyfastx_Index *self){
 	FILE* fh = fopen(temp_index, "wb");
 
 	sqlite3_prepare_v2(self->index_db, "SELECT content FROM gzindex;", -1, &stmt, NULL);
-	sqlite3_step(stmt);
-	const char *buff = sqlite3_column_blob(stmt, 0);
-	fwrite(buff, 1, strlen(buff), fh);
-	fseek(fh, 0, SEEK_SET);
+	if(sqlite3_step(stmt) == SQLITE_ROW){
+		bytes = sqlite3_column_bytes(stmt, 0);
+	}
+	//const char *buff = sqlite3_column_blob(stmt, 0);
+	//fwrite(buff, 1, strlen(buff), fh);
+	fwrite(sqlite3_column_blob(stmt, 0), bytes, 1, fh);
+	//fseek(fh, 0, SEEK_SET);
+	rewind(fh);
 
 	zran_import_index(self->gzip_index, fh);
 

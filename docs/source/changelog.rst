@@ -1,7 +1,14 @@
 Changelog
 =========
 
+Version 0.2.5 (2019-08-26)
+--------------------------
+
+- Fixed segmentation fault raised when loading gzip index
+- Changed fasta object method get_seq to fetch
+
 Version 0.2.4 (2019-08-25)
+--------------------------
 
 - Fixed fasta iter error after building new index
 
