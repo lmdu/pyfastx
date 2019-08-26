@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.2.8 (2019-08-26)
+--------------------------
+
+- Changed kseq.h library from li to attractivechaos
+- Improved fasta parser
+
 Version 0.2.7 (2019-08-26)
 --------------------------
 
