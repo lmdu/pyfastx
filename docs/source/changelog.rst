@@ -1,7 +1,12 @@
 Changelog
 =========
 
-Version 0.2.5 (2019-08-26)
+Version 0.2.6 (2019-08-26)
+--------------------------
+
+- Optimized speed of gzip random access
+
+Version 0.2.5 (2019-08-25)
 --------------------------
 
 - Fixed segmentation fault raised when loading gzip index

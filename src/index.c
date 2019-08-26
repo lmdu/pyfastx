@@ -66,7 +66,7 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 	sqlite3_stmt *stmt;
 
 	rewind(self->fd);
-	zran_init(self->gzip_index, self->fd, 0, 0, 0, ZRAN_AUTO_BUILD);
+	zran_init(self->gzip_index, self->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
 	zran_build_index(self->gzip_index, 0, 0);
 
 	//create temp gzip index file
@@ -74,15 +74,15 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 	strcpy(temp_index, self->index_file);
 	strcat(temp_index, ".tmp");
 	
-	FILE* fh = fopen(temp_index, "wb");
+	FILE* fh = fopen(temp_index, "ab");
 	
 	zran_export_index(self->gzip_index, fh);
 	
 	long fsize = ftell(fh);
-	fseek(fh, 0, SEEK_SET);
+	rewind(fh);
 	char *buff = (char *)malloc(fsize + 1);
 
-	if(fread(buff, 1, fsize, fh) != 0){
+	if(fread(buff, fsize, 1, fh) != 0){
 		return;
 	}
 	

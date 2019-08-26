@@ -226,16 +226,16 @@ Subseuqneces can be retrieved from FASTA file by using a list of [start, end] co
 
     >>> # get subsequence with start and end position
     >>> interval = (1, 10)
-    >>> fa.get_seq('JZ822577.1', interval)
+    >>> fa.fetch('JZ822577.1', interval)
     'CTCTAGAGAT'
 
     >>> # get subsequences with a list of start and end position
     >>> intervals = [(1, 10), (50, 60)]
-    >>> fa.get_seq('JZ822577.1', intervals)
+    >>> fa.fetch('JZ822577.1', intervals)
     'CTCTAGAGATTTTAGTTTGAC'
 
     >>> # get subsequences with reverse strand
-    >>> fa.get_seq('JZ822577.1', (1, 10), strand='-')
+    >>> fa.fetch('JZ822577.1', (1, 10), strand='-')
     'ATCTCTAGAG'
 
 Get identifiers
