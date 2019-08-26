@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.2.7 (2019-08-26)
+--------------------------
+
+- Fixed no gzip index wrote to sqlite index file
+
 Version 0.2.6 (2019-08-26)
 --------------------------
 

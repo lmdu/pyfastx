@@ -74,15 +74,17 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 	strcpy(temp_index, self->index_file);
 	strcat(temp_index, ".tmp");
 	
-	FILE* fh = fopen(temp_index, "ab");
+	FILE* fh = fopen(temp_index, "wb+");
+	FILE* fd = fdopen(fileno(fh), "ab");
 	
-	zran_export_index(self->gzip_index, fh);
+	zran_export_index(self->gzip_index, fd);
 	
-	long fsize = ftell(fh);
+	int fsize = ftell(fh);
 	rewind(fh);
+
 	char *buff = (char *)malloc(fsize + 1);
 
-	if(fread(buff, fsize, 1, fh) != 0){
+	if(fread(buff, fsize, 1, fh) != 1){
 		return;
 	}
 	
@@ -90,22 +92,23 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 	remove(temp_index);
 
 	sqlite3_prepare_v2(self->index_db, "INSERT INTO gzindex VALUES (NULL, ?)", -1, &stmt, NULL);
-	sqlite3_bind_blob(stmt, 1, buff, strlen(buff), NULL);
+	sqlite3_bind_blob(stmt, 1, buff, fsize, NULL);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
+	free(buff);
 }
 
 void pyfastx_load_gzip_index(pyfastx_Index *self){
 	sqlite3_stmt *stmt;
 	int bytes = 0;
 	
-	zran_init(self->gzip_index, self->fd, 0, 0, 0, ZRAN_AUTO_BUILD);
+	zran_init(self->gzip_index, self->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
 	
 	char *temp_index = (char *)malloc(strlen(self->index_file) + 5);
 	strcpy(temp_index, self->index_file);
 	strcat(temp_index, ".tmp");
 	
-	FILE* fh = fopen(temp_index, "wb");
+	FILE* fh = fopen(temp_index, "wb+");
 
 	sqlite3_prepare_v2(self->index_db, "SELECT content FROM gzindex;", -1, &stmt, NULL);
 	if(sqlite3_step(stmt) == SQLITE_ROW){
@@ -117,7 +120,8 @@ void pyfastx_load_gzip_index(pyfastx_Index *self){
 	//fseek(fh, 0, SEEK_SET);
 	rewind(fh);
 
-	zran_import_index(self->gzip_index, fh);
+	FILE* fd = fdopen(fileno(fh), "rb");
+	zran_import_index(self->gzip_index, fd);
 
 	fclose(fh);
 	remove(temp_index);

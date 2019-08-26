@@ -55,8 +55,9 @@ struct _zran_index {
     size_t        uncompressed_size;
 
     /*
-     * Spacing size in bytes, relative to the compressed
-     * data stream, between adjacent index points
+     * Spacing size in bytes, relative to the
+     * uncompressed data stream, between adjacent
+     * index points.
      */
     uint32_t      spacing;
 
@@ -318,6 +319,36 @@ enum {
  * used to rebuild index without needing to going through the file again.
  *
  * See zran_import_index for importing.
+ *
+ * A zran index file is a binary file which has the following header
+ * structure. All fields are assumed to be stored with little-endian
+ * ordering:
+ *
+ * | Offset | Length | Description                     |
+ * | 0      | 7      | File header (GZIDX\00\00)       |
+ * | 7      | 8      | Compressed file size  (uint64)  |
+ * | 15     | 8      | Uncompressed file size (uint64) |
+ * | 23     | 4      | Index point spacing (uint32)    |
+ * | 27     | 4      | Index window size W (uint32)    |
+ * | 31     | 4      | Number of index points (uint32) |
+ *
+ * The header is followed by the offsets for each index point:
+ *
+ * | Offset | Length | Description                              |
+ * | 0      | 8      | Compressed offset for point 0 (uint64)   |
+ * | 8      | 8      | Uncompressed offset for point 0 (uint64) |
+ * | 16     | 1      | Bit offset for point 0 (uint8)           |
+ * | ...    | ...    | ...                                      |
+ * | N*17   | 8      | Compressed offset for point N (uint64)   |
+ * | ...    | ...    | ...                                      |
+ *
+ * Finally the window data for every index point is concatenated
+ * (W represents the index window size):
+ *
+ * | Offset | Length | Description                   |
+ * | 0      | W      | Window data for index point N |
+ * | ...    | ...    | ...                           |
+ * | N*W    | W      | Window data for index point N |
  *
  * Returns:
  *   - ZRAN_EXPORT_OK for success.
