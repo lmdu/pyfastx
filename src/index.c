@@ -187,7 +187,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			slen INTEGER, --seq length\n \
 			llen INTEGER, --line lenght\n \
 			elen INTEGER, --end length\n \
-			norm INTEGER, --line with same length or not\n \
+			norm INTEGER, --line with the same length or not\n \
 			a INTEGER, --A base counts\n \
 			c INTEGER, --C base counts\n \
 			g INTEGER, --G base counts\n \
@@ -209,11 +209,6 @@ void pyfastx_create_index(pyfastx_Index *self){
 		return;
 	}
 
-	//ret = sqlite3_exec(self->index_db, "BEGIN;", NULL, NULL, NULL);
-	//if(ret != SQLITE_OK){
-	//	printf("%s\n", "begin error");
-	//}
-
 	const char *insert_sql = "INSERT INTO seq VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);";
 	sqlite3_prepare_v2(self->index_db, insert_sql, -1, &stmt, NULL);
 
@@ -226,8 +221,8 @@ void pyfastx_create_index(pyfastx_Index *self){
 			case 62: {
 				if(start > 0){
 
-					//end of sequenc and check whether normal fasta
-					seq_normal = (bad_line > 1) ? 0 : seq_normal;
+					//end of sequence and check whether normal fasta
+					seq_normal = (bad_line > 1) ? 0 : 1;
 
 					sqlite3_bind_null(stmt, 1);
 					sqlite3_bind_text(stmt, 2, self->kseqs->name.s, self->kseqs->name.l, NULL);
@@ -264,6 +259,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 				temp_len = 0;
 				line_len = 0;
 				line_end = 1;
+				bad_line = 0;
 				seq_normal = 1;
 
 				break;
@@ -272,7 +268,9 @@ void pyfastx_create_index(pyfastx_Index *self){
 			// c is \r
 			case 13: {
 				temp_len++;
-				line_end = 2;
+				if(line_end != 2){
+					line_end = 2;
+				}
 				break;
 			}
 			
@@ -283,7 +281,9 @@ void pyfastx_create_index(pyfastx_Index *self){
 				if(line_len > 0 && line_len != temp_len){
 					bad_line++;
 				}
-				line_len = temp_len;
+				if(line_len == 0){
+					line_len = temp_len;
+				}
 				temp_len = 0;
 				break;
 			}
@@ -491,7 +491,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 		zran_read(self->gzip_index, buff, bytes);
 	} else {
 		fseek(self->fd, offset, SEEK_SET);
-		if(fread(buff, sizeof(char), bytes, self->fd) > bytes){
+		if(fread(buff, bytes, 1, self->fd) != 1){
 			return NULL;
 		}
 	}
@@ -518,7 +518,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 @bytes int, byte length of sequence with space
 @start int, start position in sequence
 @end int, end position in sequence
-@normal int, 1 -> normal fasta with same length, 0 not normal
+@normal int, 1 -> normal fasta with the same length, 0 not normal
 @return str
 */
 char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int bytes, int start, int end, int normal){
@@ -526,7 +526,7 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 	char *buff;
 	seq_len = end - start + 1;
 
-	if(!normal){
+	if(!normal) {
 		buff = pyfastx_index_get_full_seq(self, name);
 	}
 
@@ -550,8 +550,9 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, buff, bytes);
 	} else {
-		rewind(self->fd);
-		if(fread(buff, sizeof(char), bytes, self->fd) > bytes){
+		//rewind(self->fd);
+		fseek(self->fd, offset, SEEK_SET);
+		if(fread(buff, bytes, 1, self->fd) != 1){
 			return NULL;
 		}
 	}

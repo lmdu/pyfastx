@@ -10,9 +10,9 @@ int file_exists(char *file_name){
 	return 0;
 }
 
-void remove_space(char *str){
+void remove_space(char *str) {
 	int i, j = 0;
-	for(i=0; str[i]; i++){
+	for(i = 0; str[i]; i++){
 		if(!isspace(str[i])){
 			str[j++] = str[i];
 		}
@@ -20,10 +20,12 @@ void remove_space(char *str){
 	str[j] = '\0';
 }
 
-void upper_string(char *str){
+void upper_string(char *str) {
 	int i;
-	for(i=0; str[i]; i++){
-		str[i] = toupper(str[i]);
+	for(i = 0; str[i]; i++) {
+		if(str[i] >= 'a' && str[i] <= 'z'){
+			str[i] = str[i] - 32;
+		}
 	}
 }
 

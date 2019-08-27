@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.2.9 (2019-08-27)
+--------------------------
+
+- Fixed bad line calculate error
+- Changed rewind to fseek for subsequence extraction
+
 Version 0.2.8 (2019-08-26)
 --------------------------
 
