@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.2.10 (2019-08-28)
+---------------------------
+
+- Changed fseek and fread into gzseek and gzread
+- Fixed sequence cache name comparision
+- Fixed last sequence read error without line end
+- Fixed subsequence slice error in normal FASTA file
+
 Version 0.2.9 (2019-08-27)
 --------------------------
 
