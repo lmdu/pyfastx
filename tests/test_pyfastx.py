@@ -125,7 +125,6 @@ class FastaTest(unittest.TestCase):
 
 		self.assertEqual(expect[5:10].seq, result[5:10].seq)
 		self.assertEqual(expect[20:].seq, result[20:].seq)
-		#self.assertEqual(expect[-10:-1].seq, result[-10:-1].seq)
 
 	def test_seq_content(self):
 		idx = self.get_random_index()

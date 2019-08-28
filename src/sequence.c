@@ -2,7 +2,6 @@
 #include "structmember.h"
 #include "util.h"
 
-
 PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 	pyfastx_Sequence *obj = (pyfastx_Sequence *)type->tp_alloc(type, 0);
 	return (PyObject *)obj;
@@ -118,13 +117,14 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		seq->byte_len = self->byte_len;
 		seq->index = self->index;
 
-		int line_num, tail_num;
-
 		if (self->normal) {
-			line_num = seq->seq_len / (seq->line_len - seq->end_len);
-			tail_num = seq->seq_len % (seq->line_len - seq->end_len);
-			seq->offset = seq->byte_len + seq->start + (seq->start / (seq->line_len - seq->end_len)) * seq->end_len - 1;
-			seq->byte_len = line_num * seq->line_len + tail_num;
+			//line_num = seq->seq_len / (seq->line_len - seq->end_len);
+			//tail_num = seq->seq_len % (seq->line_len - seq->end_len);
+			//seq->offset = seq->byte_len + seq->start + (seq->start / (seq->line_len - seq->end_len)) * seq->end_len - 1;
+			//seq->byte_len = line_num * seq->line_len + tail_num;
+			int line_num = (slice_start + 1)/(self->line_len - self->end_len);
+			seq->offset = self->offset + slice_start + self->end_len*line_num;
+			seq->byte_len = seq->seq_len + seq->seq_len/self->line_len*self->end_len;
 		}
 
 		Py_INCREF(seq);
