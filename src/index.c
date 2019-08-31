@@ -489,6 +489,9 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 	}
 
 	char *buff = (char *)malloc(bytes + 1);
+
+	Py_BEGIN_ALLOW_THREADS
+	
 	if(self->gzip_format){
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, buff, bytes);
@@ -508,6 +511,8 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 	if(self->uppercase) {
 		upper_string(buff);
 	}
+
+	Py_END_ALLOW_THREADS
 
 	self->cache_name = name;
 	self->cache_start = 1;
@@ -551,6 +556,8 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 
 	buff = (char *)malloc(bytes + 1);
 
+	Py_BEGIN_ALLOW_THREADS
+
 	if(self->gzip_format){
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, buff, bytes);
@@ -571,6 +578,8 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 	if(self->uppercase){
 		upper_string(buff);
 	}
+
+	Py_END_ALLOW_THREADS
 
 	self->cache_name = name;
 	self->cache_start = start;
