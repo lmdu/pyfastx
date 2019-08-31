@@ -4,13 +4,13 @@ Installation
 Dependencies
 ------------
 
-Make sure you have both `pip <https://pip.pypa.io/en/stable/installing/>`_ and at least version 3.5 of Python before starting.
+Make sure you have both `pip <https://pip.pypa.io/en/stable/installing/>`_ and at least version 3.4 of Python before starting.
 
-Currently, pyfastx only support Python 3.5, 3.6, 3.7 and can work on Windows, Linux, MacOS.
+Currently, pyfastx only support Python 3.4, 3.5, 3.6, 3.7 and can work on Windows, Linux, MacOS.
 
 .. note::
 	
-	Python 2.7 will not be maintained past 2020. Python 3.3 and 3.4 has reached end-of-life.
+	Python 2.7 will not be maintained past 2020.
 
 pyfastx depends on `zlib <https://zlib.net/>`_ and `sqlite3 <https://www.sqlite.org/index.html>`_. If you want to compile and install pyfastx from source code, you should install zlib and sqlite3 first.
 
