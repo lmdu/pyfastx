@@ -5,6 +5,7 @@ environment:
     TWINE_REPOSITORY: pypi
     TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
 
+  matrix:
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
