@@ -5,11 +5,6 @@ environment:
     TWINE_REPOSITORY: pypi
     TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
 
-  matrix:
-    - PYTHON: C:\Python34
-      PYTHON_VERSION: 3.4
-      PYTHON_ARCH: 32
-
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
@@ -64,10 +59,10 @@ install:
   - COPY %MINGW_32%\opt\lib\libsqlite3.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.a
   - COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
   - COPY %MINGW_64%\opt\lib\libsqlite3.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.a
-  - if [%PYTHON_VERSION%] neq [3.4] gendef %PYTHON%\vcruntime140.dll
-  - if [%PYTHON_VERSION%] neq [3.4] dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
+  - gendef %PYTHON%\vcruntime140.dll
+  - dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
   - python -m pip install -U pip setuptools wheel
-  - if [%PYTHON_VERSION%] neq [3.4] python ci\fix_compiler_error.py %PYTHON%
+  - python ci\fix_compiler_error.py %PYTHON%
   - pip install -U twine
 
 build_script:
