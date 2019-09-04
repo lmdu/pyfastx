@@ -7,6 +7,38 @@ PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwa
 	return (PyObject *)obj;
 }
 
+PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
+	gzseek(self->index->gzfd, self->offset, SEEK_SET);
+	self->ks = ks_init(self->index->gzfd);
+	Py_INCREF(self);
+	return (PyObject *)self;
+}
+
+PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
+	kstring_t seq = {0, 0, 0};
+	if(self->start != 1 || self->end != self->seq_len){
+		int c;
+		while((c = ks_getc(self->ks)) >= 0 && c != '>'){
+			if(c == '\n'){
+				continue;
+			} else {
+				return Py_BuildValue("C", c);
+			}
+		}
+		return NULL;
+	} else {
+		if(ks_getuntil(self->ks, '\n', &seq, 0) >= 0){
+			if(seq.s[0] != '>'){
+				if(self->index->uppercase){
+					upper_string(seq.s);
+				}
+				return Py_BuildValue("s", seq.s);
+			}
+		}
+	}
+	return NULL;
+}
+
 int pyfastx_sequence_length(pyfastx_Sequence* self){
 	return self->seq_len;
 }
@@ -192,8 +224,8 @@ PyTypeObject pyfastx_SequenceType = {
     0,                              /* tp_clear */
     0,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
-    0,                              /* tp_iter */
-    0,                              /* tp_iternext */
+    (getiterfunc)pyfastx_sequence_iter,                              /* tp_iter */
+    (iternextfunc)pyfastx_sequence_next,                              /* tp_iternext */
     0,       /* tp_methods */
     pyfastx_sequence_members,       /* tp_members */
     pyfastx_sequence_getsets,       /* tp_getset */

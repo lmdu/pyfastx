@@ -3,6 +3,8 @@
 #include "Python.h"
 #include "zlib.h"
 
+#define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
+
 typedef struct __kstream_t {
 	unsigned char *buf;
 	int begin, end, is_eof;

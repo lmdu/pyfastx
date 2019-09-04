@@ -46,6 +46,9 @@ typedef struct {
 	//standard fasta format with same line length
 	int normal;
 
+	//for iteration
+	kstream_t *ks;
+
 } pyfastx_Sequence;
 
 extern PyTypeObject pyfastx_SequenceType;
@@ -62,5 +65,7 @@ PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwa
 PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item);
 PyObject *pyfastx_sequence_str(pyfastx_Sequence* self);
 PyObject *pyfastx_sequence_repr(pyfastx_Sequence* self);
+PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self);
+PyObject *pyfastx_sequnece_next(pyfastx_Sequence* self);
 
 #endif

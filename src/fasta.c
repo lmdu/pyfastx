@@ -106,8 +106,10 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 }
 
 PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
-	pyfastx_build_index(self->index);
-	pyfastx_calc_fasta_attrs(self);
+	if(!file_exists(self->index->index_file)){
+		pyfastx_build_index(self->index);
+		pyfastx_calc_fasta_attrs(self);
+	}
 	Py_RETURN_NONE;
 }
 

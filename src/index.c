@@ -332,6 +332,10 @@ void pyfastx_create_index(pyfastx_Index *self){
 	//end of sequenc and check whether normal fasta
 	seq_normal = (bad_line > 1) ? 0 : 1;
 
+	if(line_len == 0){
+		line_len = temp_len;
+	}
+
 	sqlite3_bind_null(stmt, 1);
 	sqlite3_bind_text(stmt, 2, self->kseqs->name.s, self->kseqs->name.l, NULL);
 	sqlite3_bind_int(stmt, 3, start);
@@ -468,6 +472,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 	int seq_len;
 	int64_t offset;
 	int bytes;
+	char *buff;
 	
 	//select sql statement, seqid indicates seq name or chromomsome
 	const char* sql = "SELECT * FROM seq WHERE seqid=? LIMIT 1;";
@@ -488,26 +493,35 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 		}
 	}
 
-	char *buff = (char *)malloc(bytes + 1);
-
 	Py_BEGIN_ALLOW_THREADS
 	
 	if(self->gzip_format){
+		buff = (char *)malloc(bytes + 1);
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, buff, bytes);
+		buff[bytes] = '\0';
+		remove_space(buff);
 	} else {
-		//fseek(self->fd, offset, SEEK_SET);
-		//if(fread(buff, bytes, 1, self->fd) != 1){
-		//	return NULL;
-		//}
 		gzseek(self->gzfd, offset, SEEK_SET);
-		gzread(self->gzfd, buff, bytes);
+		kstream_t *ks;
+		kstring_t seq = {0, 0, 0};
+		seq.m = 256;
+		seq.s = (char*)malloc(seq.m);
+
+		ks = ks_init(self->gzfd);
+		
+		int c;
+		while((c = ks_getc(ks)) >= 0 && c != '>'){
+			if(c == '\n') continue;
+			seq.s[seq.l++] = c;
+			ks_getuntil2(ks, 2, &seq, 0, 1);
+		}
+
+		seq.s[seq.l] = 0;
+
+		buff = seq.s;
 	}
-
-	buff[bytes] = '\0';
-
-	remove_space(buff);
-
+	
 	if(self->uppercase) {
 		upper_string(buff);
 	}
@@ -562,11 +576,6 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, buff, bytes);
 	} else {
-		//rewind(self->fd);
-		//fseek(self->fd, offset, SEEK_SET);
-		//if(fread(buff, bytes, 1, self->fd) != 1){
-		//	return NULL;
-		//}
 		gzseek(self->gzfd, offset, SEEK_SET);
 		gzread(self->gzfd, buff, bytes);
 	}

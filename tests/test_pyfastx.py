@@ -87,6 +87,8 @@ class FastaTest(unittest.TestCase):
 		expect = self.faidx[idx][:]
 		result = self.fastx[idx]
 
+		print("@@@@@@@@@@@@@@@@@ {}".format(idx))
+
 		self.assertEqual(expect.name, result.name)
 		self.assertEqual(expect.seq, result.seq)
 
@@ -153,6 +155,11 @@ class FastaTest(unittest.TestCase):
 		interval = (random.randint(1, a), random.randint(a+1, l))
 
 		expect = self.faidx.get_seq(name, interval[0], interval[1]).seq
+
+		print(expect)
+
 		result = self.fastx.fetch(name, interval)
+
+		print(result)
 
 		self.assertEqual(expect, result)

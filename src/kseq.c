@@ -70,9 +70,6 @@ int ks_getc(kstream_t *ks)
 	return (int)ks->buf[ks->begin++];					
 }
 
-#define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
-
-
 int ks_getuntil2(kstream_t *ks, int delimiter, kstring_t *str, int *dret, int append)
 {																	
 	int gotany = 0;													
