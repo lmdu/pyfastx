@@ -47,5 +47,11 @@ PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObjec
 PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
 PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item);
 PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
+PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args);
+PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args);
+PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure);
+PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure);
+PyObject *pyfastx_fasta_mean(pyfastx_Fasta *self, void* closure);
+PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure);
 
 #endif

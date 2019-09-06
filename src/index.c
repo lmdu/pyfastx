@@ -172,7 +172,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	//reading file for kseq
 	kstream_t* ks = self->kseqs->f;
 
-	if(sqlite3_open(self->index_file, &self->index_db) != SQLITE_OK){
+	if (sqlite3_open(self->index_file, &self->index_db) != SQLITE_OK) {
 		PyErr_SetString(PyExc_ConnectionError, sqlite3_errmsg(self->index_db));
 		return;
 	}
@@ -561,7 +561,7 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 
 		if((strcmp(name,self->cache_name)==0) && (start>=self->cache_start) && (end<=self->cache_end)){
 			buff = (char *)malloc(seq_len + 1);
-			strncpy(buff, self->cache_seq + (start - self->cache_start), seq_len);
+			memcpy(buff, self->cache_seq + (start - self->cache_start), seq_len);
 			buff[seq_len] = '\0';
 			return buff;
 		}
