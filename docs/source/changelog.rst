@@ -1,7 +1,18 @@
 Changelog
 =========
 
+Version 0.3.0 (2019-09-07)
+--------------------------
+
+- Added read sequence from fasta file line by line
+- Added support for calculating assembly N50 and L50
+- Added support for calculating median and average length
+- Added support for getting longest and shortest sequence
+- Added support for calculating counts of sequence
+- removed support for Python34
+
 Version 0.2.11 (2019-08-31)
+---------------------------
 
 - Support for Python 3.4
 

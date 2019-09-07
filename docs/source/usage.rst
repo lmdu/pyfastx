@@ -45,6 +45,74 @@ Get FASTA information
 	>>> fa.composition
 	{'A': 24534, 'C': 18694, 'G': 18855, 'T': 24179, 'N': 0}
 
+Get longest and shortest sequence
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.0
+
+.. code:: python
+
+	>>> # get longest sequence (name, length)
+	>>> fa.longest
+	('JZ822609.1', 821)
+
+	>>> # get shortest sequence (name, length)
+	>>> fa.shortest
+	('JZ822617.1', 118)
+
+Calculate N50 and L50
+^^^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.0
+
+Calculate assembly N50 and L50, return (N50, L50), learn more about `N50,L50 <https://www.molecularecologist.com/2017/03/whats-n50/>`_
+
+.. code:: python
+
+	>>> # get FASTA N50 and L50
+	>>> fa.nl(50)
+	(516, 66)
+
+	>>> # get FASTA N90 and L90
+	>>> fa.nl(90)
+	(231, 161)
+
+	>>> # get FASTA N75 and L75
+	>>> fa.nl(75)
+	(365, 117)
+
+Get sequence mean and median length
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.0
+
+.. code:: python
+
+	>>> # get sequence average length
+	>>> fa.mean
+	408
+
+	>>> # get seqeunce median length
+	>>> fa.median
+	430
+
+Get sequence counts
+^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.0
+
+Get counts of sequences whose length >= specified length
+
+.. code:: python
+
+	>>> # get counts of sequences with length >= 200 bp
+	>>> fa.count(200)
+	173
+
+	>>> # get counts of sequences with length >= 500 bp
+	>>> fa.count(500)
+	70
+
 Get sequence from FASTA
 -----------------------
 
@@ -171,6 +239,24 @@ Subseuqneces can be retrieved from FASTA file by using a list of [start, end] co
 	>>> # get subsequences with reverse strand
 	>>> fa.fetch('JZ822577.1', (1, 10), strand='-')
 	'ATCTCTAGAG'
+
+Read sequence line by line
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.0
+
+The sequence object can be iterated line by line as they appear in FASTA file.
+
+.. code:: python
+
+	>>> for line in fa[0]:
+	... 	print(line)
+	...
+	CTCTAGAGATTACTTCTTCACATTCCAGATCACTCAGGCTCTTTGTCATTTTAGTTTGACTAGGATATCG
+	AGTATTCAAGCTCATCGCTTTTGGTAATCTTTGCGGTGCATGCCTTTGCATGCTGTATTGCTGCTTCATC
+	ATCCCCTTTGACTTGTGTGGCGGTGGCAAGACATCCGAAGAGTTAAGCGATGCTTGTCTAGTCAATTTCC
+	CCATGTACAGAATCATTGTTGTCAATTGGTTGTTTCCTTGATGGTGAAGGGGCTTCAATACATGAGTTCC
+	AAACTAACATTTCTTGACTAACACTTGAGGAAGAAGGACAAGGGTCCCCATGT
 
 Get identifiers
 ---------------

@@ -38,12 +38,24 @@ pyfastx
 .. contents:: Table of Contents
 	:depth: 2
 
-About
------
+Introduction
+------------
 
 The ``pyfastx`` is a lightweight Python C extension that enables users to randomly access to sequences from plain and **gzipped** FASTA files. This module aims to provide simple APIs for users to extract seqeunce from FASTA by identifier and index number. The ``pyfastx`` will build indexes stored in a sqlite3 database file for random access to avoid consuming excessive amount of memory. In addition, the ``pyfastx`` can parse standard (*sequence spread into multiple lines with same length*) and nonstandard (*lines with different length*) FASTA format. This module used `kseq.h <https://github.com/attractivechaos/klib/blob/master/kseq.h>`_ written by `@attractivechaos <https://github.com/attractivechaos>`_ in `klib <https://github.com/attractivechaos/klib>`_ project to parse plain FASTA file and zran.c written by `@pauldmccarthy <https://github.com/pauldmccarthy>`_ in project `indexed_gzip <https://github.com/pauldmccarthy/indexed_gzip>`_ to index gzipped file for random access.
 
 This project was heavily inspired by `@mdshw5 <https://github.com/mdshw5>`_'s project `pyfaidx <https://github.com/mdshw5/pyfaidx>`_ and `@brentp <https://github.com/brentp>`_'s project `pyfasta <https://github.com/brentp/pyfasta>`_.
+
+Features
+--------
+
+- Single file for the Python extension
+- Lightweight, memory efficient for parsing FASTA file
+- Fast random access to sequences from ``gzipped`` FASTA file
+- Read sequences from FASTA file line by line
+- Calculate assembly N50 and L50
+- Calculate GC content and nucleotides composition
+- Extract reverse, complement and antisense sequence
+
 
 Installation
 ------------
@@ -87,7 +99,7 @@ Read flat or gzipped FASTA file and build index, support for random access to FA
 
 .. note::
 
-	Note: Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file.
+	Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file.
 
 Get FASTA information
 ^^^^^^^^^^^^^^^^^^^^^
@@ -109,6 +121,74 @@ Get FASTA information
     >>> # get composition of nucleotides in FASTA
     >>> fa.composition
     {'A': 24534, 'C': 18694, 'G': 18855, 'T': 24179, 'N': 0}
+
+Get longest and shortest sequence
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.0
+
+.. code:: python
+
+	>>> # get longest sequence (name, length)
+	>>> fa.longest
+	('JZ822609.1', 821)
+
+	>>> # get shortest sequence (name, length)
+	>>> fa.shortest
+	('JZ822617.1', 118)
+
+Calculate N50 and L50
+^^^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.0
+
+Calculate assembly N50 and L50, return (N50, L50), learn more about `N50,L50 <https://www.molecularecologist.com/2017/03/whats-n50/>`_
+
+.. code:: python
+
+	>>> # get FASTA N50 and L50
+	>>> fa.nl(50)
+	(516, 66)
+
+	>>> # get FASTA N90 and L90
+	>>> fa.nl(90)
+	(231, 161)
+
+	>>> # get FASTA N75 and L75
+	>>> fa.nl(75)
+	(365, 117)
+
+Get sequence mean and median length
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.0
+
+.. code:: python
+
+	>>> # get sequence average length
+	>>> fa.mean
+	408
+
+	>>> # get seqeunce median length
+	>>> fa.median
+	430
+
+Get sequence counts
+^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.0
+
+Get counts of sequences whose length >= specified length
+
+.. code:: python
+
+	>>> # get counts of sequences with length >= 200 bp
+	>>> fa.count(200)
+	173
+
+	>>> # get counts of sequences with length >= 500 bp
+	>>> fa.count(500)
+	70
 
 Get sequence from FASTA
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -194,7 +274,7 @@ Sequence object can be sliced like a python string
 
 .. note::
 
-	Note: Slicing start and end coordinates are 0-based. Currently, pyfastx does not support an optional third ``step`` or ``stride`` argument. For example ``ss[::-1]``
+	Slicing start and end coordinates are 0-based. Currently, pyfastx does not support an optional third ``step`` or ``stride`` argument. For example ``ss[::-1]``
 
 Reverse and complement sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -237,6 +317,24 @@ Subseuqneces can be retrieved from FASTA file by using a list of [start, end] co
     >>> # get subsequences with reverse strand
     >>> fa.fetch('JZ822577.1', (1, 10), strand='-')
     'ATCTCTAGAG'
+
+Read sequence line by line
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.0
+
+The sequence object can be iterated line by line as they appear in FASTA file.
+
+.. code:: python
+
+	>>> for line in fa[0]:
+	... 	print(line)
+	...
+	CTCTAGAGATTACTTCTTCACATTCCAGATCACTCAGGCTCTTTGTCATTTTAGTTTGACTAGGATATCG
+	AGTATTCAAGCTCATCGCTTTTGGTAATCTTTGCGGTGCATGCCTTTGCATGCTGTATTGCTGCTTCATC
+	ATCCCCTTTGACTTGTGTGGCGGTGGCAAGACATCCGAAGAGTTAAGCGATGCTTGTCTAGTCAATTTCC
+	CCATGTACAGAATCATTGTTGTCAATTGGTTGTTTCCTTGATGGTGAAGGGGCTTCAATACATGAGTTCC
+	AAACTAACATTTCTTGACTAACACTTGAGGAAGAAGGACAAGGGTCCCCATGT
 
 Get identifiers
 ^^^^^^^^^^^^^^^

@@ -6,6 +6,8 @@ pyfastx.version
 
 .. py:function:: pyfastx.version()
 
+	Get current version of pyfastx
+
 	:return: version of pyfastx
 
 	:rtype: str
@@ -33,10 +35,6 @@ pyfastx.Fasta
 
 		total length of sequences in FASTA file
 
-	.. py:attribute:: count
-
-		total counts of sequences in FASTA file
-
 	.. py:attribute:: gc_content
 
 		GC content of whole sequences in FASTA file, return a float value
@@ -44,6 +42,38 @@ pyfastx.Fasta
 	.. py:attribute:: composition
 
 		nucleotide composition in FASTA file, a dict contains counts of A, T, G, C and N (unkown nucleotide base)
+
+	.. py:attribute:: longest
+
+		get (name, length) of longest sequence in FASTA file
+
+		.. tip::
+
+			New in ``pyfastx`` 0.3.0
+
+	.. py:attribute:: shortest
+
+		get (name, length) of shortest sequence in FASTA file
+
+		.. tip::
+
+			New in ``pyfastx`` 0.3.0
+
+	.. py:attribute:: mean
+
+		get average length of sequences in FASTA file
+
+		.. tip::
+
+			New in ``pyfastx`` 0.3.0
+
+	.. py:attribute:: median
+
+		get median length of sequences in FASTA file
+
+		.. tip::
+
+			New in ``pyfastx`` 0.3.0
 
 	.. py:method:: fetch(name, intervals, strand='+')
 
@@ -64,11 +94,47 @@ pyfastx.Fasta
 
 		:rtype: str
 
+	.. py:method:: build_index()
+
+		build index for FASTA file
+
+	.. py:method:: rebuild_index()
+
+		rebuild index for FASTA file
+
 	.. py:method:: keys()
 
 		get all names of sequences
 
 		:return: an Identifier object
+
+	.. py:method:: count(n)
+
+		get counts of sequences whose length >= n bp
+
+		.. tip::
+
+			New in ``pyfastx`` 0.3.0
+
+		:param int n: number of bases
+
+		:return: sequence counts
+
+		:rtype: int
+
+	.. py:method:: nl(quantile)
+
+		calculate assembly N50 and L50, learn more about `N50,L50 <https://www.molecularecologist.com/2017/03/whats-n50/>`_
+
+		.. tip::
+
+			New in ``pyfastx`` 0.3.0
+
+		:param int quantile: a number between 0 and 100
+
+		:return: (N50, L50)
+
+		:rtype: tuple
 
 pyfastx.Sequence
 ----------------

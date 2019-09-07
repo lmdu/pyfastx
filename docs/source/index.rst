@@ -42,6 +42,17 @@ The ``pyfastx`` is a lightweight Python C extension that enables users to random
 
 This project was heavily inspired by `@mdshw5 <https://github.com/mdshw5>`_'s project `pyfaidx <https://github.com/mdshw5/pyfaidx>`_ and `@brentp <https://github.com/brentp>`_'s project `pyfasta <https://github.com/brentp/pyfasta>`_.
 
+Features
+========
+
+- Single file for the Python extension
+- Lightweight, memory efficient for parsing FASTA file
+- Fast random access to sequences from ``gzipped`` FASTA file
+- Read sequences from FASTA file line by line
+- Calculate assembly N50 and L50
+- Calculate GC content and nucleotides composition
+- Extract reverse, complement and antisense sequence
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
