@@ -47,33 +47,25 @@ pyfastx.Fasta
 
 		get (name, length) of longest sequence in FASTA file
 
-		.. tip::
-
-			New in ``pyfastx`` 0.3.0
+		New in ``pyfastx`` 0.3.0
 
 	.. py:attribute:: shortest
 
 		get (name, length) of shortest sequence in FASTA file
 
-		.. tip::
-
-			New in ``pyfastx`` 0.3.0
+		New in ``pyfastx`` 0.3.0
 
 	.. py:attribute:: mean
 
 		get average length of sequences in FASTA file
 
-		.. tip::
-
-			New in ``pyfastx`` 0.3.0
+		New in ``pyfastx`` 0.3.0
 
 	.. py:attribute:: median
 
 		get median length of sequences in FASTA file
 
-		.. tip::
-
-			New in ``pyfastx`` 0.3.0
+		New in ``pyfastx`` 0.3.0
 
 	.. py:method:: fetch(name, intervals, strand='+')
 
@@ -112,9 +104,7 @@ pyfastx.Fasta
 
 		get counts of sequences whose length >= n bp
 
-		.. tip::
-
-			New in ``pyfastx`` 0.3.0
+		New in ``pyfastx`` 0.3.0
 
 		:param int n: number of bases
 
@@ -126,9 +116,7 @@ pyfastx.Fasta
 
 		calculate assembly N50 and L50, learn more about `N50,L50 <https://www.molecularecologist.com/2017/03/whats-n50/>`_
 
-		.. tip::
-
-			New in ``pyfastx`` 0.3.0
+		New in ``pyfastx`` 0.3.0
 
 		:param int quantile: a number between 0 and 100
 
@@ -146,6 +134,12 @@ pyfastx.Sequence
 	.. py:attribute:: name
 
 		sequence name
+
+	.. py:attribute:: description
+
+		Get sequence description after name in sequence header
+
+		New in ``pyfastx`` 0.3.1
 
 	.. py:attribute:: start
 

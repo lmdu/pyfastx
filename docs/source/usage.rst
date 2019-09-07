@@ -149,6 +149,10 @@ Get sequence information
 	>>> # get sequence name
 	>>> s.name
 	'JZ840318.1'
+
+	>>> # get sequence description, New in pyfastx 0.3.1
+	>>> s.description
+	'R283 cDNA library of flower petals in tree peony by suppression subtractive hybridization Paeonia suffruticosa cDNA, mRNA sequence'
 	
 	>>> # get sequence string
 	>>> s.seq

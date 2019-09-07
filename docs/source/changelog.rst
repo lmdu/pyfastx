@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.3.1 (2019-09-07)
+--------------------------
+
+- Added support for geting sequence description
+
 Version 0.3.0 (2019-09-07)
 --------------------------
 
