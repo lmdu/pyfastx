@@ -58,6 +58,23 @@ PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
 	}
 }
 
+PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
+	sqlite3_stmt *stmt;
+	char *descript;
+	
+	const char *sql = "SELECT descript FROM seq WHERE seqid=? LIMIT 1";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_text(stmt, 1, self->name, -1, NULL);
+	
+	if (sqlite3_step(stmt) == SQLITE_ROW) {
+		descript = (char *)sqlite3_column_text(stmt, 0);
+		sqlite3_finalize(stmt);
+		return Py_BuildValue("s", descript);
+	}
+
+	Py_RETURN_NONE;
+}
+
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
 	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
 	return Py_BuildValue("s", seq);
@@ -184,6 +201,7 @@ static PyGetSetDef pyfastx_sequence_getsets[] = {
 	{"reverse", (getter)pyfastx_sequence_reverse, NULL, NULL, NULL},
 	{"complement", (getter)pyfastx_sequence_complement, NULL, NULL, NULL},
 	{"antisense", (getter)pyfastx_sequence_antisense, NULL, NULL, NULL},
+	{"description", (getter)pyfastx_sequence_description, NULL, NULL, NULL},
 	{NULL}
 };
 

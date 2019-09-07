@@ -172,6 +172,9 @@ void pyfastx_create_index(pyfastx_Index *self){
 	//reading file for kseq
 	kstream_t* ks = self->kseqs->f;
 
+	//sequence header description
+	kstring_t description = {0, 0, 0};
+
 	if (sqlite3_open(self->index_file, &self->index_db) != SQLITE_OK) {
 		PyErr_SetString(PyExc_ConnectionError, sqlite3_errmsg(self->index_db));
 		return;
@@ -192,8 +195,9 @@ void pyfastx_create_index(pyfastx_Index *self){
 			c INTEGER, --C base counts\n \
 			g INTEGER, --G base counts\n \
 			t INTEGER, --T base counts\n \
-			n INTEGER --unknown base counts\n \
-		);\
+			n INTEGER, --unknown base counts\n \
+			descript TEXT --sequence description\n \
+		); \
 		CREATE TABLE gzindex ( \
 			ID INTEGER PRIMARY KEY, \
 			content BLOB \
@@ -209,9 +213,8 @@ void pyfastx_create_index(pyfastx_Index *self){
 		return;
 	}
 
-	const char *insert_sql = "INSERT INTO seq VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);";
+	const char *insert_sql = "INSERT INTO seq VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 	sqlite3_prepare_v2(self->index_db, insert_sql, -1, &stmt, NULL);
-
 	
 	while((c=ks_getc(ks)) >= 0){
 		position++;
@@ -237,18 +240,28 @@ void pyfastx_create_index(pyfastx_Index *self){
 					sqlite3_bind_int(stmt, 11, g_count);
 					sqlite3_bind_int(stmt, 12, t_count);
 					sqlite3_bind_int(stmt, 13, n_count);
+					sqlite3_bind_text(stmt, 14, description.s, description.l, NULL);
 					sqlite3_step(stmt);
 					sqlite3_reset(stmt);
 				}
 
 				position += ks_getuntil(ks, 0, &self->kseqs->name, &c);
 				position++;
-				
-				while(c != 10){
-					c = ks_getc(ks);
-					position++;
-				}
 
+				//get sequence header description
+				if (c != 10) {
+					position += ks_getuntil(ks, '\n', &description, 0) + 1;
+
+					if (description.s[description.l-1] == '\r') {
+						description.s[description.l-1] = '\0';
+					}
+				}
+				
+				//while(c != 10){
+				//	c = ks_getc(ks);
+				//	position++;
+				//}
+				
 				start = position;
 				seq_len = 0;
 				g_count = 0;
@@ -349,6 +362,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_bind_int(stmt, 11, g_count);
 	sqlite3_bind_int(stmt, 12, t_count);
 	sqlite3_bind_int(stmt, 13, n_count);
+	sqlite3_bind_text(stmt, 14, description.s, description.l, NULL);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
