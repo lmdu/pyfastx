@@ -54,7 +54,7 @@ Features
 - Extract reverse, complement and antisense sequence
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    installation
