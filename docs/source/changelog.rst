@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.3.4 (2019-09-07)
+--------------------------
+
+- Fixed seq description unicode string error
+
 Version 0.3.3 (2019-09-07)
 --------------------------
 
