@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.3.2 (2019-09-07)
+--------------------------
+
+- Fixed sequence description encoding error
+
 Version 0.3.1 (2019-09-07)
 --------------------------
 

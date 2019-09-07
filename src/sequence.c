@@ -69,7 +69,7 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		descript = (char *)sqlite3_column_text(stmt, 0);
 		sqlite3_finalize(stmt);
-		return Py_BuildValue("s", descript);
+		return PyUnicode_FromFormat("%s", descript);
 	}
 
 	Py_RETURN_NONE;

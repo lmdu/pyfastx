@@ -416,7 +416,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	}
 
 	//seq->index_id = sqlite3_column_int(stmt, 0);
-	name = (char *) sqlite3_column_text(stmt, 1);
+	name = (char *)sqlite3_column_text(stmt, 1);
 	seq->name = (char *)malloc(strlen(name) + 1);
 	strcpy(seq->name, name);
 	seq->offset = (int64_t)sqlite3_column_int64(stmt, 2);
