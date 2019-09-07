@@ -46,7 +46,7 @@ Get FASTA information
 	{'A': 24534, 'C': 18694, 'G': 18855, 'T': 24179, 'N': 0}
 
 Get longest and shortest sequence
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------
 
 New in ``pyfastx`` 0.3.0
 
@@ -61,7 +61,7 @@ New in ``pyfastx`` 0.3.0
 	('JZ822617.1', 118)
 
 Calculate N50 and L50
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 New in ``pyfastx`` 0.3.0
 
@@ -82,7 +82,7 @@ Calculate assembly N50 and L50, return (N50, L50), learn more about `N50,L50 <ht
 	(365, 117)
 
 Get sequence mean and median length
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------
 
 New in ``pyfastx`` 0.3.0
 
@@ -97,7 +97,7 @@ New in ``pyfastx`` 0.3.0
 	430
 
 Get sequence counts
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 New in ``pyfastx`` 0.3.0
 
@@ -241,7 +241,7 @@ Subseuqneces can be retrieved from FASTA file by using a list of [start, end] co
 	'ATCTCTAGAG'
 
 Read sequence line by line
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------
 
 New in ``pyfastx`` 0.3.0
 
