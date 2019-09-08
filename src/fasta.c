@@ -328,13 +328,13 @@ PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 
 PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	char *name;
+	const char *name;
 	int len;
 	const char *sql = "SELECT seqid,MAX(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		name = (char *)sqlite3_column_text(stmt, 0);
+		name = (const char *)sqlite3_column_text(stmt, 0);
 		len = sqlite3_column_int(stmt, 1);
 		sqlite3_finalize(stmt);
 		return Py_BuildValue("si", name, len);
@@ -345,13 +345,13 @@ PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
 
 PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	char *name;
+	const char *name;
 	int len;
 	const char *sql = "SELECT seqid,MIN(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		name = (char *)sqlite3_column_text(stmt, 0);
+		name = (const char *)sqlite3_column_text(stmt, 0);
 		len = sqlite3_column_int(stmt, 1);
 		sqlite3_finalize(stmt);
 		return Py_BuildValue("si", name, len);

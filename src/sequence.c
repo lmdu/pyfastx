@@ -60,18 +60,19 @@ PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
 
 PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	sqlite3_stmt *stmt;
-	Py_ssize_t nbytes;
-	char *descript;
+	//Py_ssize_t nbytes;
+	const char *detail;
 
 	const char *sql = "SELECT descript FROM seq WHERE seqid=? LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, self->name, -1, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		descript = (char *)sqlite3_column_text(stmt, 0);
-		nbytes = sqlite3_column_bytes(stmt, 0);
+		detail = (const char *)sqlite3_column_text(stmt, 0);
+		//Py_ssize_t nbytes = sqlite3_column_bytes(stmt, 0);
 		sqlite3_finalize(stmt);
-		return PyUnicode_FromStringAndSize(descript, nbytes);
+		//return PyUnicode_FromStringAndSize(detail, nbytes);
+		return Py_BuildValue("s", detail);
 	}
 
 	Py_RETURN_NONE;
