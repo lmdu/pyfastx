@@ -44,6 +44,7 @@ after_success:
       coveralls --build-root .;
     fi
 
-cache:
-  directories:
-    - wheelhouse
+addons:
+  artifacts:
+    target_paths:
+      - wheelhouse
