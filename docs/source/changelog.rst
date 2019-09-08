@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.3.5 (2019-09-08)
+--------------------------
+
+- Fixed unicode error caused by sqlite3_finalize 
+
 Version 0.3.4 (2019-09-07)
 --------------------------
 

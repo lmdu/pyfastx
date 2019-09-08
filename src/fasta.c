@@ -286,7 +286,6 @@ PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args){
 	sqlite3_bind_int(stmt, 1, l);
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		c = sqlite3_column_int(stmt, 0);
-		sqlite3_finalize(stmt);
 		return Py_BuildValue("i", c);
 	}
 
@@ -319,7 +318,6 @@ PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 		j = sqlite3_column_int(stmt, 0);
 		temp_size += j;
 		if (temp_size >= half_size) {
-			sqlite3_finalize(stmt);
 			return Py_BuildValue("ii", j, i);
 		}
 	}
@@ -336,7 +334,6 @@ PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		name = (const char *)sqlite3_column_text(stmt, 0);
 		len = sqlite3_column_int(stmt, 1);
-		sqlite3_finalize(stmt);
 		return Py_BuildValue("si", name, len);
 	}
 
@@ -353,7 +350,6 @@ PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure){
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		name = (const char *)sqlite3_column_text(stmt, 0);
 		len = sqlite3_column_int(stmt, 1);
-		sqlite3_finalize(stmt);
 		return Py_BuildValue("si", name, len);
 	}
 
@@ -368,7 +364,6 @@ PyObject *pyfastx_fasta_mean(pyfastx_Fasta *self, void* closure){
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		len = sqlite3_column_int(stmt, 0);
-		sqlite3_finalize(stmt);
 		return Py_BuildValue("i", len);
 	}
 
@@ -388,7 +383,6 @@ PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 	sqlite3_bind_int(stmt, 1, (self->seq_counts - 1)/2);
 	if(sqlite3_step(stmt) == SQLITE_ROW){
 		m = sqlite3_column_int(stmt, 0);
-		sqlite3_finalize(stmt);
 		return Py_BuildValue("i", m);
 	}
 

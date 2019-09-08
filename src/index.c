@@ -196,7 +196,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			g INTEGER, --G base counts\n \
 			t INTEGER, --T base counts\n \
 			n INTEGER, --unknown base counts\n \
-			descript TEXT --sequence description\n \
+			description TEXT --sequence description\n \
 		); \
 		CREATE TABLE gzindex ( \
 			ID INTEGER PRIMARY KEY, \

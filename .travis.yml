@@ -43,8 +43,3 @@ after_success:
       bash <(curl -s https://codecov.io/bash);
       coveralls --build-root .;
     fi
-
-addons:
-  artifacts:
-    target_paths:
-      - wheelhouse
