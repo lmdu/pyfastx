@@ -215,6 +215,8 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 	const char *insert_sql = "INSERT INTO seq VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 	sqlite3_prepare_v2(self->index_db, insert_sql, -1, &stmt, NULL);
+
+	Py_BEGIN_ALLOW_THREADS
 	
 	while((c=ks_getc(ks)) >= 0){
 		position++;
@@ -373,6 +375,8 @@ void pyfastx_create_index(pyfastx_Index *self){
 	if(self->gzip_format){
 		pyfastx_build_gzip_index(self);
 	}
+
+	Py_END_ALLOW_THREADS
 }
 
 //load index from index file
