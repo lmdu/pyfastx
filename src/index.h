@@ -62,7 +62,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name);
 PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, int id);
 
 pyfastx_Index *pyfastx_init_index(char* file_path, int uppercase);
-char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int bytes, int start, int end, int normal);
+char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int bytes, int start, int end, int plen, int normal);
 char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name);
 
 #endif

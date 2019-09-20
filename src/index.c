@@ -1,6 +1,7 @@
 #include "index.h"
 #include "util.h"
 #include "sequence.h"
+#include "time.h"
 
 /*
 create a index
@@ -32,6 +33,8 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int uppercase){
 
 	if(index->gzip_format){
 		index->gzip_index = (zran_index_t *)malloc(sizeof(zran_index_t));
+		//initial zran index
+		zran_init(index->gzip_index, index->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
 	}
 
 	//cache name
@@ -65,8 +68,8 @@ PyObject* pyfastx_get_next_seq(pyfastx_Index *index){
 void pyfastx_build_gzip_index(pyfastx_Index *self){
 	sqlite3_stmt *stmt;
 
-	rewind(self->fd);
-	zran_init(self->gzip_index, self->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
+	//rewind(self->fd);
+	//zran_init(self->gzip_index, self->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
 	zran_build_index(self->gzip_index, 0, 0);
 
 	//create temp gzip index file
@@ -74,21 +77,24 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 	strcpy(temp_index, self->index_file);
 	strcat(temp_index, ".tmp");
 	
-	FILE* fh = fopen(temp_index, "wb+");
-	FILE* fd = fdopen(fileno(fh), "ab");
+	FILE* fd = fopen(temp_index, "wb+");
 	
-	zran_export_index(self->gzip_index, fd);
+	if(zran_export_index(self->gzip_index, fd) != ZRAN_EXPORT_OK){
+		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
+	}
 	
-	int fsize = ftell(fh);
-	rewind(fh);
+	int fsize = ftell(fd);
+	rewind(fd);
 
 	char *buff = (char *)malloc(fsize + 1);
 
-	if(fread(buff, fsize, 1, fh) != 1){
+	if(fread(buff, fsize, 1, fd) != 1){
 		return;
 	}
+
+	buff[fsize] = '\0';
 	
-	fclose(fh);
+	fclose(fd);
 	remove(temp_index);
 
 	sqlite3_prepare_v2(self->index_db, "INSERT INTO gzindex VALUES (NULL, ?)", -1, &stmt, NULL);
@@ -101,29 +107,29 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 void pyfastx_load_gzip_index(pyfastx_Index *self){
 	sqlite3_stmt *stmt;
 	int bytes = 0;
+	FILE *fh;
 	
-	zran_init(self->gzip_index, self->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
+	//rewind(self->fd);
+	//zran_init(self->gzip_index, self->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
 	
 	char *temp_index = (char *)malloc(strlen(self->index_file) + 5);
 	strcpy(temp_index, self->index_file);
 	strcat(temp_index, ".tmp");
 	
-	FILE* fh = fopen(temp_index, "wb+");
+	fh = fopen(temp_index, "wb");
 
 	sqlite3_prepare_v2(self->index_db, "SELECT content FROM gzindex;", -1, &stmt, NULL);
 	if(sqlite3_step(stmt) == SQLITE_ROW){
 		bytes = sqlite3_column_bytes(stmt, 0);
 	}
-	//const char *buff = sqlite3_column_blob(stmt, 0);
-	//fwrite(buff, 1, strlen(buff), fh);
+	
 	fwrite(sqlite3_column_blob(stmt, 0), bytes, 1, fh);
-	//fseek(fh, 0, SEEK_SET);
-	rewind(fh);
-
-	FILE* fd = fdopen(fileno(fh), "rb");
-	zran_import_index(self->gzip_index, fd);
-
 	fclose(fh);
+
+	fh = fopen(temp_index, "rb");
+	if(zran_import_index(self->gzip_index, fh) != ZRAN_IMPORT_OK){
+		PyErr_SetString(PyExc_RuntimeError, "Failed to import gzip index.");
+	}
 	remove(temp_index);
 }
 
@@ -426,6 +432,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	seq->offset = (int64_t)sqlite3_column_int64(stmt, 2);
 	seq->byte_len = sqlite3_column_int(stmt, 3);
 	seq->seq_len = sqlite3_column_int(stmt, 4);
+	seq->parent_len = seq->seq_len;
 	seq->line_len = sqlite3_column_int(stmt, 5);
 	seq->end_len = sqlite3_column_int(stmt, 6);
 	seq->normal = sqlite3_column_int(stmt, 7);
@@ -556,19 +563,23 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 
 /*
 @name str, sequence identifier in fasta file
-@offset int, sequence byte start in fasta file
-@bytes int, byte length of sequence with space
+@offset int, subsequence byte start in fasta file
+@bytes int, byte length of subsequence with space
 @start int, sliced start position in sequence
 @end int, sliced end position in sequence
+@plen int, length of subsequence parent seq
 @normal int, 1 -> normal fasta with the same length, 0 not normal
 @return str
 */
-char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int bytes, int start, int end, int normal){
+void test_time(char *s, clock_t st, clock_t et){
+	printf("%s: %.3f\n", s, (double)(et-st)/CLOCKS_PER_SEC);
+}
+char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int bytes, int start, int end, int plen, int normal){
 	int seq_len;
 	char *buff;
 	seq_len = end - start + 1;
 
-	if(!normal || (seq_len == end && start == 1)) {
+	if(!normal || (plen == end && start == 1)) {
 		buff = pyfastx_index_get_full_seq(self, name);
 	}
 
@@ -585,14 +596,26 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 		}
 	}
 
+	clock_t st;
+	clock_t et;
+
+	printf("%ld\n", offset);
+	printf("%d\n", bytes);
 
 	buff = (char *)malloc(bytes + 1);
 
 	Py_BEGIN_ALLOW_THREADS
 
 	if(self->gzip_format){
+		st = clock();
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
+		et = clock();
+		test_time("zran seek", st, et);
+
+		st = clock();
 		zran_read(self->gzip_index, buff, bytes);
+		et = clock();
+		test_time("zran reed", st, et);
 	} else {
 		gzseek(self->gzfd, offset, SEEK_SET);
 		gzread(self->gzfd, buff, bytes);
@@ -600,10 +623,15 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 
 	buff[bytes] = '\0';
 
+	st = clock();
 	remove_space(buff);
+	et = clock();
+	test_time("remove space", st, et);
 
 	if(self->uppercase){
+		st = clock();
 		upper_string(buff);
+		test_time("uppercase", st, et);
 	}
 
 	Py_END_ALLOW_THREADS
@@ -612,6 +640,7 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 	self->cache_start = start;
 	self->cache_end = end;
 	self->cache_seq = buff;
+
 
 	return buff;
 }

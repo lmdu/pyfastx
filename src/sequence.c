@@ -43,8 +43,9 @@ int pyfastx_sequence_length(pyfastx_Sequence* self){
 	return self->seq_len;
 }
 
-int pyfastx_sequence_contains(pyfastx_Fasta *self, PyObject *subseq){
-	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
+int pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
+	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+	char *subseq = PyUnicode_AsUTF8(key);
 	if(strstr(seq, subseq) != NULL){
 		return 1;
 	}
@@ -52,7 +53,7 @@ int pyfastx_sequence_contains(pyfastx_Fasta *self, PyObject *subseq){
 }
 
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
-	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
+	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 	char *seq1 = malloc(strlen(seq)+1);
 	strcpy(seq1, seq);
 	return seq1;
@@ -83,7 +84,7 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 }
 
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
-	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
+	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 	return Py_BuildValue("s", seq);
 }
 
@@ -133,7 +134,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			i += self->seq_len;
 		}
 
-		seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
+		seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 		return Py_BuildValue("C", *(seq+i));
 	
 	} else if (PySlice_Check(item)) {
@@ -166,6 +167,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		seq->name = self->name;
 		//sprintf(seq->name, "%s:%d-%d", self->name, seq->start, seq->end);
 		seq->seq_len = slice_stop - slice_start;
+		seq->parent_len = self->parent_len;
 		seq->line_len = self->line_len;
 		seq->end_len = self->end_len;
 		seq->normal = self->normal;
@@ -191,7 +193,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 
 }
 
-PyObject *pyfastx_sequence_search(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
+PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObject *kwargs){
 	char* keywords[] = {"subseq", "strand", NULL};
 
 	char *subseq;
@@ -209,13 +211,18 @@ PyObject *pyfastx_sequence_search(pyfastx_Fasta *self, PyObject *args, PyObject 
 		complement_seq(subseq);
 	}
 
-	seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
+	seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 
 	result = strstr(seq, subseq);
 	if(result == NULL){
 		Py_RETURN_NONE;
 	}
-	start = (int)result - (int)seq + 1;
+	if(strcmp(strand, "-") == 0){
+		start = result - seq + strlen(subseq);
+	} else {
+		start = result - seq + 1;
+	}
+	
 	return Py_BuildValue("i", start);
 }
 
@@ -225,7 +232,7 @@ static PyMappingMethods pyfastx_sequence_as_mapping = {
 	0
 };
 
-static PySequenceMthods pyfastx_sequence_as_sequence = {
+static PySequenceMethods pyfastx_sequence_as_sequence = {
 	0, /*sq_length*/
 	0, /*sq_concat*/
 	0, /*sq_repeat*/
@@ -236,7 +243,7 @@ static PySequenceMthods pyfastx_sequence_as_sequence = {
 	(objobjproc)pyfastx_sequence_contains, /*sq_contains*/
 	0, /*sq_inplace_concat*/
 	0, /*sq_inplace_repeat*/
-}
+};
 
 static PyMethodDef pyfastx_sequence_methods[] = {
 	{"search", (PyCFunction)pyfastx_sequence_search, METH_VARARGS|METH_KEYWORDS},
@@ -292,7 +299,7 @@ PyTypeObject pyfastx_SequenceType = {
     0,                              /* tp_weaklistoffset */
     (getiterfunc)pyfastx_sequence_iter,                              /* tp_iter */
     (iternextfunc)pyfastx_sequence_next,                              /* tp_iternext */
-    0,       /* tp_methods */
+    pyfastx_sequence_methods,       /* tp_methods */
     pyfastx_sequence_members,       /* tp_members */
     pyfastx_sequence_getsets,       /* tp_getset */
     0,                              /* tp_base */

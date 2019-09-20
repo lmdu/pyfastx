@@ -262,6 +262,27 @@ The sequence object can be iterated line by line as they appear in FASTA file.
 	CCATGTACAGAATCATTGTTGTCAATTGGTTGTTTCCTTGATGGTGAAGGGGCTTCAATACATGAGTTCC
 	AAACTAACATTTCTTGACTAACACTTGAGGAAGAAGGACAAGGGTCCCCATGT
 
+Search for subsequence
+^^^^^^^^^^^^^^^^^^^^^^
+
+New in ``pyfastx`` 0.3.6
+
+Search for subsequence from given sequence and get the start position of the first occurrence
+
+.. code:: python
+
+    >>> # search subsequence in sense strand
+    >>> fa[0].search('GCTTCAATACA')
+    262
+
+    >>> # check subsequence weather in sequence
+    >>> 'GCTTCAATACA' in fa[0]
+    True
+
+    >>> # search subsequence in antisense strand
+    >>> fa[0].search('CCTCAAGT', '-')
+    301
+
 Get identifiers
 ---------------
 

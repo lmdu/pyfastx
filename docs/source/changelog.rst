@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.3.6 (2019-09-20)
+--------------------------
+
+- Added support for searching subsequence from a sequence
+- Added support for checking subsequence weather in a sequence
+- Fixed gzip index import error
+- Fixed subsequence parent length for full sequence extraction
+
 Version 0.3.5 (2019-09-08)
 --------------------------
 

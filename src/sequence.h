@@ -19,6 +19,9 @@ typedef struct {
 	//sequence real length
 	int seq_len;
 
+	//subsequence parent length
+	int parent_len;
+
 	//GC content
 	float gc_content;
 
@@ -55,6 +58,7 @@ extern PyTypeObject pyfastx_SequenceType;
 
 int pyfastx_sequence_length(pyfastx_Sequence* self);
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self);
+int pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key);
 
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure);
 PyObject *pyfastx_sequence_reverse(pyfastx_Sequence* self, void* closure);
@@ -67,5 +71,7 @@ PyObject *pyfastx_sequence_str(pyfastx_Sequence* self);
 PyObject *pyfastx_sequence_repr(pyfastx_Sequence* self);
 PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self);
 PyObject *pyfastx_sequnece_next(pyfastx_Sequence* self);
+
+PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObject *kwargs);
 
 #endif

@@ -173,6 +173,20 @@ pyfastx.Sequence
 
 		get the raw string of sequence in antisense strand, corresponding to reversed and complement sequence
 
+	.. py:method:: search(subseq, strand='+')
+
+		Search for subsequence from given sequence and get the start position of the first occurrence
+
+		New in ``pyfastx`` 0.3.6
+
+		:param string subseq: a subsequence for search
+
+		:param string strand: sequence strand + or -, default +
+
+		:return: if found subsequence return start position, if not return None
+
+		:rtype: int or None
+
 pyfastx.Identifier
 ------------------
 
