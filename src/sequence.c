@@ -43,6 +43,14 @@ int pyfastx_sequence_length(pyfastx_Sequence* self){
 	return self->seq_len;
 }
 
+int pyfastx_sequence_contains(pyfastx_Fasta *self, PyObject *subseq){
+	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
+	if(strstr(seq, subseq) != NULL){
+		return 1;
+	}
+	return 0;
+}
+
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
 	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
 	char *seq1 = malloc(strlen(seq)+1);
@@ -183,16 +191,57 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 
 }
 
+PyObject *pyfastx_sequence_search(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
+	char* keywords[] = {"subseq", "strand", NULL};
+
+	char *subseq;
+	char *seq;
+	char *strand = "+";
+	char *result;
+	int start;
+	
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|s", keywords, &subseq, &strand)){
+		return NULL;
+	}
+
+	if(strcmp(strand, "-") == 0){
+		reverse_seq(subseq);
+		complement_seq(subseq);
+	}
+
+	seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->normal);
+
+	result = strstr(seq, subseq);
+	if(result == NULL){
+		Py_RETURN_NONE;
+	}
+	start = (int)result - (int)seq + 1;
+	return Py_BuildValue("i", start);
+}
+
 static PyMappingMethods pyfastx_sequence_as_mapping = {
 	(lenfunc)pyfastx_sequence_length,
 	(binaryfunc)pyfastx_seqeunce_subscript,
 	0
 };
 
-/*static PyMethodDef pyfastx_sequence_methods[] = {
-	{"sub_seq", (PyCFunction)pyfastx_sequence_sub_seq, METH_VARARGS},
+static PySequenceMthods pyfastx_sequence_as_sequence = {
+	0, /*sq_length*/
+	0, /*sq_concat*/
+	0, /*sq_repeat*/
+	0, /*sq_item*/
+	0, /*sq_slice */
+	0, /*sq_ass_item*/
+	0, /*sq_ass_splice*/
+	(objobjproc)pyfastx_sequence_contains, /*sq_contains*/
+	0, /*sq_inplace_concat*/
+	0, /*sq_inplace_repeat*/
+}
+
+static PyMethodDef pyfastx_sequence_methods[] = {
+	{"search", (PyCFunction)pyfastx_sequence_search, METH_VARARGS|METH_KEYWORDS},
 	{NULL, NULL, 0, NULL}
-};*/
+};
 
 static PyGetSetDef pyfastx_sequence_getsets[] = {
 	{"name", (getter)pyfastx_sequence_get_name, NULL, NULL, NULL},
@@ -227,7 +276,7 @@ PyTypeObject pyfastx_SequenceType = {
     0,                              /* tp_reserved */
     (reprfunc)pyfastx_sequence_repr,                              /* tp_repr */
     0,                              /* tp_as_number */
-    0,                              /* tp_as_sequence */
+    &pyfastx_sequence_as_sequence,                              /* tp_as_sequence */
     &pyfastx_sequence_as_mapping,   /* tp_as_mapping */
     0,                              /* tp_hash */
     0,                              /* tp_call */
