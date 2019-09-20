@@ -183,7 +183,7 @@ pyfastx.Sequence
 
 		:param string strand: sequence strand + or -, default +
 
-		:return: if found subsequence return start position, if not return None
+		:return: if found subsequence return one-based start position, if not return None
 
 		:rtype: int or None
 

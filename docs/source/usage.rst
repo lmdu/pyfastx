@@ -267,7 +267,7 @@ Search for subsequence
 
 New in ``pyfastx`` 0.3.6
 
-Search for subsequence from given sequence and get the start position of the first occurrence
+Search for subsequence from given sequence and get one-based start position of the first occurrence
 
 .. code:: python
 
