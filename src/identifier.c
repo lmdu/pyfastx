@@ -12,7 +12,7 @@ void pyfastx_identifier_dealloc(pyfastx_Identifier *self){
 }
 
 PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self){
-	sqlite3_prepare_v2(self->index_db, "SELECT seqid FROM seq;", -1, &self->stmt, NULL);
+	sqlite3_prepare_v2(self->index_db, "SELECT chrom FROM seq;", -1, &self->stmt, NULL);
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
@@ -46,7 +46,7 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 		return NULL;
 	}
 
-	sqlite3_prepare_v2(self->index_db, "SELECT seqid FROM seq WHERE id=? LIMIT 1;", -1, &self->stmt, NULL);
+	sqlite3_prepare_v2(self->index_db, "SELECT chrom FROM seq WHERE ID=? LIMIT 1;", -1, &self->stmt, NULL);
 	sqlite3_bind_int(self->stmt, 1, i+1);
 	sqlite3_step(self->stmt);
 
@@ -64,7 +64,7 @@ int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 
 	char *name = PyUnicode_AsUTF8(key);
 
-	sqlite3_prepare_v2(self->index_db, "SELECT * FROM seq WHERE seqid=? LIMIT 1;", -1, &self->stmt, NULL);
+	sqlite3_prepare_v2(self->index_db, "SELECT * FROM seq WHERE chrom=? LIMIT 1;", -1, &self->stmt, NULL);
 	sqlite3_bind_text(self->stmt, 1, name, -1, NULL);
 	if(sqlite3_step(self->stmt) != SQLITE_ROW){
 		sqlite3_reset(self->stmt);
