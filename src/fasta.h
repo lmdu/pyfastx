@@ -1,6 +1,7 @@
 #ifndef PYFASTX_FASTA_H
 #define PYFASTX_FASTA_H
-#include "Python.h"
+#include <Python.h>
+#include <stdint.h>
 #include "zlib.h"
 #include "kseq.h"
 #include "index.h"

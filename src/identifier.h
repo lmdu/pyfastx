@@ -1,6 +1,7 @@
 #ifndef PYFASTX_IDENTIFIER_H
 #define PYFASTX_IDENTIFIER_H
 #include "Python.h"
+#include <stdint.h>
 #include "sqlite3.h"
 
 typedef struct {

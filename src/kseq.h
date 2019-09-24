@@ -1,6 +1,8 @@
 #ifndef AC_KSEQ_H
 #define AC_KSEQ_H
 #include "Python.h"
+#include <stdint.h>
+#include <ctype.h>
 #include "zlib.h"
 
 #define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))

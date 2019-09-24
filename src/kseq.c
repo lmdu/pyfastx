@@ -24,10 +24,6 @@
 */
 
 /* Last Modified: 05MAR2012 */
-
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
 #include "kseq.h"
 
 #define KS_SEP_SPACE 0 // isspace(): \t, \n, \v, \f, \r

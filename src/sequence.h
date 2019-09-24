@@ -1,6 +1,7 @@
 #ifndef PYFASTX_SEQ_H
 #define PYFASTX_SEQ_H
 #include "Python.h"
+#include <stdint.h>
 #include "index.h"
 
 //make sequence class

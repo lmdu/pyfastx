@@ -1,6 +1,7 @@
 #ifndef PYFASTX_INDEX_H
 #define PYFASTX_INDEX_H
 #include "Python.h"
+#include <stdint.h>
 #include "sqlite3.h"
 #include "zlib.h"
 #include "zran.h"
