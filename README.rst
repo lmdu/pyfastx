@@ -265,7 +265,8 @@ Sequence object can be sliced like a python string
 .. code:: python
 
     >>> # get a sub seq from sequence
-    >>> ss = seq[10:30]
+    >>> s = fa[-1]
+    >>> ss = s[10:30]
     >>> ss
     <Sequence> JZ840318.1 from 11 to 30
 
