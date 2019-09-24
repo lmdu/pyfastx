@@ -2,11 +2,11 @@
 #define PYFASTX_UTIL_H
 #include "Python.h"
 
-int file_exists(char *file_name);
+uint16_t file_exists(char *file_name);
 void remove_space(char *str);
 void upper_string(char *str);
-int is_gzip_format(char *file_name);
-void truncate_seq(char *seq, int start, int end);
+uint16_t is_gzip_format(char *file_name);
+void truncate_seq(char *seq, uint32_t start, uint32_t end);
 void complement_seq(char *seq);
 void reverse_seq(char *seq);
 

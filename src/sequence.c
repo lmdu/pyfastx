@@ -17,7 +17,7 @@ PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
 PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
 	kstring_t seq = {0, 0, 0};
 	if(self->start != 1 || self->end != self->seq_len){
-		int c;
+		int32_t c;
 		while((c = ks_getc(self->ks)) >= 0 && c != '>'){
 			if(c == '\n'){
 				continue;
@@ -39,11 +39,11 @@ PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
 	return NULL;
 }
 
-int pyfastx_sequence_length(pyfastx_Sequence* self){
+uint32_t pyfastx_sequence_length(pyfastx_Sequence* self){
 	return self->seq_len;
 }
 
-int pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
+uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 	char *subseq = PyUnicode_AsUTF8(key);
 	if(strstr(seq, subseq) != NULL){
@@ -69,14 +69,14 @@ PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
 
 PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	sqlite3_stmt *stmt;
-	const char *detail;
+	char *detail;
 
 	const char *sql = "SELECT description FROM seq WHERE seqid=? LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, self->name, -1, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		detail = (const char*)sqlite3_column_text(stmt, 0);
+		detail = (char*)sqlite3_column_text(stmt, 0);
 		return Py_BuildValue("s", detail);
 	}
 
@@ -180,7 +180,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			//tail_num = seq->seq_len % (seq->line_len - seq->end_len);
 			//seq->offset = seq->byte_len + seq->start + (seq->start / (seq->line_len - seq->end_len)) * seq->end_len - 1;
 			//seq->byte_len = line_num * seq->line_len + tail_num;
-			int line_num = (slice_start + 1)/(self->line_len - self->end_len);
+			int32_t line_num = (slice_start + 1)/(self->line_len - self->end_len);
 			seq->offset = self->offset + slice_start + self->end_len*line_num;
 			seq->byte_len = seq->seq_len + seq->seq_len/self->line_len*self->end_len;
 		}
@@ -200,7 +200,7 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 	char *seq;
 	char *strand = "+";
 	char *result;
-	int start;
+	uint32_t start;
 	
 	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|s", keywords, &subseq, &strand)){
 		return NULL;

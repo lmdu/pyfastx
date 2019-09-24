@@ -13,7 +13,7 @@ typedef struct {
 	sqlite3_stmt *stmt;
 
 	//sequence counts
-	int seq_counts;
+	uint32_t seq_counts;
 
 } pyfastx_Identifier;
 

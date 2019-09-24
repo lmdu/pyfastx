@@ -11,16 +11,16 @@ typedef struct {
 	char* name;
 
 	//start position
-	int start;
+	uint32_t start;
 
 	//end position
-	int end;
+	uint32_t end;
 
 	//sequence real length
-	int seq_len;
+	uint32_t seq_len;
 
 	//subsequence parent length
-	int parent_len;
+	uint32_t parent_len;
 
 	//GC content
 	float gc_content;
@@ -38,16 +38,16 @@ typedef struct {
 	int64_t offset;
 
 	//byte length for sequence
-	int byte_len;
+	uint32_t byte_len;
 
 	//each line length of sequence
-	int line_len;
+	uint32_t line_len;
 
 	//line end length, \n or \r\n
-	int end_len;
+	uint16_t end_len;
 
 	//standard fasta format with same line length
-	int normal;
+	uint16_t normal;
 
 	//for iteration
 	kstream_t *ks;
@@ -56,9 +56,9 @@ typedef struct {
 
 extern PyTypeObject pyfastx_SequenceType;
 
-int pyfastx_sequence_length(pyfastx_Sequence* self);
+uint32_t pyfastx_sequence_length(pyfastx_Sequence* self);
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self);
-int pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key);
+uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key);
 
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure);
 PyObject *pyfastx_sequence_reverse(pyfastx_Sequence* self, void* closure);

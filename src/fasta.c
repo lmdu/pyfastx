@@ -8,7 +8,7 @@ composition (ATGCN count) and GC content
 */
 void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	//ACGTN nucleotide counts
-	int a, c, g, t, n;
+	uint64_t a, c, g, t, n;
 
 	sqlite3_stmt *stmt;
 	
@@ -27,12 +27,12 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	//calculate base counts
 	sqlite3_prepare_v2(self->index->index_db, "SELECT SUM(a),SUM(c),SUM(g),SUM(t),SUM(n) FROM seq LIMIT 1;", -1, &stmt, NULL);
 	sqlite3_step(stmt);
-	a = sqlite3_column_int(stmt, 0);
-	c = sqlite3_column_int(stmt, 1);
-	g = sqlite3_column_int(stmt, 2);
-	t = sqlite3_column_int(stmt, 3);
-	n = sqlite3_column_int(stmt, 4);
-	self->composition = Py_BuildValue("{s:i,s:i,s:i,s:i,s:i}", "A", a, "C", c, "G", g, "T", t, "N", n);
+	a = sqlite3_column_int64(stmt, 0);
+	c = sqlite3_column_int64(stmt, 1);
+	g = sqlite3_column_int64(stmt, 2);
+	t = sqlite3_column_int64(stmt, 3);
+	n = sqlite3_column_int64(stmt, 4);
+	self->composition = Py_BuildValue("{s:K,s:K,s:K,s:K,s:K}", "A", a, "C", c, "G", g, "T", t, "N", n);
 	sqlite3_finalize(stmt);
 
 	//calc GC content
@@ -45,10 +45,10 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	char *file_name;
 
 	//bool value for uppercase sequence
-	int uppercase = 1;
+	uint16_t uppercase = 1;
 
 	//build index or not
-	int build_index = 1;
+	uint16_t build_index = 1;
 
 	//paramters for fasta object construction
 	static char* keywords[] = {"file_name", "uppercase", "build_index", NULL};
@@ -129,8 +129,8 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	char *seq;
 	PyObject *intervals;
 	char *strand = "+";
-	int start;
-	int end;
+	uint64_t start;
+	uint64_t end;
 	
 	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|s", keywords, &name, &intervals, &strand)){
 		return NULL;
@@ -161,7 +161,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		return PyErr_Format(PyExc_NameError, "Sequence %s does not exists", name);
 	}
 
-	int seq_len;
+	uint32_t seq_len;
 	char *sub_seq;
 
 	seq = pyfastx_index_get_full_seq(self->index, name);
@@ -181,8 +181,8 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		memcpy(sub_seq, seq+start-1, seq_len);
 		sub_seq[seq_len] = '\0';
 	} else {
-		int i;
-		int j = 0;
+		uint32_t i;
+		uint32_t j = 0;
 		sub_seq = (char *)malloc(strlen(seq) + 1);
 
 		for(i=0; i<size; i++){
@@ -273,11 +273,11 @@ int pyfastx_fasta_contains(pyfastx_Fasta *self, PyObject *key){
 }
 
 PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args){
-	int l;
-	int c;
+	uint32_t l;
+	uint32_t c;
 	sqlite3_stmt *stmt;
 
-	if (!PyArg_ParseTuple(args, "i", &l)) {
+	if (!PyArg_ParseTuple(args, "I", &l)) {
 		return NULL;
 	}
 
@@ -286,7 +286,7 @@ PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args){
 	sqlite3_bind_int(stmt, 1, l);
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		c = sqlite3_column_int(stmt, 0);
-		return Py_BuildValue("i", c);
+		return Py_BuildValue("I", c);
 	}
 
 	Py_RETURN_NONE;
@@ -294,11 +294,11 @@ PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args){
 
 PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 	sqlite3_stmt *stmt;
-	int p;
+	int16_t p;
 	float half_size;
-	int temp_size = 0;
-	int i = 0;
-	int j = 0;
+	uint64_t temp_size = 0;
+	uint32_t i = 0;
+	uint32_t j = 0;
 
 	if (!PyArg_ParseTuple(args, "i", &p)) {
 		return NULL;
@@ -318,7 +318,7 @@ PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 		j = sqlite3_column_int(stmt, 0);
 		temp_size += j;
 		if (temp_size >= half_size) {
-			return Py_BuildValue("ii", j, i);
+			return Py_BuildValue("II", j, i);
 		}
 	}
 	Py_RETURN_NONE;
@@ -327,14 +327,14 @@ PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
 	const char *name;
-	int len;
+	uint32_t len;
 	const char *sql = "SELECT seqid,MAX(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		name = (const char *)sqlite3_column_text(stmt, 0);
 		len = sqlite3_column_int(stmt, 1);
-		return Py_BuildValue("si", name, len);
+		return Py_BuildValue("sI", name, len);
 	}
 
 	Py_RETURN_NONE;
@@ -343,14 +343,14 @@ PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
 PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
 	const char *name;
-	int len;
+	uint32_t len;
 	const char *sql = "SELECT seqid,MIN(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		name = (const char *)sqlite3_column_text(stmt, 0);
 		len = sqlite3_column_int(stmt, 1);
-		return Py_BuildValue("si", name, len);
+		return Py_BuildValue("sI", name, len);
 	}
 
 	Py_RETURN_NONE;
@@ -358,13 +358,13 @@ PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure){
 
 PyObject *pyfastx_fasta_mean(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	int len;
+	uint32_t len;
 	const char *sql = "SELECT AVG(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		len = sqlite3_column_int(stmt, 0);
-		return Py_BuildValue("i", len);
+		return Py_BuildValue("I", len);
 	}
 
 	Py_RETURN_NONE;
@@ -372,7 +372,7 @@ PyObject *pyfastx_fasta_mean(pyfastx_Fasta *self, void* closure){
 
 PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	int m;
+	uint32_t m;
 	const char *sql;
 	if (self->seq_counts % 2 == 0) {
 		sql = "SELECT AVG(slen) FROM seq LIMIT ?,2";
@@ -383,7 +383,7 @@ PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 	sqlite3_bind_int(stmt, 1, (self->seq_counts - 1)/2);
 	if(sqlite3_step(stmt) == SQLITE_ROW){
 		m = sqlite3_column_int(stmt, 0);
-		return Py_BuildValue("i", m);
+		return Py_BuildValue("I", m);
 	}
 
 	Py_RETURN_NONE;

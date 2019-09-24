@@ -1,7 +1,7 @@
 #include "util.h"
 
 //check file is whether exists in disk
-int file_exists(char *file_name){
+uint16_t file_exists(char *file_name){
 	FILE *file;
 	if((file = fopen(file_name, "r"))){
 		fclose(file);
@@ -11,7 +11,7 @@ int file_exists(char *file_name){
 }
 
 void remove_space(char *str) {
-	int i, j = 0;
+	uint32_t i, j = 0;
 	for(i = 0; str[i]; i++){
 		if(!isspace(str[i])){
 			str[j++] = str[i];
@@ -21,7 +21,7 @@ void remove_space(char *str) {
 }
 
 void upper_string(char *str) {
-	int i;
+	uint32_t i;
 	for(i = 0; str[i]; i++) {
 		if(str[i] >= 'a' && str[i] <= 'z'){
 			str[i] = str[i] - 32;
@@ -43,7 +43,7 @@ void reverse_seq(char *seq){
 }
 
 void complement_seq(char *seq){
-	int i;
+	uint32_t i;
 
 	for(i=0; seq[i]; i++){
 		switch(seq[i]){
@@ -79,8 +79,8 @@ PyObject *clean_seq(PyObject *self, PyObject *args){
 	if (!PyArg_ParseTuple(args, "s", &seq)){
 		return NULL;
 	}
-	int i;
-	int j = 0;
+	uint32_t i;
+	uint32_t j = 0;
 	for(i=0; seq[i]; i++){
 		if(!isspace(seq[i])){
 			seq[j++] = toupper(seq[i]);
@@ -90,10 +90,10 @@ PyObject *clean_seq(PyObject *self, PyObject *args){
 	return Py_BuildValue("s", seq);
 }
 
-void truncate_seq(char *seq, int start, int end){
-	int len;
-	int i = 0;
-	int j = 0;
+void truncate_seq(char *seq, uint32_t start, uint32_t end){
+	uint32_t len;
+	uint32_t i = 0;
+	uint32_t j = 0;
 	len = end - start + 1;
 
 	for(i=0; i<strlen(seq); i++){
@@ -113,16 +113,16 @@ void truncate_seq(char *seq, int start, int end){
 
 PyObject *sub_seq(PyObject *self, PyObject *args){
 	char *seq;
-	int start;
-	int end;
+	uint32_t start;
+	uint32_t end;
 
 	if (!PyArg_ParseTuple(args, "sii", &seq, &start, &end)){
 		return NULL;
 	}
-	int i;
-	int j = 0;
-	int real_pos = 0;
-	int flag;
+	uint32_t i;
+	uint32_t j = 0;
+	uint32_t real_pos = 0;
+	uint16_t flag;
 	for(i=0; seq[i]; i++){
 		flag = isspace(seq[i]);
 
@@ -148,8 +148,8 @@ PyObject *sub_seq(PyObject *self, PyObject *args){
 @para file_name str, input file path string
 @return bool, 1 is gzip formmat file, 0 is not gzip
 */
-int is_gzip_format(char* file_name){
-	int ret;
+uint16_t is_gzip_format(char* file_name){
+	uint16_t ret;
 	FILE* fd;
 	unsigned char magic[4] = {0};
 

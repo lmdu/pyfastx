@@ -13,12 +13,12 @@ typedef struct {
 	char* index_file;
 
 	//always output uppercase
-	int uppercase;
+	uint16_t uppercase;
 
 	//is gzip compressed file
 	//0 not gzip file
 	//1 is gzip file
-	int gzip_format;
+	uint16_t gzip_format;
 
 	//open file handle
 	FILE* fd;
@@ -39,8 +39,8 @@ typedef struct {
 	char* cache_name;
 
 	//cache start and end position
-	int cache_start;
-	int cache_end;
+	uint32_t cache_start;
+	uint32_t cache_end;
 
 	//cache sequence
 	char* cache_seq;
@@ -59,10 +59,10 @@ void pyfastx_index_free(pyfastx_Index *self);
 PyObject *pyfastx_get_next_seq(pyfastx_Index *index);
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt);
 PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name);
-PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, int id);
+PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id);
 
-pyfastx_Index *pyfastx_init_index(char* file_path, int uppercase);
-char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int bytes, int start, int end, int plen, int normal);
+pyfastx_Index *pyfastx_init_index(char* file_path, uint16_t uppercase);
+char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int64_t bytes, uint32_t start, uint32_t end, uint32_t plen, uint16_t normal);
 char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name);
 
 #endif

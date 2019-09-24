@@ -13,13 +13,13 @@ typedef struct {
 	char* file_name;
 
 	//always output uppercase sequence
-	int uppercase;
+	uint16_t uppercase;
 
 	//total sequence counts
-	int seq_counts;
+	uint32_t seq_counts;
 
 	//total sequence length (bp)
-	long seq_length;
+	uint64_t seq_length;
 
 	//a float for GC content (%)
 	float gc_content;

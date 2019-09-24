@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.3.7 (2019-09-24)
+
+- Changed int type to standard type
+- Added support for processing large fasta file
+
 Version 0.3.6 (2019-09-20)
 --------------------------
 

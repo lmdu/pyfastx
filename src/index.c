@@ -9,7 +9,7 @@ create a index
 @param uppercase, uppercase sequence
 @param uppercase
 */
-pyfastx_Index* pyfastx_init_index(char* file_name, int uppercase){
+pyfastx_Index* pyfastx_init_index(char* file_name, uint16_t uppercase){
 	pyfastx_Index* index;
 
 	index = (pyfastx_Index *)malloc(sizeof(pyfastx_Index));
@@ -83,7 +83,7 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
 	}
 	
-	int fsize = ftell(fd);
+	int32_t fsize = ftell(fd);
 	rewind(fd);
 
 	char *buff = (char *)malloc(fsize + 1);
@@ -106,7 +106,7 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 
 void pyfastx_load_gzip_index(pyfastx_Index *self){
 	sqlite3_stmt *stmt;
-	int bytes = 0;
+	int32_t bytes = 0;
 	FILE *fh;
 	
 	//rewind(self->fd);
@@ -142,38 +142,38 @@ void pyfastx_create_index(pyfastx_Index *self){
 	
 	// 1: normal fasta sequence with the same length in line
 	// 0: not normal fasta sequence with different length in line
-	int seq_normal = 1;
+	uint16_t seq_normal = 1;
 
 	//1: \n, 2: \r\n
-	int line_end = 1;
+	uint16_t line_end = 1;
 	
 	//length of previous line
-	int line_len = 0;
+	uint32_t line_len = 0;
 
 	//length of current line
-	int temp_len = 0;
+	uint32_t temp_len = 0;
 
 	//number of lines that line_len not equal to temp_len
-	int bad_line = 0;
+	uint32_t bad_line = 0;
 
 	//current read position
-	int position = 0;
+	uint64_t position = 0;
 	
 	// start position
-	int start = 0;
+	uint64_t start = 0;
 
 	//sequence length
-	int seq_len = 0;
+	uint32_t seq_len = 0;
 
 	//number of bases
-	int g_count = 0;
-	int c_count = 0;
-	int a_count = 0;
-	int t_count = 0;
-	int n_count = 0;
+	uint32_t g_count = 0;
+	uint32_t c_count = 0;
+	uint32_t a_count = 0;
+	uint32_t t_count = 0;
+	uint32_t n_count = 0;
 
 	//current read base char
-	int c;
+	int32_t c;
 
 	//reading file for kseq
 	kstream_t* ks = self->kseqs->f;
@@ -190,8 +190,8 @@ void pyfastx_create_index(pyfastx_Index *self){
 	const char *create_sql = " \
 		CREATE TABLE seq ( \
 			ID INTEGER PRIMARY KEY, --seq identifier\n \
-			seqid TEXT, --seq name\n \
-			offset INTEGER, --seq offset start\n \
+			chrom TEXT, --seq name\n \
+			boff INTEGER, --seq offset start\n \
 			blen INTEGER, --seq byte length\n \
 			slen INTEGER, --seq length\n \
 			llen INTEGER, --line lenght\n \
@@ -202,7 +202,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			g INTEGER, --G base counts\n \
 			t INTEGER, --T base counts\n \
 			n INTEGER, --unknown base counts\n \
-			description TEXT --sequence description\n \
+			descr TEXT --sequence description\n \
 		); \
 		CREATE TABLE gzindex ( \
 			ID INTEGER PRIMARY KEY, \
@@ -417,7 +417,7 @@ void pyfastx_index_free(pyfastx_Index *self){
 }
 
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
-	int a, c, g, t, n;
+	uint32_t a, c, g, t, n;
 	char* name;
 
 	pyfastx_Sequence *seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);
@@ -449,7 +449,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	seq->end = seq->seq_len;
 
 	//composition
-	seq->composition = Py_BuildValue("{s:i,s:i,s:i,s:i,s:i}", "A", a, "C", c, "G", g, "T", t, "N", n);
+	seq->composition = Py_BuildValue("{s:I,s:I,s:I,s:I,s:I}", "A", a, "C", c, "G", g, "T", t, "N", n);
 
 	//calc GC content
 	seq->gc_content = (float)(g+c)/(a+c+g+t)*100;
@@ -478,7 +478,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
 }
 
 
-PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, int id){
+PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id){
 	sqlite3_stmt *stmt;
 
 	const char* sql = "SELECT * FROM seq WHERE id=? LIMIT 1;";
@@ -494,9 +494,9 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, int id){
 
 char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 	sqlite3_stmt *stmt;
-	int seq_len;
+	uint32_t seq_len;
 	int64_t offset;
-	int bytes;
+	uint32_t bytes;
 	char *buff;
 	
 	//select sql statement, seqid indicates seq name or chromomsome
@@ -535,7 +535,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 
 		ks = ks_init(self->gzfd);
 		
-		int c;
+		int32_t c;
 		while((c = ks_getc(ks)) >= 0 && c != '>'){
 			if(c == '\n') continue;
 			seq.s[seq.l++] = c;
@@ -571,11 +571,8 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 @normal int, 1 -> normal fasta with the same length, 0 not normal
 @return str
 */
-void test_time(char *s, clock_t st, clock_t et){
-	printf("%s: %.3f\n", s, (double)(et-st)/CLOCKS_PER_SEC);
-}
-char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int bytes, int start, int end, int plen, int normal){
-	int seq_len;
+char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int64_t bytes, uint32_t start, uint32_t end, uint32_t plen, uint16_t normal){
+	uint32_t seq_len;
 	char *buff;
 	seq_len = end - start + 1;
 
@@ -596,26 +593,13 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 		}
 	}
 
-	clock_t st;
-	clock_t et;
-
-	printf("%ld\n", offset);
-	printf("%d\n", bytes);
-
 	buff = (char *)malloc(bytes + 1);
 
 	Py_BEGIN_ALLOW_THREADS
 
 	if(self->gzip_format){
-		st = clock();
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
-		et = clock();
-		test_time("zran seek", st, et);
-
-		st = clock();
 		zran_read(self->gzip_index, buff, bytes);
-		et = clock();
-		test_time("zran reed", st, et);
 	} else {
 		gzseek(self->gzfd, offset, SEEK_SET);
 		gzread(self->gzfd, buff, bytes);
@@ -623,15 +607,10 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 
 	buff[bytes] = '\0';
 
-	st = clock();
 	remove_space(buff);
-	et = clock();
-	test_time("remove space", st, et);
 
 	if(self->uppercase){
-		st = clock();
 		upper_string(buff);
-		test_time("uppercase", st, et);
 	}
 
 	Py_END_ALLOW_THREADS
