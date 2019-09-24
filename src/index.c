@@ -23,9 +23,9 @@ pyfastx_Index* pyfastx_init_index(char* file_name, uint16_t uppercase){
 	index->kseqs = kseq_init(index->gzfd);
 
 	//create index file
-	index->index_file = (char *)malloc(strlen(file_name) + 4);
+	index->index_file = (char *)malloc(strlen(file_name) + 5);
 	strcpy(index->index_file, file_name);
-	strcat(index->index_file, ".db");
+	strcat(index->index_file, ".fxi");
 
 	index->fd = fopen(file_name, "rb");
 
@@ -237,7 +237,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 					sqlite3_bind_null(stmt, 1);
 					sqlite3_bind_text(stmt, 2, self->kseqs->name.s, self->kseqs->name.l, NULL);
-					sqlite3_bind_int(stmt, 3, start);
+					sqlite3_bind_int64(stmt, 3, start);
 					sqlite3_bind_int(stmt, 4, position-start-1);
 					sqlite3_bind_int(stmt, 5, seq_len);
 					sqlite3_bind_int(stmt, 6, line_len);
@@ -359,7 +359,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 	sqlite3_bind_null(stmt, 1);
 	sqlite3_bind_text(stmt, 2, self->kseqs->name.s, self->kseqs->name.l, NULL);
-	sqlite3_bind_int(stmt, 3, start);
+	sqlite3_bind_int64(stmt, 3, start);
 	sqlite3_bind_int(stmt, 4, position-start);
 	sqlite3_bind_int(stmt, 5, seq_len);
 	sqlite3_bind_int(stmt, 6, line_len);
@@ -453,6 +453,9 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 
 	//calc GC content
 	seq->gc_content = (float)(g+c)/(a+c+g+t)*100;
+
+	//calc GC skew
+	seq->gc_skew = (float)(g-c)/(g+c);
 
 	//index
 	seq->index = self;

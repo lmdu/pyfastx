@@ -150,7 +150,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			Py_RETURN_NONE;
 		}
 
-		if(slice_step != 1) {
+		if (slice_step != 1) {
 			Py_RETURN_NONE;
 		}
 
@@ -177,10 +177,6 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		seq->index = self->index;
 
 		if (self->normal) {
-			//line_num = seq->seq_len / (seq->line_len - seq->end_len);
-			//tail_num = seq->seq_len % (seq->line_len - seq->end_len);
-			//seq->offset = seq->byte_len + seq->start + (seq->start / (seq->line_len - seq->end_len)) * seq->end_len - 1;
-			//seq->byte_len = line_num * seq->line_len + tail_num;
 			int32_t line_num = (slice_start + 1)/(self->line_len - self->end_len);
 			seq->offset = self->offset + slice_start + self->end_len*line_num;
 			seq->byte_len = seq->seq_len + seq->seq_len/self->line_len*self->end_len;
@@ -199,11 +195,11 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 
 	char *subseq;
 	char *seq;
-	char *strand = "+";
 	char *result;
 	uint32_t start;
+	uint16_t strand = '+';
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|s", keywords, &subseq, &strand)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|C", keywords, &subseq, &strand)){
 		return NULL;
 	}
 
@@ -218,13 +214,13 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 	if(result == NULL){
 		Py_RETURN_NONE;
 	}
-	if(strcmp(strand, "-") == 0){
+	if(strand == '-'){
 		start = result - seq + strlen(subseq);
 	} else {
 		start = result - seq + 1;
 	}
 	
-	return Py_BuildValue("i", start);
+	return Py_BuildValue("I", start);
 }
 
 static PyMappingMethods pyfastx_sequence_as_mapping = {
@@ -268,6 +264,7 @@ static PyMemberDef pyfastx_sequence_members[] = {
 	{"end", T_INT, offsetof(pyfastx_Sequence, end), READONLY},
 	//{"length", T_INT, offsetof(pyfastx_Sequence, seq_len), READONLY},
 	{"gc_content", T_FLOAT, offsetof(pyfastx_Sequence, gc_content), READONLY},
+	{"gc_skew", T_FLOAT, offsetof(pyfastx_Sequence, gc_skew), READONLY},
 	{"composition", T_OBJECT, offsetof(pyfastx_Sequence, composition), READONLY},
 	{NULL}
 };

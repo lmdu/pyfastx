@@ -37,6 +37,9 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 
 	//calc GC content
 	self->gc_content = (float)(g+c)/(a+c+g+t)*100;
+
+	//calc GC skew
+	self->gc_skew = (float)(g-c)/(g+c);
 }
 
 
@@ -59,7 +62,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	//check input sequence file is whether exists
 	if(!file_exists(file_name)){
-		return PyErr_Format(PyExc_FileExistsError, "input sequence file %s does not exists", file_name);
+		return PyErr_Format(PyExc_FileExistsError, "input fasta file %s does not exists", file_name);
 	}
 
 	//create Fasta class
@@ -98,7 +101,7 @@ PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){
 }
 
 PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self){
-	return PyUnicode_FromFormat("<Fasta> %s contains %d seqs", self->file_name, self->seq_counts);
+	return PyUnicode_FromFormat("<Fasta> %s contains %d sequences", self->file_name, self->seq_counts);
 }
 
 PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
@@ -128,16 +131,16 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	char *name;
 	char *seq;
 	PyObject *intervals;
-	char *strand = "+";
 	uint64_t start;
 	uint64_t end;
+	uint16_t strand = '+';
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|s", keywords, &name, &intervals, &strand)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|C", keywords, &name, &intervals, &strand)){
 		return NULL;
 	}
 
 	if(!PyTuple_Check(intervals) && !PyList_Check(intervals)){
-		PyErr_SetString(PyExc_ValueError, "Intervals must be list or tuple");
+		PyErr_SetString(PyExc_ValueError, "intervals must be list or tuple");
 		return NULL;
 	}
 
@@ -173,7 +176,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		end = PyLong_AsLong(PyTuple_GetItem(intervals, 1));
 
 		if(start > end){
-			PyErr_SetString(PyExc_ValueError, "Start position > end position");
+			PyErr_SetString(PyExc_ValueError, "start position > end position");
 			return NULL;
 		}
 
@@ -197,7 +200,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 			seq_len = end - start + 1;
 
 			if(start > end){
-				PyErr_SetString(PyExc_ValueError, "Start position > end position");
+				PyErr_SetString(PyExc_ValueError, "start position > end position");
 				return NULL;
 			}
 
@@ -207,7 +210,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		sub_seq[j] = '\0';
 	}
 
-	if(strcmp(strand, "-") == 0){
+	if(strand == '-'){
 		reverse_seq(sub_seq);
 		complement_seq(sub_seq);
 	}
@@ -296,7 +299,7 @@ PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args){
 
 PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 	sqlite3_stmt *stmt;
-	int16_t p = 50;
+	uint16_t p = 50;
 	float half_size;
 	uint64_t temp_size = 0;
 	uint32_t i = 0;
@@ -306,8 +309,8 @@ PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 		return NULL;
 	}
 
-	if (p < 0 && p > 100){
-		return PyErr_Format(PyExc_ValueError, "The value must between 0 and 100");
+	if (p <= 0 && p >= 100){
+		return PyErr_Format(PyExc_ValueError, "the value must between 0 and 100");
 	}
 
 	half_size = p/100.0 * self->seq_length;
@@ -374,18 +377,18 @@ PyObject *pyfastx_fasta_mean(pyfastx_Fasta *self, void* closure){
 
 PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	uint32_t m;
+	double m;
 	const char *sql;
 	if (self->seq_counts % 2 == 0) {
-		sql = "SELECT AVG(slen) FROM seq LIMIT ?,2";
+		sql = "SELECT AVG(slen) FROM (SELECT slen FROM seq LIMIT ?,2) LIMIT 1";
 	} else {
 		sql = "SELECT slen FROM seq LIMIT ?,1";
 	}
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, (self->seq_counts - 1)/2);
 	if(sqlite3_step(stmt) == SQLITE_ROW){
-		m = sqlite3_column_int(stmt, 0);
-		return Py_BuildValue("I", m);
+		m = sqlite3_column_double(stmt, 0);
+		return Py_BuildValue("d", m);
 	}
 
 	Py_RETURN_NONE;
@@ -405,6 +408,7 @@ static PyMemberDef pyfastx_fasta_members[] = {
 	{"size", T_LONG, offsetof(pyfastx_Fasta, seq_length), READONLY},
 	//{"count", T_INT, offsetof(pyfastx_Fasta, seq_counts), READONLY},
 	{"gc_content", T_FLOAT, offsetof(pyfastx_Fasta, gc_content), READONLY},
+	{"gc_skew", T_FLOAT, offsetof(pyfastx_Fasta, gc_skew), READONLY},
 	{"composition", T_OBJECT, offsetof(pyfastx_Fasta, composition), READONLY},
 	{NULL}
 };

@@ -25,6 +25,9 @@ typedef struct {
 	//a float for GC content (%)
 	float gc_content;
 
+	//GC skew
+	float gc_skew;
+
 	//a dict for storing A T G C N (unknown base) counts in fasta
 	PyObject* composition;
 

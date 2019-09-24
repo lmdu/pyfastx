@@ -29,6 +29,9 @@ typedef struct {
 	//GC content
 	float gc_content;
 
+	//GC skew
+	float gc_skew;
+
 	//a dict for storing ATGCN counts
 	PyObject* composition;
 
