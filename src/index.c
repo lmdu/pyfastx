@@ -83,7 +83,7 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
 	}
 	
-	int32_t fsize = ftell(fd);
+	uint32_t fsize = ftell(fd);
 	rewind(fd);
 
 	char *buff = (char *)malloc(fsize + 1);
@@ -106,7 +106,7 @@ void pyfastx_build_gzip_index(pyfastx_Index *self){
 
 void pyfastx_load_gzip_index(pyfastx_Index *self){
 	sqlite3_stmt *stmt;
-	int32_t bytes = 0;
+	uint32_t bytes = 0;
 	FILE *fh;
 	
 	//rewind(self->fd);
@@ -173,7 +173,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	uint32_t n_count = 0;
 
 	//current read base char
-	int32_t c;
+	int c;
 
 	//reading file for kseq
 	kstream_t* ks = self->kseqs->f;
@@ -535,7 +535,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 
 		ks = ks_init(self->gzfd);
 		
-		int32_t c;
+		int c;
 		while((c = ks_getc(ks)) >= 0 && c != '>'){
 			if(c == '\n') continue;
 			seq.s[seq.l++] = c;

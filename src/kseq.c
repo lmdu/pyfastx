@@ -57,7 +57,7 @@ void ks_destroy(kstream_t *ks)
 	}															
 }
 
-int32_t ks_getc(kstream_t *ks)				
+int ks_getc(kstream_t *ks)				
 {														
 	if (ks_err(ks)) return -3;							
 	if (ks->is_eof && ks->begin >= ks->end) return -1;	
@@ -67,16 +67,16 @@ int32_t ks_getc(kstream_t *ks)
 		if (ks->end == 0) { ks->is_eof = 1; return -1;}	
 		if (ks->end == -1) { ks->is_eof = 1; return -3;}
 	}													
-	return (int32_t)ks->buf[ks->begin++];					
+	return (int)ks->buf[ks->begin++];					
 }
 
-int32_t ks_getuntil2(kstream_t *ks, int32_t delimiter, kstring_t *str, int32_t*dret, int32_t append)
+int ks_getuntil2(kstream_t *ks, int delimiter, kstring_t *str, int *dret, int append)
 {																	
-	int32_t gotany = 0;													
+	int gotany = 0;													
 	if (dret) *dret = 0;											
 	str->l = append? str->l : 0;									
 	for (;;) {														
-		int32_t i;														
+		int i;														
 		if (ks_err(ks)) return -3;									
 		if (ks->begin >= ks->end) {									
 			if (!ks->is_eof) {										
@@ -122,7 +122,7 @@ int32_t ks_getuntil2(kstream_t *ks, int32_t delimiter, kstring_t *str, int32_t*d
 	return str->l;													
 } 
 
-int32_t ks_getuntil(kstream_t *ks, int32_t delimiter, kstring_t *str, int32_t *dret) 
+int ks_getuntil(kstream_t *ks, int delimiter, kstring_t *str, int *dret) 
 { return ks_getuntil2(ks, delimiter, str, dret, 0); }
 
 void kseq_rewind(kseq_t *ks)
@@ -149,9 +149,9 @@ void kseq_destroy(kseq_t *ks)
    -3   error reading stream
  */
 
-int32_t kseq_read(kseq_t *seq) 
+int kseq_read(kseq_t *seq) 
 { 
-	int32_t c,r; 
+	int c,r; 
 	kstream_t *ks = seq->f; 
 	if (seq->last_char == 0) { /* then jump to the next header line */ 
 		while ((c = ks_getc(ks)) >= 0 && c != '>' && c != '@'); 
