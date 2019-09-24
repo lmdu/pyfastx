@@ -38,7 +38,7 @@ pyfastx_Index* pyfastx_init_index(char* file_name, uint16_t uppercase){
 	}
 
 	//cache name
-	index->cache_name = NULL;
+	index->cache_chrom = 0;
 
 	//cache start and end position
 	index->cache_start = 0;
@@ -425,7 +425,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 		return NULL;
 	}
 
-	//seq->index_id = sqlite3_column_int(stmt, 0);
+	seq->id = sqlite3_column_int(stmt, 0);
 	name = (char *)sqlite3_column_text(stmt, 1);
 	seq->name = (char *)malloc(strlen(name) + 1);
 	strcpy(seq->name, name);
@@ -466,7 +466,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
 	sqlite3_stmt *stmt;
 	
 	//select sql statement, seqid indicates seq name or chromomsome
-	const char* sql = "SELECT * FROM seq WHERE seqid=? LIMIT 1;";
+	const char* sql = "SELECT * FROM seq WHERE chrom=? LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, name, -1, NULL);
 	if(sqlite3_step(stmt) != SQLITE_ROW){
@@ -478,12 +478,12 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
 }
 
 
-PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id){
+PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 	sqlite3_stmt *stmt;
 
-	const char* sql = "SELECT * FROM seq WHERE id=? LIMIT 1;";
+	const char* sql = "SELECT * FROM seq WHERE ID=? LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_int(stmt, 1, id);
+	sqlite3_bind_int(stmt, 1, chrom);
 	if(sqlite3_step(stmt) != SQLITE_ROW){
 		PyErr_SetString(PyExc_IndexError, "Index Error");
 		return NULL;
@@ -492,7 +492,7 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id){
 	return pyfastx_index_make_seq(self, stmt);
 }
 
-char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
+char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	sqlite3_stmt *stmt;
 	uint32_t seq_len;
 	int64_t offset;
@@ -500,22 +500,20 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 	char *buff;
 	
 	//select sql statement, seqid indicates seq name or chromomsome
-	const char* sql = "SELECT * FROM seq WHERE seqid=? LIMIT 1;";
+	const char* sql = "SELECT boff,blen,slen FROM seq WHERE ID=? LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_text(stmt, 1, name, -1, NULL);
+	sqlite3_bind_int(stmt, 1, chrom);
 	if(sqlite3_step(stmt) != SQLITE_ROW){
-		PyErr_SetString(PyExc_KeyError, name);
+		PyErr_SetString(PyExc_KeyError, "Can not found sequence");
 		return NULL;
 	}
 
-	offset = (int64_t)sqlite3_column_int64(stmt, 2);
-	bytes = sqlite3_column_int(stmt, 3);
-	seq_len = sqlite3_column_int(stmt, 4);
+	offset = (int64_t)sqlite3_column_int64(stmt, 0);
+	bytes = sqlite3_column_int(stmt, 1);
+	seq_len = sqlite3_column_int(stmt, 2);
 
-	if(self->cache_name != NULL){
-		if(strcmp(name,self->cache_name)==0 && (1==self->cache_start) && (seq_len==self->cache_end)){
-			return self->cache_seq;
-		}
+	if((chrom == self->cache_chrom) && (1==self->cache_start) && (seq_len==self->cache_end)){
+		return self->cache_seq;
 	}
 
 	Py_BEGIN_ALLOW_THREADS
@@ -543,7 +541,6 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 		}
 
 		seq.s[seq.l] = 0;
-
 		buff = seq.s;
 	}
 	
@@ -553,7 +550,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 
 	Py_END_ALLOW_THREADS
 
-	self->cache_name = name;
+	self->cache_chrom = chrom;
 	self->cache_start = 1;
 	self->cache_end = seq_len;
 	self->cache_seq = buff;
@@ -571,28 +568,26 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name){
 @normal int, 1 -> normal fasta with the same length, 0 not normal
 @return str
 */
-char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int64_t bytes, uint32_t start, uint32_t end, uint32_t plen, uint16_t normal){
+char *pyfastx_index_get_sub_seq(pyfastx_Index *self, uint32_t chrom, int64_t offset, int64_t bytes, uint32_t start, uint32_t end, uint32_t plen, uint16_t normal){
 	uint32_t seq_len;
 	char *buff;
 	seq_len = end - start + 1;
 
 	if(!normal || (plen == end && start == 1)) {
-		buff = pyfastx_index_get_full_seq(self, name);
+		buff = pyfastx_index_get_full_seq(self, chrom);
+	}
+	
+	if((chrom == self->cache_chrom) && (start==self->cache_start) && (end==self->cache_end)){
+		return self->cache_seq;
 	}
 
-	if(self->cache_name != NULL){
-		if((strcmp(name,self->cache_name)==0) && (start==self->cache_start) && (end==self->cache_end)){
-			return self->cache_seq;
-		}
-
-		if((strcmp(name,self->cache_name)==0) && (start>=self->cache_start) && (end<=self->cache_end)){
-			buff = (char *)malloc(seq_len + 1);
-			memcpy(buff, self->cache_seq + (start - self->cache_start), seq_len);
-			buff[seq_len] = '\0';
-			return buff;
-		}
+	if((chrom == self->cache_chrom) && (start>=self->cache_start) && (end<=self->cache_end)){
+		buff = (char *)malloc(seq_len + 1);
+		memcpy(buff, self->cache_seq + (start - self->cache_start), seq_len);
+		buff[seq_len] = '\0';
+		return buff;
 	}
-
+	
 	buff = (char *)malloc(bytes + 1);
 
 	Py_BEGIN_ALLOW_THREADS
@@ -615,7 +610,7 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset,
 
 	Py_END_ALLOW_THREADS
 
-	self->cache_name = name;
+	self->cache_chrom = chrom;
 	self->cache_start = start;
 	self->cache_end = end;
 	self->cache_seq = buff;

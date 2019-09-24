@@ -154,17 +154,19 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	sqlite3_stmt *stmt;
 	
 	//select sql statement, seqid indicates seq name or chromomsome
-	const char* sql = "SELECT * FROM seq WHERE seqid=? LIMIT 1;";
+	const char* sql = "SELECT ID FROM seq WHERE chrom=? LIMIT 1;";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, name, -1, NULL);
 	if(sqlite3_step(stmt) != SQLITE_ROW){
 		return PyErr_Format(PyExc_NameError, "Sequence %s does not exists", name);
 	}
 
+	uint32_t chrom = sqlite3_column_int(stmt, 0);
+	
 	uint32_t seq_len;
 	char *sub_seq;
 
-	seq = pyfastx_index_get_full_seq(self->index, name);
+	seq = pyfastx_index_get_full_seq(self->index, chrom);
 
 	if(size == 2 && PyLong_Check(item)){
 		start = PyLong_AsLong(item);
@@ -294,13 +296,13 @@ PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args){
 
 PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 	sqlite3_stmt *stmt;
-	int16_t p;
+	int16_t p = 50;
 	float half_size;
 	uint64_t temp_size = 0;
 	uint32_t i = 0;
 	uint32_t j = 0;
 
-	if (!PyArg_ParseTuple(args, "i", &p)) {
+	if (!PyArg_ParseTuple(args, "|i", &p)) {
 		return NULL;
 	}
 
@@ -328,7 +330,7 @@ PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
 	const char *name;
 	uint32_t len;
-	const char *sql = "SELECT seqid,MAX(slen) FROM seq LIMIT 1";
+	const char *sql = "SELECT chrom,MAX(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -344,7 +346,7 @@ PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
 	const char *name;
 	uint32_t len;
-	const char *sql = "SELECT seqid,MIN(slen) FROM seq LIMIT 1";
+	const char *sql = "SELECT chrom,MIN(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -358,13 +360,13 @@ PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure){
 
 PyObject *pyfastx_fasta_mean(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	uint32_t len;
+	double len;
 	const char *sql = "SELECT AVG(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		len = sqlite3_column_int(stmt, 0);
-		return Py_BuildValue("I", len);
+		len = sqlite3_column_double(stmt, 0);
+		return Py_BuildValue("d", len);
 	}
 
 	Py_RETURN_NONE;

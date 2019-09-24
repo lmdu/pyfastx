@@ -7,6 +7,9 @@
 //make sequence class
 typedef struct {
 	PyObject_HEAD
+
+	//sequence order
+	uint32_t id;
 	
 	//sequence name
 	char* name;

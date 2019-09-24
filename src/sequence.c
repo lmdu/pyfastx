@@ -44,7 +44,7 @@ uint32_t pyfastx_sequence_length(pyfastx_Sequence* self){
 }
 
 uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
-	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 	char *subseq = PyUnicode_AsUTF8(key);
 	if(strstr(seq, subseq) != NULL){
 		return 1;
@@ -53,7 +53,7 @@ uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 }
 
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
-	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 	char *seq1 = malloc(strlen(seq)+1);
 	strcpy(seq1, seq);
 	return seq1;
@@ -71,7 +71,7 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	sqlite3_stmt *stmt;
 	char *detail;
 
-	const char *sql = "SELECT description FROM seq WHERE seqid=? LIMIT 1";
+	const char *sql = "SELECT descr FROM seq WHERE chrom=? LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, self->name, -1, NULL);
 
@@ -84,7 +84,7 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 }
 
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
-	char *seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 	return Py_BuildValue("s", seq);
 }
 
@@ -134,7 +134,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			i += self->seq_len;
 		}
 
-		seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+		seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 		return Py_BuildValue("C", *(seq+i));
 	
 	} else if (PySlice_Check(item)) {
@@ -164,6 +164,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		seq->start = slice_start + self->start;
 		seq->end = slice_stop + self->start - 1;
 		//seq->name = (char *)malloc(strlen(self->name) + 25);
+		seq->id = self->id;
 		seq->name = self->name;
 		//sprintf(seq->name, "%s:%d-%d", self->name, seq->start, seq->end);
 		seq->seq_len = slice_stop - slice_start;
@@ -211,7 +212,7 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 		complement_seq(subseq);
 	}
 
-	seq = pyfastx_index_get_sub_seq(self->index, self->name, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+	seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 
 	result = strstr(seq, subseq);
 	if(result == NULL){
@@ -262,6 +263,7 @@ static PyGetSetDef pyfastx_sequence_getsets[] = {
 
 static PyMemberDef pyfastx_sequence_members[] = {
 	//{"name", T_STRING, offsetof(pyfastx_Sequence, name), READONLY},
+	{"id", T_INT, offsetof(pyfastx_Sequence, id), READONLY},
 	{"start", T_INT, offsetof(pyfastx_Sequence, start), READONLY},
 	{"end", T_INT, offsetof(pyfastx_Sequence, end), READONLY},
 	//{"length", T_INT, offsetof(pyfastx_Sequence, seq_len), READONLY},

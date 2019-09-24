@@ -36,10 +36,8 @@ typedef struct {
 	//gzip random access index
 	zran_index_t* gzip_index;
 
-	//cache name
-	char* cache_name;
-
-	//cache start and end position
+	//cache seq start and end position
+	uint32_t cache_chrom;
 	uint32_t cache_start;
 	uint32_t cache_end;
 
@@ -63,7 +61,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name);
 PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id);
 
 pyfastx_Index *pyfastx_init_index(char* file_path, uint16_t uppercase);
-char *pyfastx_index_get_sub_seq(pyfastx_Index *self, char *name, int64_t offset, int64_t bytes, uint32_t start, uint32_t end, uint32_t plen, uint16_t normal);
-char *pyfastx_index_get_full_seq(pyfastx_Index *self, char *name);
+char *pyfastx_index_get_sub_seq(pyfastx_Index *self, uint32_t chrom, int64_t offset, int64_t bytes, uint32_t start, uint32_t end, uint32_t plen, uint16_t normal);
+char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom);
 
 #endif

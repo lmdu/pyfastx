@@ -223,6 +223,11 @@ Get sequence information
     >>> s
     <Sequence> JZ840318.1 with length of 134
 
+    >>> # get sequence order number in FASTA file
+    >>> # New in pyfastx 0.3.7
+    >>> s.id
+    211
+
     >>> # get sequence name
     >>> s.name
     'JZ840318.1'

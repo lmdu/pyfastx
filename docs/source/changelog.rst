@@ -5,6 +5,9 @@ Version 0.3.7 (2019-09-24)
 
 - Changed int type to standard type
 - Added support for processing large fasta file
+- Added id number for each sequence
+- Fixed SQL fetch error
+- Used 50 as default value of nl to calculate N50 and L50
 
 Version 0.3.6 (2019-09-20)
 --------------------------
