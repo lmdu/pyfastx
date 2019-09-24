@@ -374,7 +374,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
-	sqlite3_exec(self->index_db, "CREATE INDEX seqidx ON seq (seqid);", NULL, NULL, NULL);
+	sqlite3_exec(self->index_db, "CREATE INDEX chromidx ON seq (chrom);", NULL, NULL, NULL);
 	sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
 
 	//create gzip random access index
@@ -465,7 +465,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
 	// sqlite3 prepare object
 	sqlite3_stmt *stmt;
 	
-	//select sql statement, seqid indicates seq name or chromomsome
+	//select sql statement, chrom indicates seq name or chromomsome
 	const char* sql = "SELECT * FROM seq WHERE chrom=? LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, name, -1, NULL);
@@ -499,7 +499,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	uint32_t bytes;
 	char *buff;
 	
-	//select sql statement, seqid indicates seq name or chromomsome
+	//select sql statement, chrom indicates seq or chromomsome id
 	const char* sql = "SELECT boff,blen,slen FROM seq WHERE ID=? LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, chrom);

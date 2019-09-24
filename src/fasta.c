@@ -153,7 +153,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	// sqlite3 prepare object
 	sqlite3_stmt *stmt;
 	
-	//select sql statement, seqid indicates seq name or chromomsome
+	//select sql statement, chrom indicates seq name or chromomsome
 	const char* sql = "SELECT ID FROM seq WHERE chrom=? LIMIT 1;";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, name, -1, NULL);
@@ -265,7 +265,7 @@ int pyfastx_fasta_contains(pyfastx_Fasta *self, PyObject *key){
 	
 	char *name = PyUnicode_AsUTF8(key);
 
-	sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM seq WHERE seqid=? LIMIT 1;", -1, &stmt, NULL);
+	sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM seq WHERE chrom=? LIMIT 1;", -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, name, -1, NULL);
 	if(sqlite3_step(stmt) != SQLITE_ROW){
 		return 0;
