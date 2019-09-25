@@ -122,6 +122,11 @@ Get FASTA information
     >>> fa.gc_content
     43.529014587402344
 
+    >>> # get GC skew of DNA sequences in FASTA
+    >>> # New in pyfastx 0.3.8
+    >>> fa.gc_skews
+    0.004287730902433395
+
     >>> # get composition of nucleotides in FASTA
     >>> fa.composition
     {'A': 24534, 'C': 18694, 'G': 18855, 'T': 24179, 'N': 0}

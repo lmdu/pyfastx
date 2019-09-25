@@ -1,7 +1,18 @@
 Changelog
 =========
 
+Version 0.3.8 (2019-09-25)
+--------------------------
+
+- Fixed large offset became negative error
+- Fixed slice step
+- Fixed uncorrect median length
+- Fixed strand compare error
+- Added GC skew calculation
+- Updated test script
+
 Version 0.3.7 (2019-09-24)
+--------------------------
 
 - Changed int type to standard type
 - Added support for processing large fasta file

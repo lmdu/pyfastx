@@ -380,9 +380,9 @@ PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 	double m;
 	const char *sql;
 	if (self->seq_counts % 2 == 0) {
-		sql = "SELECT AVG(slen) FROM (SELECT slen FROM seq LIMIT ?,2) LIMIT 1";
+		sql = "SELECT AVG(slen) FROM (SELECT slen FROM seq ORDER BY slen LIMIT ?,2) LIMIT 1";
 	} else {
-		sql = "SELECT slen FROM seq LIMIT ?,1";
+		sql = "SELECT slen FROM seq ORDER BY slen LIMIT ?,1";
 	}
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, (self->seq_counts - 1)/2);

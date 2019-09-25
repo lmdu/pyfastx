@@ -3,6 +3,7 @@ import random
 import pyfastx
 import pyfaidx
 import unittest
+import statistics
 
 #os.chdir(os.path.dirname(__file__))
 
@@ -16,11 +17,11 @@ class FastaTest(unittest.TestCase):
 		self.count = len(self.fastx)
 
 	def tearDown(self):
-		if os.path.exists('data/test.fa.gz.db'):
-			os.remove('data/test.fa.gz.db')
+		if os.path.exists('tests/data/test.fa.gz.fxi'):
+			os.remove('tests/data/test.fa.gz.fxi')
 
-		if os.path.exists('data/test.fa.fai'):
-			os.remove('data/test.fa.fai')
+		if os.path.exists('tests/data/test.fa.fai'):
+			os.remove('tests/data/test.fa.fai')
 
 	def get_random_index(self):
 		return random.randint(0, self.count-1)
@@ -30,9 +31,10 @@ class FastaTest(unittest.TestCase):
 		self.assertEqual(len(self.fastx), len(self.faidx.keys()))
 
 		#seq length
-		expect = sum(len(s) for s in self.faidx)
-		self.assertEqual(self.fastx.size, expect)
+		expect_size = sum(len(s) for s in self.faidx)
+		self.assertEqual(self.fastx.size, expect_size)
 
+		#test composition
 		expect = {'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0}
 		for s in self.faidx:
 			expect['A'] += s[:].seq.count('A')
@@ -40,26 +42,71 @@ class FastaTest(unittest.TestCase):
 			expect['G'] += s[:].seq.count('G')
 			expect['T'] += s[:].seq.count('T')
 			expect['N'] += s[:].seq.count('N')
-
-		#composition
 		self.assertEqual(self.fastx.composition, expect)
 
-		#GC content
-		expect = (expect['G']+expect['C'])/sum(expect.values())*100
+		#test GC content
+		expect_gc = (expect['G']+expect['C'])/sum(expect.values())*100
+		self.assertEqual(round(self.fastx.gc_content, 3), round(expect_gc, 3))
 
-		self.assertEqual(round(self.fastx.gc_content, 3), round(expect, 3))
+		#test GC skew
+		expect_skew = (expect['G']-expect['C'])/(expect['G']+expect['C'])
+		self.assertEqual(round(self.fastx.gc_skew, 3), round(expect_skew, 3))
+
+		#test longest and shortest sequence
+		longest = (None, 0)
+		shortest = (None, expect_size)
+		for seq in self.faidx:
+			l = len(seq)
+			if l > longest[1]:
+				longest = (seq.name, l)
+
+			if l < shortest[1]:
+				shortest = (seq.name, l)
+
+		self.assertEqual(longest, self.fastx.longest)
+		self.assertEqual(shortest, self.fastx.shortest)
 
 		#test contains
 		idx = self.get_random_index()
 		name = self.faidx[0].name
-
 		self.assertTrue(name in self.fastx)
-
 
 	def test_iter(self):
 		for name, result in self.fastx:
 			expect = self.faidx[name][:].seq
 			self.assertEqual(expect, result)
+
+	def test_stat(self):
+		lens = sorted([len(seq) for seq in self.faidx], reverse=True)
+		half = sum(lens)/2
+		tlen = 0
+		l50 = 0
+		for n50 in lens:
+			l50 += 1
+			tlen += n50
+
+			if tlen >= half:
+				break
+
+		self.assertEqual(self.fastx.nl(50), (n50, l50))
+
+		#test mean length
+		expect = round(statistics.mean(lens), 3)
+		result = round(self.fastx.mean, 3)
+		self.assertEqual(expect, result)
+
+		#test median length
+		expect = statistics.median(lens)
+		result = self.fastx.median
+		self.assertEqual(expect, result)
+
+		#test count squence
+		expect = 0
+		for l in lens:
+			if l >= 200:
+				expect += 1
+		result = self.fastx.count(200)
+		self.assertEqual(expect, result)
 
 	def test_keys(self):
 		expect = list(self.faidx.keys())
@@ -97,6 +144,7 @@ class FastaTest(unittest.TestCase):
 
 		self.assertEqual(expect.name, result.name)
 		self.assertEqual(expect.seq, result.seq)
+
 
 	def test_seq_by_key(self):
 		idx = self.get_random_index()
@@ -158,7 +206,9 @@ class FastaTest(unittest.TestCase):
 		a = int(l/2)
 		interval = (random.randint(1, a), random.randint(a+1, l))
 
-		expect = self.faidx.get_seq(name, interval[0], interval[1]).seq
+		#expect = self.faidx.get_seq(name, interval[0], interval[1]).seq
+		#expect = self.faidx[name][interval[0]-1:interval[1]].seq
+		expect = str(self.faidx[name])[interval[0]-1:interval[1]]
 		result = self.fastx.fetch(name, interval)
 
 		if len(expect) > len(result):

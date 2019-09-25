@@ -150,6 +150,10 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			Py_RETURN_NONE;
 		}
 
+		if (slice_step == 0) {
+			PyErr_SetString(PyExc_ValueError, "slice step cannot be zero");
+		}
+
 		if (slice_step != 1) {
 			Py_RETURN_NONE;
 		}
@@ -203,7 +207,7 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 		return NULL;
 	}
 
-	if(strcmp(strand, "-") == 0){
+	if(strand == '-'){
 		reverse_seq(subseq);
 		complement_seq(subseq);
 	}

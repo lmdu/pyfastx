@@ -39,6 +39,12 @@ pyfastx.Fasta
 
 		GC content of whole sequences in FASTA file, return a float value
 
+	.. py:attribute:: gc_skew
+
+		GC skew of whole sequences in FASTA file, learn more about `GC skew <https://en.wikipedia.org/wiki/GC_skew>`_
+
+		New in ``pyfastx`` 0.3.8
+
 	.. py:attribute:: composition
 
 		nucleotide composition in FASTA file, a dict contains counts of A, T, G, C and N (unkown nucleotide base)
@@ -156,6 +162,10 @@ pyfastx.Sequence
 	.. py:attribute:: gc_content
 
 		GC content of current sequence, return a float value
+
+	.. py:attribute:: gc_skew
+
+		GC skew of current sequence, learn more about `GC skew <https://en.wikipedia.org/wiki/GC_skew>`_
 
 	.. py:attribute:: composition
 
