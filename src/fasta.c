@@ -33,13 +33,14 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	t = sqlite3_column_int64(stmt, 3);
 	n = sqlite3_column_int64(stmt, 4);
 	self->composition = Py_BuildValue("{s:K,s:K,s:K,s:K,s:K}", "A", a, "C", c, "G", g, "T", t, "N", n);
-	sqlite3_finalize(stmt);
-
+	
 	//calc GC content
 	self->gc_content = (float)(g+c)/(a+c+g+t)*100;
 
 	//calc GC skew
 	self->gc_skew = (float)(g-c)/(g+c);
+
+	sqlite3_finalize(stmt);
 }
 
 

@@ -302,7 +302,9 @@ void pyfastx_create_index(pyfastx_Index *self){
 				if(line_len > 0 && line_len != temp_len){
 					bad_line++;
 				}
-				if(line_len == 0){
+				//if(line_len == 0){
+				//get the longest line
+				if (temp_len > line_len){
 					line_len = temp_len;
 				}
 				temp_len = 0;

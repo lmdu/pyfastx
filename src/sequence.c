@@ -8,34 +8,142 @@ PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwa
 }
 
 PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
-	gzseek(self->index->gzfd, self->offset, SEEK_SET);
-	self->ks = ks_init(self->index->gzfd);
+	if (self->normal) {
+		if (self->index->gzip_format){
+			zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
+		} else {
+			gzseek(self->index->gzfd, self->offset, SEEK_SET);
+			self->ks = ks_init(self->index->gzfd);
+		}
+	} else {
+		self->iter_pos = 0;
+		self->iter_seq = (char *)malloc(self->byte_len + 1);
+		if (self->index->gzip_format) {
+			zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
+			zran_read(self->index->gzip_index, self->iter_seq, self->byte_len);
+		} else {
+			gzseek(self->index->gzfd, self->offset, SEEK_SET);
+			gzread(self->index-gzfd, self->iter_seq, self->byte_len);
+		}
+		self->iter_seq[self->byte_len] = '\0';
+	}
+
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
 
 PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
-	kstring_t seq = {0, 0, 0};
-	if(self->start != 1 || self->end != self->seq_len){
-		int32_t c;
-		while((c = ks_getc(self->ks)) >= 0 && c != '>'){
-			if(c == '\n'){
-				continue;
-			} else {
+	if (self->index->gzip_format) {
+		if (self->start != 1 || self->end != self->seq_len) {
+			int32_t c;
+			int64_t ret;
+			char buff[2];
+
+			while(1) {
+				ret = zran_read(self->index->gzip_index, buff, 1);
+
+				if (ret == ZRAN_READ_EOF) {
+					return NULL;
+				}
+				
+				c = buff[0];
+				
+				if (c == '>') {
+					return NULL;
+				}
+
+				if (isspace(c)) {
+					continue;
+				}
+
 				return Py_BuildValue("C", c);
 			}
-		}
-		return NULL;
-	} else {
-		if(ks_getuntil(self->ks, '\n', &seq, 0) >= 0){
-			if(seq.s[0] != '>'){
-				if(self->index->uppercase){
-					upper_string(seq.s);
+		} else {
+			/*if (self->normal) {
+				int64_t ret;
+				char *buff = (char *)malloc(self->line_len);
+				ret = zran_read(self->index->gzip_index, buff, self->line_len);
+
+				if (ret == ZRAN_READ_EOF) {
+					return NULL;
 				}
-				return Py_BuildValue("s", seq.s);
+
+				buff[self->line_len] = '\0';
+
+				if (buff[0] == '>') {
+					return NULL;
+				}
+
+				//check 
+				char *e;
+				uint32_t i;
+				e = strchr(buff, '\n');
+
+				if (e != NULL) {
+					i = (int)(e - buff);
+					buff[i] = '\0';
+				}
+
+				remove_space(buff);
+				if (self->index->uppercase) {
+					upper_string(buff);
+				}
+				return Py_BuildValue("s", buff);
+			} else {*/
+				int64_t ret;
+				char readbuf[2];
+				char *buff = (char *)malloc(self->line_len);
+
+				while (1) {
+					ret = zran_read(self->index->gzip_index, readbuf, 1);
+					
+					if (ret == ZRAN_READ_EOF) {
+						return NULL;
+					}
+
+					//if (readbuf[0] == '>') {
+					//	return NULL;
+					//}
+
+
+
+					if (readbuf[0] == '\n') {
+						*buff = '\0';
+						remove_space(buff);
+						if (self->index->uppercase) {
+							upper_string(buff);
+						}
+						return Py_BuildValue("s", buff);
+					}
+
+					*buff++ = readbuf[0];
+				}
+			//}
+		}
+	} else {
+		kstring_t seq = {0, 0, 0};
+		if(self->start != 1 || self->end != self->seq_len){
+			int32_t c;
+			while((c = ks_getc(self->ks)) >= 0 && c != '>'){
+				if(c == '\n'){
+					continue;
+				} else {
+					return Py_BuildValue("C", c);
+				}
+			}
+			return NULL;
+		} else {
+			if(ks_getuntil(self->ks, '\n', &seq, 0) >= 0){
+				if(seq.s[0] != '>'){
+					if(self->index->uppercase){
+						upper_string(seq.s);
+					}
+					return Py_BuildValue("s", seq.s);
+				}
 			}
 		}
 	}
+	
 	return NULL;
 }
 
