@@ -33,92 +33,42 @@ PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
 }
 
 PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
-	if (self->index->gzip_format) {
-		if (self->start != 1 || self->end != self->seq_len) {
-			int32_t c;
-			int64_t ret;
-			char buff[2];
+	if (self->index->gzip_format) {	
+		if (self->normal) {
+			int16_t ret;
+			char readbuf[1];
+			char *buff = (char *)malloc(self->line_len);
 
-			while(1) {
-				ret = zran_read(self->index->gzip_index, buff, 1);
+			uint64_t end_offset = self->offset + self->byte_len;
 
+			while (1) {
+				ret = zran_read(self->index->gzip_index, readbuf, 1);
+				
 				if (ret == ZRAN_READ_EOF) {
 					return NULL;
 				}
-				
-				c = buff[0];
-				
-				if (c == '>') {
+
+				if (readbuf[0] == '>') {
 					return NULL;
 				}
 
-				if (isspace(c)) {
-					continue;
+				if (zran_tell(self->index->gzip_index) > end_offset) {
+					return NULL;
 				}
 
-				return Py_BuildValue("C", c);
+				if (readbuf[0] == '\n') {
+					*buff = '\0';
+					remove_space(buff);
+					if (self->index->uppercase) {
+						upper_string(buff);
+					}
+					return Py_BuildValue("s", buff);
+				}
+
+				*buff++ = readbuf[0];
 			}
 		} else {
-			/*if (self->normal) {
-				int64_t ret;
-				char *buff = (char *)malloc(self->line_len);
-				ret = zran_read(self->index->gzip_index, buff, self->line_len);
 
-				if (ret == ZRAN_READ_EOF) {
-					return NULL;
-				}
-
-				buff[self->line_len] = '\0';
-
-				if (buff[0] == '>') {
-					return NULL;
-				}
-
-				//check 
-				char *e;
-				uint32_t i;
-				e = strchr(buff, '\n');
-
-				if (e != NULL) {
-					i = (int)(e - buff);
-					buff[i] = '\0';
-				}
-
-				remove_space(buff);
-				if (self->index->uppercase) {
-					upper_string(buff);
-				}
-				return Py_BuildValue("s", buff);
-			} else {*/
-				int64_t ret;
-				char readbuf[2];
-				char *buff = (char *)malloc(self->line_len);
-
-				while (1) {
-					ret = zran_read(self->index->gzip_index, readbuf, 1);
-					
-					if (ret == ZRAN_READ_EOF) {
-						return NULL;
-					}
-
-					//if (readbuf[0] == '>') {
-					//	return NULL;
-					//}
-
-
-
-					if (readbuf[0] == '\n') {
-						*buff = '\0';
-						remove_space(buff);
-						if (self->index->uppercase) {
-							upper_string(buff);
-						}
-						return Py_BuildValue("s", buff);
-					}
-
-					*buff++ = readbuf[0];
-				}
-			//}
 		}
 	} else {
 		kstring_t seq = {0, 0, 0};
