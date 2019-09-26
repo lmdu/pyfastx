@@ -56,10 +56,6 @@ typedef struct {
 	//standard fasta format with same line length
 	uint16_t normal;
 
-	//used for unnormal fasta iteration
-	char* iter_seq;
-	uint32_t iter_pos;
-
 	//for iteration
 	kstream_t *ks;
 

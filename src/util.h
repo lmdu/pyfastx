@@ -14,4 +14,6 @@ void reverse_seq(char *seq);
 PyObject* clean_seq(PyObject *self, PyObject *args);
 PyObject* sub_seq(PyObject *self, PyObject *args);
 
+//int64_t zran_readline(zran_index_t *index, char *linebuf, uint32_t bufsize);
+
 #endif

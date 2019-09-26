@@ -351,6 +351,17 @@ void pyfastx_create_index(pyfastx_Index *self){
 			}
 		}
 	}
+	
+	//fixed file ended without \n
+	if( temp_len != 0) {
+		if (temp_len != line_len) {
+			bad_line++;
+		}
+		
+		if (temp_len > line_len) {
+			line_len = temp_len;
+		}
+	}
 
 	//end of sequenc and check whether normal fasta
 	seq_normal = (bad_line > 1) ? 0 : 1;

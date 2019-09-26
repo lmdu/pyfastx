@@ -8,24 +8,16 @@ PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwa
 }
 
 PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
-	if (self->normal) {
-		if (self->index->gzip_format){
-			zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
-		} else {
-			gzseek(self->index->gzfd, self->offset, SEEK_SET);
-			self->ks = ks_init(self->index->gzfd);
-		}
+	if (self->start != 1 || self->end != self->parent_len) {
+		PyErr_SetString(PyExc_RuntimeError, "sliced sequence cannot be read line by line");
+		return NULL;
+	}
+
+	if (self->index->gzip_format){
+		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
 	} else {
-		self->iter_pos = 0;
-		self->iter_seq = (char *)malloc(self->byte_len + 1);
-		if (self->index->gzip_format) {
-			zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
-			zran_read(self->index->gzip_index, self->iter_seq, self->byte_len);
-		} else {
-			gzseek(self->index->gzfd, self->offset, SEEK_SET);
-			gzread(self->index-gzfd, self->iter_seq, self->byte_len);
-		}
-		self->iter_seq[self->byte_len] = '\0';
+		gzseek(self->index->gzfd, self->offset, SEEK_SET);
+		self->ks = ks_init(self->index->gzfd);
 	}
 
 	Py_INCREF(self);
@@ -33,63 +25,56 @@ PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
 }
 
 PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
-	if (self->index->gzip_format) {	
-		if (self->normal) {
-			int16_t ret;
-			char readbuf[1];
-			char *buff = (char *)malloc(self->line_len);
+	if (self->index->gzip_format) {
+		int64_t ret;
+		int64_t startpos;
+		char *lend;
+		char *buff = (char*)malloc(self->line_len + 1);
+		int64_t max_offset = self->offset + self->byte_len;
 
-			uint64_t end_offset = self->offset + self->byte_len;
-
-			while (1) {
-				ret = zran_read(self->index->gzip_index, readbuf, 1);
-				
-				if (ret == ZRAN_READ_EOF) {
-					return NULL;
-				}
-
-				if (readbuf[0] == '>') {
-					return NULL;
-				}
-
-				if (zran_tell(self->index->gzip_index) > end_offset) {
-					return NULL;
-				}
-
-				if (readbuf[0] == '\n') {
-					*buff = '\0';
-					remove_space(buff);
-					if (self->index->uppercase) {
-						upper_string(buff);
-					}
-					return Py_BuildValue("s", buff);
-				}
-
-				*buff++ = readbuf[0];
-			}
-		} else {
-
+		startpos = zran_tell(self->index->gzip_index);
+		
+		if (startpos > max_offset) {
+			return NULL;
 		}
+		
+		ret = zran_read(self->index->gzip_index, buff, self->line_len);
+		if (ret == ZRAN_READ_EOF) {
+			return NULL;
+		}
+
+		buff[self->line_len] = '\0';
+
+		if (buff[0] == '>') {
+			return NULL;
+		}
+
+		lend = strchr(buff, '\n');
+		if (lend != NULL) {
+			*lend = '\0';
+		} else {
+			buff[ret] = '\0';
+		}
+
+		if (!self->normal) {
+			zran_seek(self->index->gzip_index, startpos+strlen(buff)+1, SEEK_SET, NULL);
+		}
+
+		remove_space(buff);
+		if (self->index->uppercase) {
+			upper_string(buff);
+		}
+
+		return Py_BuildValue("s", buff);
+
 	} else {
 		kstring_t seq = {0, 0, 0};
-		if(self->start != 1 || self->end != self->seq_len){
-			int32_t c;
-			while((c = ks_getc(self->ks)) >= 0 && c != '>'){
-				if(c == '\n'){
-					continue;
-				} else {
-					return Py_BuildValue("C", c);
+		if(ks_getuntil(self->ks, '\n', &seq, 0) >= 0){
+			if(seq.s[0] != '>'){
+				if(self->index->uppercase){
+					upper_string(seq.s);
 				}
-			}
-			return NULL;
-		} else {
-			if(ks_getuntil(self->ks, '\n', &seq, 0) >= 0){
-				if(seq.s[0] != '>'){
-					if(self->index->uppercase){
-						upper_string(seq.s);
-					}
-					return Py_BuildValue("s", seq.s);
-				}
+				return Py_BuildValue("s", seq.s);
 			}
 		}
 	}

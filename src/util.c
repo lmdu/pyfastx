@@ -167,3 +167,45 @@ uint16_t is_gzip_format(char* file_name){
 	
 	return 1;
 }
+
+/* read line from zran indexed gzip file
+int64_t zran_readline(zran_index_t *index, char *linebuf, uint32_t bufsize) {
+	int64_t startpos;
+	int64_t ret;
+	uint16_t haveline;
+	char* readbuf = (char *)malloc(bufsize);
+	char* lineidx;
+	uint32_t idxpos;
+
+	//record start position
+	startpos = zran_tell(index);
+
+	while (1) {
+		ret = zran_read(index, readbuf, bufsize);
+
+		if (ret == ZRAN_READ_EOF) {
+			return 0
+		}
+
+		lineidx = strchr(readbuf, '\n');
+		haveline = (lineidx != NULL) ? 1 : 0;
+
+		if (haveline) {
+			idxpos = (int)(lineidx - readbuf);
+			linebuf = (char *)realloc(linebuf, strlen(linebuf) + idxpos);
+			memcpy(linebuf+strlen(linebuf), readbuf, idxpos);
+			linebuf[strlen[linebuf]] = '\0';
+		} else {
+			linebuf = (char *)realloc(linebuf, strlen(linebuf) + bufsize);
+			memcpy(linebuf+strlen(linebuf), readbuf, bufsize);
+			linebuf[strlen(linebuf)] = '\0';
+		}
+
+		if (haveline) {
+			break;
+		}
+	}
+	zran_seek(index, startpos+strlen(linebuf), SEEK_SET, NULL);
+	free(readbuf);
+	return strlen(linebuf);
+}*/
