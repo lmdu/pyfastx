@@ -273,6 +273,10 @@ The sequence object can be iterated line by line as they appear in FASTA file.
 	CCATGTACAGAATCATTGTTGTCAATTGGTTGTTTCCTTGATGGTGAAGGGGCTTCAATACATGAGTTCC
 	AAACTAACATTTCTTGACTAACACTTGAGGAAGAAGGACAAGGGTCCCCATGT
 
+.. note::
+
+	Sliced sequence (e.g. fa[0][10:50]) cannot be read line by line
+
 Search for subsequence
 ^^^^^^^^^^^^^^^^^^^^^^
 

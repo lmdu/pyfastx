@@ -6,6 +6,7 @@ Version 0.3.9 (2019-09-26)
 
 - Fixed sequence read line by line error
 - Fixed last sequence build index error when fasta file ended without \n
+- Fixed GC skew error
 
 Version 0.3.8 (2019-09-25)
 --------------------------
