@@ -47,8 +47,8 @@ typedef struct {
 } pyfastx_Index;
 
 
-void pyfastx_build_gzip_index(pyfastx_Index *self);
-void pyfastx_load_gzip_index(pyfastx_Index *self);
+//void pyfastx_build_gzip_index(pyfastx_Index *self);
+//void pyfastx_load_gzip_index(pyfastx_Index *self);
 void pyfastx_create_index(pyfastx_Index *self);
 void pyfastx_load_index(pyfastx_Index *self);
 void pyfastx_build_index(pyfastx_Index *self);

@@ -2,6 +2,8 @@
 #define PYFASTX_UTIL_H
 #include <Python.h>
 #include <stdint.h>
+#include "sqlite3.h"
+#include "zran.h"
 
 uint16_t file_exists(char *file_name);
 void remove_space(char *str);
@@ -15,5 +17,7 @@ PyObject* clean_seq(PyObject *self, PyObject *args);
 PyObject* sub_seq(PyObject *self, PyObject *args);
 
 //int64_t zran_readline(zran_index_t *index, char *linebuf, uint32_t bufsize);
+void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* index_file);
+void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* index_file);
 
 #endif

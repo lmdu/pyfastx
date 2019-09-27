@@ -51,5 +51,5 @@ setup(
             "Operating System :: Unix",
             "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
-    test_suite="tests"
+    test_suite = "tests"
 )

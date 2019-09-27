@@ -1,6 +1,8 @@
 #include "Python.h"
 #include "fasta.h"
+#include "fastq.h"
 #include "util.h"
+#include "read.h"
 #include "sequence.h"
 #include "identifier.h"
 #include "version.h"
@@ -38,12 +40,27 @@ PyMODINIT_FUNC PyInit_pyfastx(void){
 	Py_INCREF((PyObject *)&pyfastx_FastaType);
 	PyModule_AddObject(module, "Fasta", (PyObject *)&pyfastx_FastaType);
 
+	if(PyType_Ready(&pyfastx_FastqType) < 0){
+		return NULL;
+	}
+
+	Py_INCREF((PyObject *)&pyfastx_FastqType);
+	PyModule_AddObject(module, "Fastq", (PyObject *)&pyfastx_FastqType);
+
 	if(PyType_Ready(&pyfastx_SequenceType) < 0){
 		return NULL;
 	}
 
 	Py_INCREF((PyObject *)&pyfastx_SequenceType);
 	PyModule_AddObject(module, "Sequence", (PyObject *)&pyfastx_SequenceType);
+
+	
+	if(PyType_Ready(&pyfastx_ReadType) < 0){
+		return NULL;
+	}
+
+	Py_INCREF((PyObject *)&pyfastx_ReadType);
+	PyModule_AddObject(module, "Read", (PyObject *)&pyfastx_ReadType);
 
 	if(PyType_Ready(&pyfastx_IdentifierType) < 0){
 		return NULL;

@@ -1,7 +1,6 @@
 #include "index.h"
 #include "util.h"
 #include "sequence.h"
-#include "time.h"
 
 /*
 create a index
@@ -65,6 +64,7 @@ PyObject* pyfastx_get_next_seq(pyfastx_Index *index){
 	return NULL;
 }
 
+/*
 void pyfastx_build_gzip_index(pyfastx_Index *self){
 	sqlite3_stmt *stmt;
 
@@ -131,7 +131,7 @@ void pyfastx_load_gzip_index(pyfastx_Index *self){
 		PyErr_SetString(PyExc_RuntimeError, "Failed to import gzip index.");
 	}
 	remove(temp_index);
-}
+}*/
 
 void pyfastx_create_index(pyfastx_Index *self){
 	// seqlite3 return value
@@ -392,7 +392,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 	//create gzip random access index
 	if(self->gzip_format){
-		pyfastx_build_gzip_index(self);
+		pyfastx_build_gzip_index(self->gzip_index, self->index_db, self->index_file);
 	}
 
 	Py_END_ALLOW_THREADS
@@ -406,7 +406,7 @@ void pyfastx_load_index(pyfastx_Index *self){
 	}
 
 	if(self->gzip_format){
-		pyfastx_load_gzip_index(self);
+		pyfastx_load_gzip_index(self->gzip_index, self->index_db, self->index_file);
 	}
 }
 

@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include "zlib.h"
 #include "kseq.h"
+#include "zran.h"
 #include "index.h"
+#include "sqlite3.h"
 
 //make sequence iterator
 typedef struct {

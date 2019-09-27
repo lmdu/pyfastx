@@ -209,3 +209,67 @@ int64_t zran_readline(zran_index_t *index, char *linebuf, uint32_t bufsize) {
 	free(readbuf);
 	return strlen(linebuf);
 }*/
+
+void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* index_file) {
+	sqlite3_stmt *stmt;
+
+	zran_build_index(gzip_index, 0, 0);
+
+	//create temp gzip index file
+	char *temp_index = (char *)malloc(strlen(index_file) + 5);
+	strcpy(temp_index, index_file);
+	strcat(temp_index, ".tmp");
+	
+	FILE* fd = fopen(temp_index, "wb+");
+	
+	if(zran_export_index(gzip_index, fd) != ZRAN_EXPORT_OK){
+		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
+	}
+	
+	uint32_t fsize = ftell(fd);
+	rewind(fd);
+
+	char *buff = (char *)malloc(fsize + 1);
+
+	if(fread(buff, fsize, 1, fd) != 1){
+		return;
+	}
+
+	buff[fsize] = '\0';
+	
+	fclose(fd);
+	remove(temp_index);
+
+	sqlite3_prepare_v2(index_db, "INSERT INTO gzindex VALUES (NULL, ?)", -1, &stmt, NULL);
+	sqlite3_bind_blob(stmt, 1, buff, fsize, NULL);
+	sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	free(buff);
+}
+
+void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* index_file) {
+	sqlite3_stmt *stmt;
+	uint32_t bytes = 0;
+	FILE *fh;
+	
+	char *temp_index = (char *)malloc(strlen(index_file) + 5);
+	strcpy(temp_index, index_file);
+	strcat(temp_index, ".tmp");
+	
+	fh = fopen(temp_index, "wb");
+
+	sqlite3_prepare_v2(index_db, "SELECT content FROM gzindex;", -1, &stmt, NULL);
+	if (sqlite3_step(stmt) == SQLITE_ROW){
+		bytes = sqlite3_column_bytes(stmt, 0);
+	}
+	
+	fwrite(sqlite3_column_blob(stmt, 0), bytes, 1, fh);
+	fclose(fh);
+
+	fh = fopen(temp_index, "rb");
+	if(zran_import_index(gzip_index, fh) != ZRAN_IMPORT_OK){
+		PyErr_SetString(PyExc_RuntimeError, "Failed to import gzip index.");
+	}
+	fclose(fh);
+	remove(temp_index);
+}
