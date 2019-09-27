@@ -430,7 +430,7 @@ void pyfastx_index_free(pyfastx_Index *self){
 }
 
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
-	uint32_t a, c, g, t, n;
+	int32_t a, c, g, t, n;
 	char* name;
 
 	pyfastx_Sequence *seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);

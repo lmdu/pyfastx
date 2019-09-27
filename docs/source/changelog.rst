@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.3.10 (2019-09-27)
+---------------------------
+
+- Fixed GC skew exception caused by mixing unsigned with signed for division  
+
 Version 0.3.9 (2019-09-26)
 --------------------------
 

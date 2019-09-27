@@ -8,7 +8,7 @@ composition (ATGCN count) and GC content
 */
 void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	//ACGTN nucleotide counts
-	uint64_t a, c, g, t, n;
+	int64_t a, c, g, t, n;
 
 	sqlite3_stmt *stmt;
 	
@@ -38,8 +38,7 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	self->gc_content = (float)(g+c)/(a+c+g+t)*100;
 
 	//calc GC skew
-	//why (float)(g-c)/(g+c) error ???
-	self->gc_skew = (g*1.0-c*1.0)/(g*1.0+c*1.0);
+	self->gc_skew = (float)(g-c)/(g+c);
 
 	sqlite3_finalize(stmt);
 }
