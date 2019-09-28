@@ -1,3 +1,4 @@
 import pyfastx
 
-fq = pyfastx.Fastq('tests/data/test.fq')
+fq = pyfastx.Fastq('tests/data/test1.fq')
+

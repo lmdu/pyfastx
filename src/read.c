@@ -17,39 +17,79 @@ int pyfastx_read_length(pyfastx_Read *self) {
 
 PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
     if (self->seq == NULL) {
-        gzseek(self->ks->f, self->seq_offset, SEEK_SET);
-        kstring_t seq = {0, 0, 0};
-        if(ks_getuntil(self->ks, '\n', &seq, 0) >= 0) {
-           self->seq = seq.s;
+        self->seq = (char *)malloc(self->read_len + 1);
+        if (self->gzip_format) {
+            zran_seek(self->gzip_index, self->seq_offset, SEEK_SET, NULL);
+            zran_read(self->gzip_index, self->seq, self->read_len);
+            
+        } else {
+            gzseek(self->gzfd, self->seq_offset, SEEK_SET);
+            gzread(self->gzfd, self->seq, self->read_len);
         }
+        self->seq[self->read_len] = '\0';
     }
 
     if (self->seq) {
         return Py_BuildValue("s", self->seq);
     }
 
-    return NULL;
+    Py_RETURN_NONE;
 }
 
 PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
     if (self->qual == NULL) {
-        gzseek(self->ks->f, self->qual_offset, SEEK_SET);
-        kstring_t qual = {0, 0, 0};
-        if(ks_getuntil(self->ks, '\n', &qual, 0) >= 0) {
-            self->qual = qual.s;
+        self->qual = (char *)malloc(self->read_len + 1);
+        if (self->gzip_format) {
+            zran_seek(self->gzip_index, self->qual_offset, SEEK_SET, NULL);
+            zran_read(self->gzip_index, self->qual, self->read_len);
+        } else {
+            gzseek(self->gzfd, self->qual_offset, SEEK_SET);
+            gzread(self->gzfd, self->qual, self->read_len);
         }
+        self->qual[self->read_len] = '\0';
     }
 
     if (self->qual) {
         return Py_BuildValue("s", self->qual);
     }
 
+    Py_RETURN_NONE;
+}
+
+PyObject* pyfastx_read_quali(pyfastx_Read *self, void* closure) {
+    int i;
+    PyObject* q;
+
+    if (self->qual == NULL) {
+        pyfastx_read_qual(self, NULL);
+    }
+
+    if (self->qual != NULL) {
+        PyObject *quals = PyList_New(0);
+
+        for (i = 0; i < self->read_len; i++) {
+            q = Py_BuildValue("i", self->qual[i] - self->phred);
+            PyList_Append(quals, q);
+        }
+
+        return quals;
+    }
+
     return NULL;
+}
+
+PyObject* pyfastx_read_repr(pyfastx_Read *self) {
+    return PyUnicode_FromFormat("<Read> %s with length of %d", self->name, self->read_len);
+}
+
+PyObject* pyfastx_read_str(pyfastx_Read *self) {
+    return pyfastx_read_seq(self, NULL);
 }
 
 static PyGetSetDef pyfastx_read_getsets[] = {
     {"seq", (getter)pyfastx_read_seq, NULL, NULL, NULL},
     {"qual", (getter)pyfastx_read_qual, NULL, NULL, NULL},
+    {"quali", (getter)pyfastx_read_quali, NULL, NULL, NULL},
     {NULL}
 };
 
@@ -78,13 +118,13 @@ PyTypeObject pyfastx_ReadType = {
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
     0,                              /* tp_reserved */
-    0,                              /* tp_repr */
+    (reprfunc)pyfastx_read_repr,                              /* tp_repr */
     0,                              /* tp_as_number */
     0,                   /* tp_as_sequence */
     &pyfastx_read_as_mapping,                   /* tp_as_mapping */
     0,                              /* tp_hash */
     0,                              /* tp_call */
-    0,                              /* tp_str */
+    (reprfunc)pyfastx_read_str,                              /* tp_str */
     0,                              /* tp_getattro */
     0,                              /* tp_setattro */
     0,                              /* tp_as_buffer */

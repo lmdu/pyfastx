@@ -18,6 +18,12 @@ typedef struct {
 	//index file
 	char* index_file;
 
+	//sequence platform
+	char* platform;
+
+	//phred
+	uint16_t phred;
+
 	//total read counts
 	uint64_t read_counts;
 
@@ -44,6 +50,9 @@ typedef struct {
 
 	//kstream for reading line from fastq
 	kstream_t *ks;
+
+	//kseq for iteration
+	kseq_t *kseq;
 
 	//gzip index
 	zran_index_t* gzip_index;

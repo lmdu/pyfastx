@@ -22,8 +22,17 @@ typedef struct {
 	//quality start offset
 	int64_t qual_offset;
 
-	//kstream for read
-	kstream_t *ks;
+	//gzip index read handle
+	gzFile gzfd;
+
+	//gzip index
+	zran_index_t* gzip_index;
+
+	//gzip format
+	uint16_t gzip_format;
+
+	//phred
+	uint16_t phred;
 
 	//seq and quality content
 	char *seq;
