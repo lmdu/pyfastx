@@ -1,5 +1,5 @@
 pyfastx
-=======
+#######
 
 .. image:: https://travis-ci.org/lmdu/pyfastx.svg?branch=master
    :target: https://travis-ci.org/lmdu/pyfastx
@@ -40,7 +40,6 @@ pyfastx
 *a robust python module for fast random access to sequences from plain and gzipped FASTA file*
 
 .. contents:: Table of Contents
-	:depth: 3
 
 ============
 Introduction
