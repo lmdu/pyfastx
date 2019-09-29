@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 0.4.0 (2019-09-29)
+--------------------------
+
+Added support for parsing FASTQ
+Added random access to reads from FASTQ
+
 Version 0.3.10 (2019-09-27)
 ---------------------------
 
