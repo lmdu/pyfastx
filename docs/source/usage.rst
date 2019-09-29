@@ -372,7 +372,7 @@ Get read from FASTQ
 Get read information
 --------------------
 
-..code:: python
+.. code:: python
 
 	>>> r = fq[-10]
 	>>> r
