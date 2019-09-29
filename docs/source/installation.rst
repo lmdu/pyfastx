@@ -1,8 +1,8 @@
+============
 Installation
 ============
-
 Dependencies
-------------
+============
 
 Make sure you have both `pip <https://pip.pypa.io/en/stable/installing/>`_ and at least version 3.5 of Python before starting.
 
@@ -37,7 +37,7 @@ On MacOS
 
 
 Installation
-------------
+============
 
 You can install pyfastx via the Python Package Index (PyPI) (**recommended**) or from source.
 

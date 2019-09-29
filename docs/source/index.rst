@@ -59,7 +59,7 @@ Features
 - Excellent compatibility, support for parsing nonstandard FASTA file
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    installation

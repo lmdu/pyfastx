@@ -1,3 +1,4 @@
+=======
 pyfastx
 =======
 
@@ -40,17 +41,19 @@ pyfastx
 *a robust python module for fast random access to sequences from plain and gzipped FASTA file*
 
 .. contents:: Table of Contents
-	:depth: 2
+	:depth: 3
 
+============
 Introduction
-------------
+============
 
 The ``pyfastx`` is a lightweight Python C extension that enables users to randomly access to sequences from plain and **gzipped** FASTA files. This module aims to provide simple APIs for users to extract seqeunce from FASTA by identifier and index number. The ``pyfastx`` will build indexes stored in a sqlite3 database file for random access to avoid consuming excessive amount of memory. In addition, the ``pyfastx`` can parse standard (*sequence is spread into multiple lines with same length*) and nonstandard (*sequence is spread into one or more lines with different length*) FASTA format. This module used `kseq.h <https://github.com/attractivechaos/klib/blob/master/kseq.h>`_ written by `@attractivechaos <https://github.com/attractivechaos>`_ in `klib <https://github.com/attractivechaos/klib>`_ project to parse plain FASTA file and zran.c written by `@pauldmccarthy <https://github.com/pauldmccarthy>`_ in project `indexed_gzip <https://github.com/pauldmccarthy/indexed_gzip>`_ to index gzipped file for random access.
 
 This project was heavily inspired by `@mdshw5 <https://github.com/mdshw5>`_'s project `pyfaidx <https://github.com/mdshw5/pyfaidx>`_ and `@brentp <https://github.com/brentp>`_'s project `pyfasta <https://github.com/brentp/pyfasta>`_.
 
+========
 Features
---------
+========
 
 - Single file for the Python extension
 - Lightweight, memory efficient for parsing FASTA file
@@ -61,8 +64,9 @@ Features
 - Extract reverse, complement and antisense sequence
 - Excellent compatibility, support for parsing nonstandard FASTA file
 
+============
 Installation
-------------
+============
 
 Make sure you have both `pip <https://pip.pypa.io/en/stable/installing/>`_ and at least version 3.5 of Python before starting.
 
@@ -78,11 +82,14 @@ Update ``pyfastx`` module
 
 	pip install -U pyfastx
 
+=====
 Usage
------
+=====
+Fasta
+=====
 
 Read FASTA file
-^^^^^^^^^^^^^^^
+---------------
 
 The fastest way to parse flat or gzipped FASTA file without building index.
 
@@ -106,7 +113,7 @@ Read flat or gzipped FASTA file and build index, support for random access to FA
 	Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file.
 
 Get FASTA information
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 .. code:: python
 
@@ -132,7 +139,7 @@ Get FASTA information
     {'A': 24534, 'C': 18694, 'G': 18855, 'T': 24179, 'N': 0}
 
 Get longest and shortest sequence
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------
 
 New in ``pyfastx`` 0.3.0
 
@@ -147,7 +154,7 @@ New in ``pyfastx`` 0.3.0
 	('JZ822617.1', 118)
 
 Calculate N50 and L50
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 New in ``pyfastx`` 0.3.0
 
@@ -168,7 +175,7 @@ Calculate assembly N50 and L50, return (N50, L50), learn more about `N50,L50 <ht
 	(365, 117)
 
 Get sequence mean and median length
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------
 
 New in ``pyfastx`` 0.3.0
 
@@ -183,7 +190,7 @@ New in ``pyfastx`` 0.3.0
 	430
 
 Get sequence counts
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 New in ``pyfastx`` 0.3.0
 
@@ -200,7 +207,7 @@ Get counts of sequences whose length >= specified length
 	70
 
 Get sequence from FASTA
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
 
 .. code:: python
 
@@ -224,7 +231,7 @@ Get sequence from FASTA
     True
 
 Get sequence information
-^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 .. code:: python
 
@@ -263,7 +270,7 @@ Get sequence information
     {'A': 31, 'C': 37, 'G': 25, 'T': 41, 'N': 0}
 
 Sequence slice
-^^^^^^^^^^^^^^
+--------------
 
 Sequence object can be sliced like a python string
 
@@ -297,7 +304,7 @@ Sequence object can be sliced like a python string
 	Slicing start and end coordinates are 0-based. Currently, pyfastx does not support an optional third ``step`` or ``stride`` argument. For example ``ss[::-1]``
 
 Reverse and complement sequence
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------
 
 .. code:: python
 
@@ -318,7 +325,7 @@ Reverse and complement sequence
     'GGAAATTGAC'
 
 Get subsequences
-^^^^^^^^^^^^^^^^
+----------------
 
 Subseuqneces can be retrieved from FASTA file by using a list of [start, end] coordinates
 
@@ -339,7 +346,7 @@ Subseuqneces can be retrieved from FASTA file by using a list of [start, end] co
     'ATCTCTAGAG'
 
 Read sequence line by line
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------
 
 New in ``pyfastx`` 0.3.0
 
@@ -361,7 +368,7 @@ The sequence object can be iterated line by line as they appear in FASTA file.
     Sliced sequence (e.g. fa[0][10:50]) cannot be read line by line
 
 Search for subsequence
-^^^^^^^^^^^^^^^^^^^^^^
+----------------------
 
 New in ``pyfastx`` 0.3.6
 
@@ -382,7 +389,7 @@ Search for subsequence from given sequence and get one-based start position of t
     301
 
 Get identifiers
-^^^^^^^^^^^^^^^
+---------------
 
 Get all identifiers of sequence as a list-like object.
 
@@ -411,8 +418,116 @@ Get all identifiers of sequence as a list-like object.
     >>> # convert to a list
     >>> list(ids)
 
+Fastq
+=====
+
+New in ``pyfastx`` 0.4.0
+
+Read FASTQ file
+---------------
+
+The fastest way to parse plain or gzipped FASTQ file without building index.
+
+.. code:: python
+
+    >>> import pyfastx
+    >>> for read in pyfastx.Fastq('tests/data/test.fq.gz', build_index=False):
+    >>>     print(read.name, read.seq, read.qual)
+
+Read plain or gzipped file and build index, support for random access to reads from FASTQ.
+
+.. code:: python
+
+    >>> import pyfastx
+    >>> fq = pyfastx.Fastq('tests/data/test.fq.gz')
+    >>> fq
+    <Fastq> tests/data/test.fq.gz contains 100 reads
+
+Get FASTQ information
+---------------------
+
+.. code:: python
+
+    >>> # get read counts in FASTQ
+    >>> len(fq)
+    800
+
+    >>> # get total bases
+    >>> fq.size
+    120000
+
+    >>> # get GC content of FASTQ file
+    >>> fq.gc_content
+    66.17471313476562
+
+    >>> # get composition of bases in FASTQ
+    >>> fq.composition
+    {'A': 20501, 'C': 39705, 'G': 39704, 'T': 20089, 'N': 1}
+
+Get read from FASTQ
+-------------------
+
+.. code:: python
+
+    >>> #get read like a dict by read name
+    >>> r1 = fq['A00129:183:H77K2DMXX:1:1101:4752:1047']
+    >>> r1
+    <Read> A00129:183:H77K2DMXX:1:1101:4752:1047 with length of 150
+
+    >>> # get read like a list by index
+    >>> r2 = fq[10]
+    >>> r2
+    <Read> A00129:183:H77K2DMXX:1:1101:18041:1078 with length of 150
+
+    >>> # get the last read
+    >>> r3 = fq[-1]
+    >>> r3
+    <Read> A00129:183:H77K2DMXX:1:1101:31575:4726 with length of 150
+
+    >>> # check a read weather in FASTQ file
+    >>> 'A00129:183:H77K2DMXX:1:1101:4752:1047' in fq
+    True
+
+Get read information
+--------------------
+
+..code:: python
+
+    >>> r = fq[-10]
+    >>> r
+    <Read> A00129:183:H77K2DMXX:1:1101:1750:4711 with length of 150
+
+    >>> # get read order number in FASTQ file
+    >>> r.id
+    791
+
+    >>> # get read name
+    >>> r.name
+    'A00129:183:H77K2DMXX:1:1101:1750:4711'
+
+    >>> # get read length
+    >>> len(r)
+    150
+
+    >>> # get read sequence
+    >>> r.seq
+    'CGAGGAAATCGACGTCACCGATCTGGAAGCCCTGCGCGCCCATCTCAACCAGAAATGGGGTGGCCAGCGCGGCAAGCTGACCCTGCTGCCGTTCCTGGTCCGCGCCATGGTCGTGGCGCTGCGCGACTTCCCGCAGTTGAACGCGCGCTA'
+
+    >>> # get read quality ascii string
+    >>> r.qual
+    'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF:FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF:FF,FFFFFFFFFFFFFFFFFFFFFFFFFF,F:FFFFFFFFF:'
+
+    >>> # get read quality integer value, ascii - 33 or 64
+    >>> r.quali
+    [37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 25, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 25, 37, 37, 11, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 11, 37, 25, 37, 37, 37, 37, 37, 37, 37, 37, 37, 25]
+
+    >>> # get read length
+    >>> len(r)
+    150
+
+=======
 Testing
--------
+=======
 
 The ``pyfaidx`` module was used to test ``pyfastx``. To run the tests:
 
@@ -420,7 +535,8 @@ The ``pyfaidx`` module was used to test ``pyfastx``. To run the tests:
 
 	$ python setup.py test
 
+================
 Acknowledgements
-----------------
+================
 
 `kseq.h <https://github.com/attractivechaos/klib/blob/master/kseq.h>`_ and `zlib <https://www.zlib.net/>`_ was used to parse FASTA format. `Sqlite3 <https://www.sqlite.org/index.html>`_ was used to store built indexes. ``pyfastx`` can randomly access to sequences from gzipped FASTA file mainly attributed to `indexed_gzip <https://github.com/pauldmccarthy/indexed_gzip>`_.

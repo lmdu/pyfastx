@@ -1,4 +1,7 @@
+=====
 Usage
+=====
+Fasta
 =====
 
 Read FASTA file
@@ -297,6 +300,114 @@ Search for subsequence from given sequence and get one-based start position of t
     >>> # search subsequence in antisense strand
     >>> fa[0].search('CCTCAAGT', '-')
     301
+
+Fastq
+=====
+
+Read FASTQ file
+---------------
+
+The fastest way to parse plain or gzipped FASTQ file without building index.
+
+.. code:: python
+
+	>>> import pyfastx
+	>>> for read in pyfastx.Fastq('tests/data/test.fq.gz', build_index=False):
+	>>> 	print(read.name, read.seq, read.qual)
+
+Read plain or gzipped file and build index, support for random access to reads from FASTQ.
+
+.. code:: python
+
+	>>> import pyfastx
+	>>> fq = pyfastx.Fastq('tests/data/test.fq.gz')
+	>>> fq
+	<Fastq> tests/data/test.fq.gz contains 100 reads
+
+Get FASTQ information
+---------------------
+
+.. code:: python
+
+	>>> # get read counts in FASTQ
+	>>> len(fq)
+	800
+
+	>>> # get total bases
+	>>> fq.size
+	120000
+
+	>>> # get GC content of FASTQ file
+	>>> fq.gc_content
+	66.17471313476562
+
+	>>> # get composition of bases in FASTQ
+	>>> fq.composition
+	{'A': 20501, 'C': 39705, 'G': 39704, 'T': 20089, 'N': 1}
+
+Get read from FASTQ
+-------------------
+
+.. code:: python
+
+	>>> #get read like a dict by read name
+	>>> r1 = fq['A00129:183:H77K2DMXX:1:1101:4752:1047']
+	>>> r1
+	<Read> A00129:183:H77K2DMXX:1:1101:4752:1047 with length of 150
+
+	>>> # get read like a list by index
+	>>> r2 = fq[10]
+	>>> r2
+	<Read> A00129:183:H77K2DMXX:1:1101:18041:1078 with length of 150
+
+	>>> # get the last read
+	>>> r3 = fq[-1]
+	>>> r3
+	<Read> A00129:183:H77K2DMXX:1:1101:31575:4726 with length of 150
+
+	>>> # check a read weather in FASTQ file
+	>>> 'A00129:183:H77K2DMXX:1:1101:4752:1047' in fq
+	True
+
+Get read information
+--------------------
+
+..code:: python
+
+	>>> r = fq[-10]
+	>>> r
+	<Read> A00129:183:H77K2DMXX:1:1101:1750:4711 with length of 150
+
+	>>> # get read order number in FASTQ file
+	>>> r.id
+	791
+
+	>>> # get read name
+	>>> r.name
+	'A00129:183:H77K2DMXX:1:1101:1750:4711'
+
+	>>> # get read length
+	>>> len(r)
+	150
+
+	>>> # get read sequence
+	>>> r.seq
+	'CGAGGAAATCGACGTCACCGATCTGGAAGCCCTGCGCGCCCATCTCAACCAGAAATGGGGTGGCCAGCGCGGCAAGCTGACCCTGCTGCCGTTCCTGGTCCGCGCCATGGTCGTGGCGCTGCGCGACTTCCCGCAGTTGAACGCGCGCTA'
+
+	>>> # get read quality ascii string
+	>>> r.qual
+	'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF:FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF:FF,FFFFFFFFFFFFFFFFFFFFFFFFFF,F:FFFFFFFFF:'
+
+	>>> # get read quality integer value, ascii - 33 or 64
+	>>> r.quali
+	[37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 25, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 25, 37, 37, 11, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 11, 37, 25, 37, 37, 37, 37, 37, 37, 37, 37, 37, 25]
+
+	>>> # get read length
+	>>> len(r)
+	150
+
+Identifier
+==========
 
 Get identifiers
 ---------------
