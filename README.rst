@@ -41,7 +41,6 @@ pyfastx
 
 .. contents:: Table of Contents
 
-============
 Introduction
 ============
 
@@ -49,7 +48,6 @@ The ``pyfastx`` is a lightweight Python C extension that enables users to random
 
 This project was heavily inspired by `@mdshw5 <https://github.com/mdshw5>`_'s project `pyfaidx <https://github.com/mdshw5/pyfaidx>`_ and `@brentp <https://github.com/brentp>`_'s project `pyfasta <https://github.com/brentp/pyfasta>`_.
 
-========
 Features
 ========
 
@@ -63,7 +61,6 @@ Features
 - Excellent compatibility, support for parsing nonstandard FASTA file
 - Support for random access reads from FASTQ file
 
-============
 Installation
 ============
 
@@ -81,9 +78,6 @@ Update ``pyfastx`` module
 
 	pip install -U pyfastx
 
-=====
-Usage
-=====
 Fasta
 =====
 
@@ -205,7 +199,31 @@ Get counts of sequences whose length >= specified length
 	>>> fa.count(500)
 	70
 
-Get sequence from FASTA
+Get subsequences
+----------------
+
+Subseuqneces can be retrieved from FASTA file by using a list of [start, end] coordinates
+
+.. code:: python
+
+    >>> # get subsequence with start and end position
+    >>> interval = (1, 10)
+    >>> fa.fetch('JZ822577.1', interval)
+    'CTCTAGAGAT'
+
+    >>> # get subsequences with a list of start and end position
+    >>> intervals = [(1, 10), (50, 60)]
+    >>> fa.fetch('JZ822577.1', intervals)
+    'CTCTAGAGATTTTAGTTTGAC'
+
+    >>> # get subsequences with reverse strand
+    >>> fa.fetch('JZ822577.1', (1, 10), strand='-')
+    'ATCTCTAGAG'
+
+Sequence
+========
+
+Get a sequence from FASTA
 -----------------------
 
 .. code:: python
@@ -323,27 +341,6 @@ Reverse and complement sequence
     >>> fa[0][10:20].antisense
     'GGAAATTGAC'
 
-Get subsequences
-----------------
-
-Subseuqneces can be retrieved from FASTA file by using a list of [start, end] coordinates
-
-.. code:: python
-
-    >>> # get subsequence with start and end position
-    >>> interval = (1, 10)
-    >>> fa.fetch('JZ822577.1', interval)
-    'CTCTAGAGAT'
-
-    >>> # get subsequences with a list of start and end position
-    >>> intervals = [(1, 10), (50, 60)]
-    >>> fa.fetch('JZ822577.1', intervals)
-    'CTCTAGAGATTTTAGTTTGAC'
-
-    >>> # get subsequences with reverse strand
-    >>> fa.fetch('JZ822577.1', (1, 10), strand='-')
-    'ATCTCTAGAG'
-
 Read sequence line by line
 --------------------------
 
@@ -386,36 +383,6 @@ Search for subsequence from given sequence and get one-based start position of t
     >>> # search subsequence in antisense strand
     >>> fa[0].search('CCTCAAGT', '-')
     301
-
-Get identifiers
----------------
-
-Get all identifiers of sequence as a list-like object.
-
-.. code:: python
-
-    >>> ids = fa.keys()
-    >>> ids
-    <Identifier> contains 211 identifiers
-
-    >>> # get count of sequence
-    >>> len(ids)
-    211
-
-    >>> # get identifier by index
-    >>> ids[0]
-    'JZ822577.1'
-
-    >>> # check identifier where in fasta
-    >>> 'JZ822577.1' in ids
-    True
-
-    >>> # iter identifiers
-    >>> for name in ids:
-    >>>     print(name)
-
-    >>> # convert to a list
-    >>> list(ids)
 
 Fastq
 =====
@@ -462,6 +429,9 @@ Get FASTQ information
     >>> # get composition of bases in FASTQ
     >>> fq.composition
     {'A': 20501, 'C': 39705, 'G': 39704, 'T': 20089, 'N': 1}
+
+Read
+====
 
 Get read from FASTQ
 -------------------
@@ -524,7 +494,36 @@ Get read information
     >>> len(r)
     150
 
-=======
+Identifiers
+===========
+
+Get all identifiers of sequence as a list-like object.
+
+.. code:: python
+
+    >>> ids = fa.keys()
+    >>> ids
+    <Identifier> contains 211 identifiers
+
+    >>> # get count of sequence
+    >>> len(ids)
+    211
+
+    >>> # get identifier by index
+    >>> ids[0]
+    'JZ822577.1'
+
+    >>> # check identifier where in fasta
+    >>> 'JZ822577.1' in ids
+    True
+
+    >>> # iter identifiers
+    >>> for name in ids:
+    >>>     print(name)
+
+    >>> # convert to a list
+    >>> list(ids)
+
 Testing
 =======
 
@@ -534,7 +533,6 @@ The ``pyfaidx`` module was used to test ``pyfastx``. To run the tests:
 
 	$ python setup.py test
 
-================
 Acknowledgements
 ================
 
