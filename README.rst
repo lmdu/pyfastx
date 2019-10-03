@@ -37,6 +37,15 @@ pyfastx
    :target: https://www.codacy.com/manual/lmdu/pyfastx?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lmdu/pyfastx&amp;utm_campaign=Badge_Grade
    :alt: Codacy
 
+.. image:: https://img.shields.io/pypi/implementation/pyfastx
+   :alt: PyPI - Implementation
+
+.. image:: https://img.shields.io/pypi/dm/pyfastx
+   :alt: PyPI - Downloads
+
+.. image:: https://img.shields.io/pypi/l/pyfastx
+   :alt: PyPI - License
+
 *a robust python module for fast random access to sequences from plain and gzipped FASTA/Q file*
 
 .. contents:: Table of Contents
