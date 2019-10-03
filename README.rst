@@ -38,12 +38,15 @@ pyfastx
    :alt: Codacy
 
 .. image:: https://img.shields.io/pypi/implementation/pyfastx
+   :target: https://pypi.org/project/pyfastx
    :alt: PyPI - Implementation
 
 .. image:: https://img.shields.io/pypi/dm/pyfastx
+   :target: https://pypi.org/project/pyfastx
    :alt: PyPI - Downloads
 
 .. image:: https://img.shields.io/pypi/l/pyfastx
+   :target: https://pypi.org/project/pyfastx
    :alt: PyPI - License
 
 *a robust python module for fast random access to sequences from plain and gzipped FASTA/Q file*
