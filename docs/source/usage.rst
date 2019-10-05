@@ -345,6 +345,15 @@ Get FASTQ information
 	>>> fq.composition
 	{'A': 20501, 'C': 39705, 'G': 39704, 'T': 20089, 'N': 1}
 
+	>>> # get phred which affects the quality score conversion
+	>>> fq.phred
+	33
+
+	>>> # Guess fastq quality encoding system
+	>>> # New in pyfastx 0.4.1
+	>>> fq.guess
+	['Sanger Phred+33', 'Illumina 1.8+ Phred+33']
+
 Read
 =====
 

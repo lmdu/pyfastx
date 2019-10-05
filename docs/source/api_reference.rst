@@ -234,6 +234,16 @@ New in ``pyfastx`` 0.4.0
 
 		base composition in FASTQ file, a dict contains counts of A, T, G, C and N (unkown nucleotide base)
 
+	.. py:attribute:: phred
+
+		get phred value
+
+	.. py:attribute:: guess
+
+		New in ``pyfastx`` 0.4.1
+
+		Guess the quality encoding system used by FASTQ sequence file
+
 pyfastx.Read
 ------------
 

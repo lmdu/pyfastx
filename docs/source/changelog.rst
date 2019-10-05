@@ -1,11 +1,17 @@
 Changelog
 =========
 
+Version 0.4.1 (2019-10-05)
+--------------------------
+
+- Fixed fastq quality encoding system guesser
+- Fixed gzip index insertion error
+
 Version 0.4.0 (2019-09-29)
 --------------------------
 
-Added support for parsing FASTQ
-Added random access to reads from FASTQ
+- Added support for parsing FASTQ
+- Added random access to reads from FASTQ
 
 Version 0.3.10 (2019-09-27)
 ---------------------------

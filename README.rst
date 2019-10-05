@@ -90,7 +90,7 @@ Update ``pyfastx`` module
 
 	pip install -U pyfastx
 
-Fasta
+FASTA
 =====
 
 Read FASTA file
@@ -396,7 +396,7 @@ Search for subsequence from given sequence and get one-based start position of t
     >>> fa[0].search('CCTCAAGT', '-')
     301
 
-Fastq
+FASTQ
 =====
 
 New in ``pyfastx`` 0.4.0
@@ -441,6 +441,15 @@ Get FASTQ information
     >>> # get composition of bases in FASTQ
     >>> fq.composition
     {'A': 20501, 'C': 39705, 'G': 39704, 'T': 20089, 'N': 1}
+
+    >>> # get phred which affects the quality score conversion
+    >>> fq.phred
+    33
+
+    >>> # Guess fastq quality encoding system
+    >>> # New in pyfastx 0.4.1
+    >>> fq.guess
+    ['Sanger Phred+33', 'Illumina 1.8+ Phred+33']
 
 Read
 ====
