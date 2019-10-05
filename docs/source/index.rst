@@ -47,7 +47,7 @@ The ``pyfastx`` is a lightweight Python C extension that enables users to random
 This project was heavily inspired by `@mdshw5 <https://github.com/mdshw5>`_'s project `pyfaidx <https://github.com/mdshw5/pyfaidx>`_ and `@brentp <https://github.com/brentp>`_'s project `pyfasta <https://github.com/brentp/pyfasta>`_.
 
 Features
-========
+########
 
 - Single file for the Python extension
 - Lightweight, memory efficient for parsing FASTA file
