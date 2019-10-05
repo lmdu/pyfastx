@@ -240,7 +240,7 @@ void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char*
 	fclose(fd);
 	remove(temp_index);
 
-	sqlite3_prepare_v2(index_db, "INSERT INTO gzindex VALUES (?)", -1, &stmt, NULL);
+	sqlite3_prepare_v2(index_db, "INSERT INTO gzindex VALUES (?,?)", -1, &stmt, NULL);
 	sqlite3_bind_null(stmt, 1);
 	sqlite3_bind_blob(stmt, 2, buff, fsize, NULL);
 	sqlite3_step(stmt);

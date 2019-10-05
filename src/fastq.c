@@ -34,8 +34,9 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 			n INTEGER  \
 		); \
 		CREATE TABLE meta ( \
-			platform TEXT,  \
-			phred INTEGER  \
+			minqs INTEGER, --max quality score \n \
+			maxqs INTEGER, --min quality score \n \
+			phred INTEGER --phred value \n \
 		);";
 
 
@@ -168,24 +169,12 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 		}
 	}
 
-	//check fastq platform
-	if (minqs < 59 && maxqs == 73) {
-		self->platform = "Sanger Phred+33";
-	} else if (minqs < 59 && maxqs == 74) {
-		self->platform = "Illumina 1.8+ Phred+64";
-	} else if (minqs < 64 && maxqs > 74) {
-		self->platform = "Solexa Solexa+64";
-	} else if (minqs < 67 && maxqs > 74) {
-		self->platform = "Illumina 1.3+ Phred+64";
-	} else if (minqs >=67 && maxqs > 74) {
-		self->platform = "Illumina 1.5+ Phred+64";
-	}
-
 	//insert platform into index file
-	insert_sql = "INSERT INTO meta VALUES (?,?);";
+	insert_sql = "INSERT INTO meta VALUES (?,?,?);";
 	sqlite3_prepare_v2(self->index_db, insert_sql, -1, &stmt, NULL);
-	sqlite3_bind_text(stmt, 1, self->platform, -1, NULL);
-	sqlite3_bind_int(stmt, 2, self->phred);
+	sqlite3_bind_int(stmt, 1, minqs);
+	sqlite3_bind_int(stmt, 2, maxqs);
+	sqlite3_bind_int(stmt, 3, self->phred);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
@@ -228,11 +217,10 @@ void pyfastx_fastq_load_index(pyfastx_Fastq *self) {
 	t = sqlite3_column_int64(stmt, 0);
 	n = sqlite3_column_int64(stmt, 0);
 
-	sql = "SELECT * FROM meta LIMIT 1;";
+	sql = "SELECT phred FROM meta LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	sqlite3_step(stmt);
-	self->platform = (char *)sqlite3_column_text(stmt, 0);
-	self->phred = sqlite3_column_int(stmt, 1);
+	self->phred = sqlite3_column_int(stmt, 0);
 
 	self->seq_length = a + c + g + t + n;
 	self->gc_content = (float)(g + c)/(a + c + g + t) * 100;
@@ -284,9 +272,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//initail index connection
 	obj->index_db = NULL;
 
-	//inital phred and platform
-	obj->platform = "Cannot be determined";
-
+	//inital phred
 	obj->phred = phred;
 
 	//is gzip file
@@ -451,6 +437,54 @@ PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
 	return NULL;
 }
 
+PyObject* pyfastx_fastq_guess(pyfastx_Fastq* self, void* closure) {
+	sqlite3_stmt *stmt;
+	int maxqs, minqs;
+	const char *sql = "SELECT * FROM meta LIMIT 1;";
+	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
+	if (sqlite3_step(stmt) != SQLITE_ROW) {
+		return NULL;
+	}
+
+	minqs = sqlite3_column_int(stmt, 0);
+	maxqs = sqlite3_column_int(stmt, 1);
+
+	PyObject* platforms = PyList_New(0);
+	PyObject* platform;
+
+	//check fastq platform
+	if (minqs < 33 || maxqs > 104) {
+		return PyErr_Format(PyExc_TypeError, "Quality values corrupt. found [%d, %d] where [33, 104] was expected", minqs, maxqs);
+	}
+
+	if (minqs >= 33 && maxqs <= 73) {
+		platform = Py_BuildValue("s", "Sanger Phred+33");
+		PyList_Append(platforms, platform);
+	}
+
+	if (minqs >= 33 && maxqs <= 74) {
+		platform = Py_BuildValue("s", "Illumina 1.8+ Phred+33");
+		PyList_Append(platforms, platform);
+	}
+
+	if (minqs >= 59 && maxqs <= 104) {
+		platform = Py_BuildValue("s", "Solexa Solexa+64");
+		PyList_Append(platforms, platform);
+	}
+
+	if (minqs >= 64 && maxqs <= 104) {
+		platform = Py_BuildValue("s", "Illumina 1.3+ Phred+64");
+		PyList_Append(platforms, platform);
+	}
+
+	if (minqs >= 66 && maxqs <= 104) {
+		platform = Py_BuildValue("s", "Illumina 1.5+ Phred+64");
+		PyList_Append(platforms, platform);
+	}
+
+	return platforms;
+}
+
 static PySequenceMethods pyfastx_fastq_as_sequence = {
 	0, /*sq_length*/
 	0, /*sq_concat*/
@@ -470,9 +504,13 @@ static PyMappingMethods pyfastx_fastq_as_mapping = {
 	0,
 };
 
+static PyGetSetDef pyfastx_fastq_getsets[] = {
+	{"guess", (getter)pyfastx_fastq_guess, NULL, NULL, NULL},
+	{NULL}
+};
+
 static PyMemberDef pyfastx_fastq_members[] = {
 	{"file_name", T_STRING, offsetof(pyfastx_Fastq, file_name), READONLY},
-	{"platform", T_STRING, offsetof(pyfastx_Fastq, platform), READONLY},
 	{"phred", T_INT, offsetof(pyfastx_Fastq, phred), READONLY},
 	{"size", T_LONG, offsetof(pyfastx_Fastq, seq_length), READONLY},
 	{"gc_content", T_FLOAT, offsetof(pyfastx_Fastq, gc_content), READONLY},
@@ -510,7 +548,7 @@ PyTypeObject pyfastx_FastqType = {
     (iternextfunc)pyfastx_fastq_next,    /* tp_iternext */
     0,          /* tp_methods */
     pyfastx_fastq_members,          /* tp_members */
-    0,                              /* tp_getset */
+    pyfastx_fastq_getsets,                              /* tp_getset */
     0,                              /* tp_base */
     0,                              /* tp_dict */
     0,                              /* tp_descr_get */

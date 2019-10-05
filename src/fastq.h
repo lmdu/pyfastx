@@ -18,9 +18,6 @@ typedef struct {
 	//index file
 	char* index_file;
 
-	//sequence platform
-	char* platform;
-
 	//phred
 	uint16_t phred;
 
