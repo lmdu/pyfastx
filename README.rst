@@ -236,7 +236,7 @@ Sequence
 ========
 
 Get a sequence from FASTA
------------------------
+-------------------------
 
 .. code:: python
 

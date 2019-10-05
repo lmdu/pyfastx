@@ -142,8 +142,8 @@ Subseuqneces can be retrieved from FASTA file by using a list of [start, end] co
 Sequence
 ========
 
-Get sequence from FASTA
------------------------
+Get a sequence from FASTA
+-------------------------
 
 .. code:: python
 
