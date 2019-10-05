@@ -1,7 +1,4 @@
-=====
-Usage
-=====
-Fasta
+FASTA
 =====
 
 Read FASTA file
@@ -121,6 +118,30 @@ Get counts of sequences whose length >= specified length
 	>>> fa.count(500)
 	70
 
+Get subsequences
+----------------
+
+Subseuqneces can be retrieved from FASTA file by using a list of [start, end] coordinates
+
+.. code:: python
+
+	>>> # get subsequence with start and end position
+	>>> interval = (1, 10)
+	>>> fa.fetch('JZ822577.1', interval)
+	'CTCTAGAGAT'
+
+	>>> # get subsequences with a list of start and end position
+	>>> intervals = [(1, 10), (50, 60)]
+	>>> fa.fetch('JZ822577.1', intervals)
+	'CTCTAGAGATTTTAGTTTGAC'
+
+	>>> # get subsequences with reverse strand
+	>>> fa.fetch('JZ822577.1', (1, 10), strand='-')
+	'ATCTCTAGAG'
+
+Sequence
+========
+
 Get sequence from FASTA
 -----------------------
 
@@ -237,27 +258,6 @@ Reverse and complement sequence
 	>>> fa[0][10:20].antisense
 	'GGAAATTGAC'
 
-Get subsequences
-----------------
-
-Subseuqneces can be retrieved from FASTA file by using a list of [start, end] coordinates
-
-.. code:: python
-
-	>>> # get subsequence with start and end position
-	>>> interval = (1, 10)
-	>>> fa.fetch('JZ822577.1', interval)
-	'CTCTAGAGAT'
-
-	>>> # get subsequences with a list of start and end position
-	>>> intervals = [(1, 10), (50, 60)]
-	>>> fa.fetch('JZ822577.1', intervals)
-	'CTCTAGAGATTTTAGTTTGAC'
-
-	>>> # get subsequences with reverse strand
-	>>> fa.fetch('JZ822577.1', (1, 10), strand='-')
-	'ATCTCTAGAG'
-
 Read sequence line by line
 --------------------------
 
@@ -281,7 +281,7 @@ The sequence object can be iterated line by line as they appear in FASTA file.
 	Sliced sequence (e.g. fa[0][10:50]) cannot be read line by line
 
 Search for subsequence
-^^^^^^^^^^^^^^^^^^^^^^
+----------------------
 
 New in ``pyfastx`` 0.3.6
 
@@ -301,7 +301,7 @@ Search for subsequence from given sequence and get one-based start position of t
     >>> fa[0].search('CCTCAAGT', '-')
     301
 
-Fastq
+FASTQ
 =====
 
 Read FASTQ file
@@ -344,6 +344,9 @@ Get FASTQ information
 	>>> # get composition of bases in FASTQ
 	>>> fq.composition
 	{'A': 20501, 'C': 39705, 'G': 39704, 'T': 20089, 'N': 1}
+
+Read
+=====
 
 Get read from FASTQ
 -------------------

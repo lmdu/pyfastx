@@ -51,7 +51,7 @@ Features
 
 - Single file for the Python extension
 - Lightweight, memory efficient for parsing FASTA file
-- Fast random access to sequences from ``gzipped`` FASTA file
+- Fast random access to sequences from **gzipped** FASTA file
 - Read sequences from FASTA file line by line
 - Calculate assembly N50 and L50
 - Calculate GC content and nucleotides composition

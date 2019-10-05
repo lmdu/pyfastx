@@ -1,20 +1,36 @@
-============
 Installation
 ============
-Dependencies
-============
+
+You can install pyfastx via the Python Package Index (PyPI) (**recommended**) or from source.
 
 Make sure you have both `pip <https://pip.pypa.io/en/stable/installing/>`_ and at least version 3.5 of Python before starting.
 
-Currently, pyfastx only support Python 3.5, 3.6, 3.7 and can work on Windows, Linux, MacOS.
+Currently, pyfastx only supports Python 3.5, 3.6, 3.7 and can work on Windows, Linux, MacOS.
 
 .. warning::
 	
 	Python 2.7 will not be maintained past 2020. Python 3.4 has now reached its end-of-life and has been retired
 
-pyfastx depends on `zlib <https://zlib.net/>`_ and `sqlite3 <https://www.sqlite.org/index.html>`_. If you want to compile and install pyfastx from source code, you should install zlib and sqlite3 first.
 
-On Centos 
+Install from PyPI
+-----------------
+
+::
+
+	pip install pyfastx
+
+Update pyfastx using ``pip``
+
+::
+
+	pip install -U pyfastx
+
+Install from source
+-------------------
+
+``pyfastx`` depends on `zlib <https://zlib.net/>`_ and `sqlite3 <https://www.sqlite.org/index.html>`_. If you want to compile and install pyfastx from source code. First, you should install zlib and sqlite3.
+
+On Centos
 
 ::
 
@@ -36,28 +52,7 @@ On MacOS
 	brew install sqlite3
 
 
-Installation
-============
-
-You can install pyfastx via the Python Package Index (PyPI) (**recommended**) or from source.
-
-Install from PyPI
------------------
-
-::
-
-	pip install pyfastx
-
-Update pyfastx using ``pip``
-
-::
-
-	pip install -U pyfastx
-
-Install from source
--------------------
-
-First, clone pyfastx using ``git`` or download latest `release <https://github.com/lmdu/pyfastx/releases>`_:
+Second, clone pyfastx using ``git`` or download latest `release <https://github.com/lmdu/pyfastx/releases>`_:
 
 ::
 
