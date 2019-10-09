@@ -16,11 +16,21 @@ typedef struct {
 	//sequence counts
 	uint32_t seq_counts;
 
+	//file format 1: fasta, 2: fastq
+	//uint16_t format;
+
+	//sort by 1: id, 2: name, 3: length
+	uint16_t sort;
+
+	//oder 0: asc, 1: desc
+	uint16_t order;
+
 } pyfastx_Identifier;
 
 extern PyTypeObject pyfastx_IdentifierType;
 
 PyObject *pyfastx_identifier_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
+PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyObject *kwargs);
 PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self);
 PyObject *pyfastx_identifier_next(pyfastx_Identifier *self);
 int pyfastx_identifier_length(pyfastx_Identifier *self);

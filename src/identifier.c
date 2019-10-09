@@ -12,7 +12,30 @@ void pyfastx_identifier_dealloc(pyfastx_Identifier *self){
 }
 
 PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self){
-	sqlite3_prepare_v2(self->index_db, "SELECT chrom FROM seq;", -1, &self->stmt, NULL);
+	char *key;
+	char *order;
+	char *sql;
+
+	if (self->sort == 1) {
+		key = "ID";
+	} else if (self->sort == 2) {
+		key = "chrom";
+	} else if (self->sort == 3) {
+		key = "slen";
+	}
+
+	if (self->order == 0) {
+		order = "ASC";
+	} else {
+		order = "DESC";
+	}
+
+	sql = (char *)malloc(50 * sizeof(char));
+	sprintf(sql, "SELECT chrom FROM seq ORDER BY %s %s;", key, order);
+
+	printf("%s\n", sql);
+
+	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
@@ -75,6 +98,42 @@ int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 	}
 }
 
+PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyObject *kwargs) {
+	char *key = "id";
+	uint16_t reverse = 0;
+	
+	static char *kwlist[] = {"key", "reverse", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sp", kwlist, &key, &reverse)) {
+		return NULL;
+	}
+
+	printf("key#: %s\n", key);
+	printf("reverse#: %d\n", reverse);
+
+	//set sort column
+	if (strcmp(key, "id") == 0) {
+		self->sort = 1;
+	} else if (strcmp(key, "name") == 0) {
+		self->sort = 2;
+	} else if (strcmp(key, "length") == 0) {
+		self->sort = 3;
+	} else {
+		PyErr_SetString(PyExc_ValueError, "key only can be id, name or length");
+		return NULL;
+	}
+
+	//set sort order
+	self->order = reverse;
+
+	return (PyObject *)self;
+}
+
+static PyMethodDef pyfastx_identifier_methods[] = {
+	{"sort", (PyCFunction)pyfastx_identifier_sort, METH_VARARGS|METH_KEYWORDS},
+	{NULL, NULL, 0, NULL}
+};
+
 //as a list
 static PySequenceMethods identifier_as_sequence = {
 	(lenfunc)pyfastx_identifier_length, /*sq_length*/
@@ -118,7 +177,7 @@ PyTypeObject pyfastx_IdentifierType = {
     0,                              /* tp_weaklistoffset */
     (getiterfunc)pyfastx_identifier_iter,                              /* tp_iter */
     (iternextfunc)pyfastx_identifier_next,                              /* tp_iternext */
-    0,       /* tp_methods */
+    pyfastx_identifier_methods,       /* tp_methods */
     0,       /* tp_members */
     0,       /* tp_getset */
     0,                              /* tp_base */

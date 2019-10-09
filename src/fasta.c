@@ -228,6 +228,8 @@ PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self, PyObject *args, PyObject *kwar
 	ids->index_db = self->index->index_db;
 	ids->stmt = NULL;
 	ids->seq_counts = self->seq_counts;
+	ids->sort = 1;
+	ids->order = 0;
 
 	Py_INCREF(ids);
 	return (PyObject *)ids;

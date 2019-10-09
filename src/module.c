@@ -36,21 +36,18 @@ PyMODINIT_FUNC PyInit_pyfastx(void){
 	if(PyType_Ready(&pyfastx_FastaType) < 0){
 		return NULL;
 	}
-	
 	Py_INCREF((PyObject *)&pyfastx_FastaType);
 	PyModule_AddObject(module, "Fasta", (PyObject *)&pyfastx_FastaType);
 
 	if(PyType_Ready(&pyfastx_FastqType) < 0){
 		return NULL;
 	}
-
 	Py_INCREF((PyObject *)&pyfastx_FastqType);
 	PyModule_AddObject(module, "Fastq", (PyObject *)&pyfastx_FastqType);
 
 	if(PyType_Ready(&pyfastx_SequenceType) < 0){
 		return NULL;
 	}
-
 	Py_INCREF((PyObject *)&pyfastx_SequenceType);
 	PyModule_AddObject(module, "Sequence", (PyObject *)&pyfastx_SequenceType);
 
@@ -58,14 +55,12 @@ PyMODINIT_FUNC PyInit_pyfastx(void){
 	if(PyType_Ready(&pyfastx_ReadType) < 0){
 		return NULL;
 	}
-
 	Py_INCREF((PyObject *)&pyfastx_ReadType);
 	PyModule_AddObject(module, "Read", (PyObject *)&pyfastx_ReadType);
 
 	if(PyType_Ready(&pyfastx_IdentifierType) < 0){
 		return NULL;
 	}
-
 	Py_INCREF((PyObject *)&pyfastx_IdentifierType);
 	PyModule_AddObject(module, "Identifier", (PyObject *)&pyfastx_IdentifierType);
 
