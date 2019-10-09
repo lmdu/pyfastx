@@ -233,8 +233,8 @@ void pyfastx_fastq_load_index(pyfastx_Fastq *self) {
 
 PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
 	char *file_name;
-	uint16_t phred = 0;
-	uint16_t build_index = 1;
+	int phred = 0;
+	int build_index = 1;
 
 	static char* keywords[] = {"file_name", "phred", "build_index", NULL};
 

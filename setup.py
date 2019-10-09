@@ -6,11 +6,11 @@ import glob
 #from distutils.core import setup, Extension
 from setuptools import setup, Extension
 
-sources = glob.glob('src/*.c')
-
-extensions = [
-    Extension('pyfastx', sources, extra_link_args=['-lz', '-lsqlite3'])
-]
+extension = Extension('pyfastx',
+    sources = glob.glob('src/*.c'),
+    #extra_compile_args=["-Wall"],
+    extra_link_args=['-lz', '-lsqlite3']
+)
 
 description = (
     "pyfastx is a python module for fast random "
@@ -27,7 +27,7 @@ with open(os.path.join('src', 'version.h')) as fh:
 setup(
     name = 'pyfastx',
     version = version,
-    ext_modules = extensions,
+    ext_modules = [extension],
     description = description,
     long_description = long_description,
     author = 'Lianming Du',

@@ -12,24 +12,28 @@ PyObject *pyfastx_version(PyObject *self, PyObject *args){
 }
 
 static PyMethodDef module_methods[] = {
-	//{"test", test, METH_VARARGS|METH_KEYWORDS},
-	{"clean_seq", clean_seq, METH_VARARGS},
-	{"sub_seq", sub_seq, METH_VARARGS},
-	{"version", pyfastx_version, METH_VARARGS},
+	//{"test", (PyCFunction)pyfastx_test, METH_VARARGS | METH_KEYWORDS, NULL},
+	{"clean_seq", clean_seq, METH_VARARGS, NULL},
+	{"sub_seq", sub_seq, METH_VARARGS, NULL},
+	{"version", pyfastx_version, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef module_definition = {
+#if PY_MAJOR_VERSION >= 3
+
+static PyModuleDef module_pyfastx = {
 	PyModuleDef_HEAD_INIT,
 	"pyfastx",
-	"",
+	"A python C extension for parsing fasta and fastq file",
 	-1,
 	module_methods,
 };
 
-PyMODINIT_FUNC PyInit_pyfastx(void){
-	PyObject *module = PyModule_Create(&module_definition);
-	if(!module){
+PyMODINIT_FUNC PyInit_pyfastx(){
+	PyObject *module;
+
+	module = PyModule_Create(&module_pyfastx);
+	if(module == NULL){
 		return NULL;
 	}
 
@@ -66,3 +70,19 @@ PyMODINIT_FUNC PyInit_pyfastx(void){
 
 	return module;
 }
+
+#else
+PyMODINIT_FUNC initpyfastx() {
+	PyObject *module;
+
+	module = Py_InitModule3(
+		"pyfastx",
+		module_methods,
+		"A python C extension for parsing fasta and fastq file"
+	);
+
+	if (module == NULL) {
+		return;
+	}
+}
+#endif

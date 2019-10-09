@@ -49,10 +49,10 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	char *file_name;
 
 	//bool value for uppercase sequence
-	uint16_t uppercase = 1;
+	int uppercase = 1;
 
 	//build index or not
-	uint16_t build_index = 1;
+	int build_index = 1;
 
 	//paramters for fasta object construction
 	static char* keywords[] = {"file_name", "uppercase", "build_index", NULL};
@@ -134,7 +134,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	PyObject *intervals;
 	uint64_t start;
 	uint64_t end;
-	uint16_t strand = '+';
+	int strand = '+';
 	
 	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|C", keywords, &name, &intervals, &strand)){
 		return NULL;

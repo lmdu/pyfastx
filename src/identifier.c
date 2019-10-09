@@ -33,8 +33,6 @@ PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self){
 	sql = (char *)malloc(50 * sizeof(char));
 	sprintf(sql, "SELECT chrom FROM seq ORDER BY %s %s;", key, order);
 
-	printf("%s\n", sql);
-
 	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
 	Py_INCREF(self);
 	return (PyObject *)self;
@@ -100,16 +98,14 @@ int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 
 PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyObject *kwargs) {
 	char *key = "id";
-	uint16_t reverse = 0;
+	int reverse = 0;
 	
-	static char *kwlist[] = {"key", "reverse", NULL};
+	static char* kwlist[] = {"key", "reverse", NULL};
 
+	// cannot use uint16_t to parse Python bool, should use int declare
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sp", kwlist, &key, &reverse)) {
 		return NULL;
 	}
-
-	printf("key#: %s\n", key);
-	printf("reverse#: %d\n", reverse);
 
 	//set sort column
 	if (strcmp(key, "id") == 0) {

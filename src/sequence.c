@@ -244,7 +244,7 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 	char *seq;
 	char *result;
 	uint32_t start;
-	uint16_t strand = '+';
+	int strand = '+';
 	
 	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|C", keywords, &subseq, &strand)){
 		return NULL;
