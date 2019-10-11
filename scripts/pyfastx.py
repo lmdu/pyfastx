@@ -22,7 +22,7 @@ if __name__ == '__main__':
 	)
 
 	parser_split = subparsers.add_parser('split', 
-		help = "Split fasta "
+		help = "Split fasta file into multiple files"
 	)
 
 
