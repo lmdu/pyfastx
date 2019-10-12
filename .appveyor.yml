@@ -29,7 +29,6 @@ environment:
     - PYTHON: C:\Python27-x64
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 64
-      CFLAGS: -DMS_WIN64
 
     - PYTHON: C:\Python34-x64
       PYTHON_VERSION: 3.4
@@ -53,6 +52,7 @@ install:
   - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
   - if [%PYTHON_ARCH%] == [32] SET PATH=%MINGW_32%\bin;%PATH%
   - if [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
+  - if [%PYTHON_ARCH%] == [64] SET CFLAGS=-DMS_WIN64
   - COPY %MINGW_32%\opt\include\sqlite3.h %MINGW_32%\i686-w64-mingw32\include\sqlite3.h
   - COPY %MINGW_32%\opt\lib\libsqlite3.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.a
   - COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
