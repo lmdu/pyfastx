@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Version 0.5.0 (2019-10-12)
+--------------------------
+
+- Added support for python 2.7 and 3.4
+- Added command line tool to manipulate fasta and fastq file
+- Added gzip attribute to fasta and fastq object to check whether compressed
+- Added sort function for identifier object
+- Fixed python bool argument parsing error caused by uint16_t
+- Fixed identifier sort key initialization
+
 Version 0.4.1 (2019-10-05)
 --------------------------
 

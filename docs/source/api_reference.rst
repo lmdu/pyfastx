@@ -35,6 +35,12 @@ pyfastx.Fasta
 
 		total length of sequences in FASTA file
 
+	.. py:attribute:: gzip
+
+		New in pyfastx 0.5.0
+
+		return True if fasta is gzip compressed else return False
+
 	.. py:attribute:: gc_content
 
 		GC content of whole sequences in FASTA file, return a float value
@@ -193,9 +199,9 @@ pyfastx.Sequence
 
 		New in ``pyfastx`` 0.3.6
 
-		:param string subseq: a subsequence for search
+		:param str subseq: a subsequence for search
 
-		:param string strand: sequence strand + or -, default +
+		:param str strand: sequence strand + or -, default +
 
 		:return: if found subsequence return one-based start position, if not return None
 
@@ -225,6 +231,12 @@ New in ``pyfastx`` 0.4.0
 	.. py:attribute:: size
 
 		total bases in FASTQ file
+
+	.. py:attribute:: gzip
+
+		New in pyfastx 0.5.0
+
+		return True if fasta is gzip compressed else return False
 
 	.. py:attribute:: gc_content
 
@@ -279,3 +291,15 @@ pyfastx.Identifier
 .. py:class:: pyfastx.Identifier
 
 	Identifier is a readonly and list-like object, contains all names of sequences
+
+	.. py:method:: sort(key="id", reverse=False)
+
+		Sort identifiers by sequence id, name or length for iteration
+
+		New in ``pyfastx`` 0.5.0
+
+		:param str key: order by key, only can be id, name, or length
+
+		:param bool reverse: used to flag descending sorts, default is False
+
+		:return: identifer object itself

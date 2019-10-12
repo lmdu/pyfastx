@@ -545,6 +545,11 @@ Get all identifiers of sequence as a list-like object.
     >>> # convert to a list
     >>> list(ids)
 
+    >>> # sort identifier
+    >>> # New in pyfastx 0.5.0
+    >>> for name in ids.sort(key='length', reverse=True):
+    >>>     print(name)
+
 Testing
 =======
 
