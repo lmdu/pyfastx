@@ -11,7 +11,7 @@ link_args = ['-lz', '-lsqlite3']
 comp_args = []
 
 if os.name == 'nt' and '64' in platform.architecture()[0]:
-    extra_args.append('-DMS_WIN64')
+    link_args.append('-DMS_WIN64')
     comp_args.append('-DMS_WIN64')
 
 
