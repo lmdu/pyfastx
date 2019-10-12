@@ -22,6 +22,8 @@ PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self){
 		key = "chrom";
 	} else if (self->sort == 3) {
 		key = "slen";
+	} else {
+		key = NULL;
 	}
 
 	if (self->order == 0) {
