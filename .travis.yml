@@ -2,7 +2,7 @@ language: python
 
 env:
   global:
-    - CIBW_SKIP="cp27-* cp33-* cp34-*"
+    #- CIBW_SKIP=""
     - CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel"
     - CIBW_BEFORE_BUILD_MACOS="brew install zlib"
     - PIP=pip3
