@@ -3,13 +3,19 @@
 import os
 import sys
 import glob
+import platform
 #from distutils.core import setup, Extension
 from setuptools import setup, Extension
+
+extra_args = ['-lz', '-lsqlite3']
+
+if os.name == 'nt' and '64' in platform.architecture()[0]:
+    extra_args.append('-DMS_WIN64')
 
 extension = Extension('pyfastx',
     sources = glob.glob('src/*.c'),
     #extra_compile_args=["-Wall"],
-    extra_link_args=['-lz', '-lsqlite3']
+    extra_link_args = extra_args
 )
 
 description = (
