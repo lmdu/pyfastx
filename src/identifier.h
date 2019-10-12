@@ -3,6 +3,7 @@
 #include "Python.h"
 #include <stdint.h>
 #include "sqlite3.h"
+#include "pycompat.h"
 
 typedef struct {
 	PyObject_HEAD

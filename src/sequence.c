@@ -183,11 +183,15 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 	} else if (PySlice_Check(item)) {
 		Py_ssize_t slice_start, slice_stop, slice_step, slice_len;
 
-		if(PySlice_Unpack(item, &slice_start, &slice_stop, &slice_step) < 0) {
+		/*if(PySlice_Unpack(item, &slice_start, &slice_stop, &slice_step) < 0) {
 			return NULL;
 		}
 
-		slice_len = PySlice_AdjustIndices(self->seq_len, &slice_start, &slice_stop, slice_step);
+		slice_len = PySlice_AdjustIndices(self->seq_len, &slice_start, &slice_stop, slice_step);*/
+
+		if (pyfastxSlice_GetIndicesEx(item, self->seq_len, &slice_start, &slice_stop, &slice_step, &slice_len) < 0) {
+			return NULL;
+		}
 
 		if (slice_len <= 0) {
 			Py_RETURN_NONE;

@@ -397,12 +397,20 @@ PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 	Py_RETURN_NONE;
 }
 
+PyObject *pyfastx_fasta_format(pyfastx_Fasta *self, void* closure) {
+	if (self->index->gzip_format) {
+		Py_RETURN_TRUE;
+	}
+
+	Py_RETURN_FALSE;
+}
 
 static PyGetSetDef pyfastx_fasta_getsets[] = {
 	{"longest", (getter)pyfastx_fasta_longest, NULL, NULL, NULL},
 	{"shortest", (getter)pyfastx_fasta_shortest, NULL, NULL, NULL},
 	{"mean", (getter)pyfastx_fasta_mean, NULL, NULL, NULL},
 	{"median", (getter)pyfastx_fasta_median, NULL, NULL, NULL},
+	{"gzip", (getter)pyfastx_fasta_format, NULL, NULL, NULL},
 	{NULL}
 };
 

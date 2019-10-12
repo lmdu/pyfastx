@@ -5,67 +5,27 @@ environment:
     TWINE_REPOSITORY: pypi
     TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
 
-  matrix:
-    - PYTHON: C:\Python35
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 32
-
-    - PYTHON: C:\Python36
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 32
-
-    - PYTHON: C:\Python37
-      PYTHON_VERSION: 3.7
-      PYTHON_ARCH: 32
-
-    - PYTHON: C:\Python35-x64
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 64
-
-    - PYTHON: C:\Python36-x64
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 64
-
-    - PYTHON: C:\Python37-x64
-      PYTHON_VERSION: 3.7
-      PYTHON_ARCH: 64
+matrix:
+  fast_finish: false
 
 install:
   - appveyor DownloadFile https://github.com/lmdu/mingw64/raw/master/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z -FileName mw32.7z
   - 7z x -oC:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0 mw32.7z > NUL
-  #- appveyor DownloadFile https://raw.githubusercontent.com/horta/zlib.install/master/install.bat
-  #- install.bat
-  #- appveyor DownloadFile https://www.sqlite.org/2019/sqlite-amalgamation-3280000.zip
-  #- 7z e sqlite-amalgamation-3280000.zip -oc:\sqlite
-  #- SET INCLUDE=%programfiles%\zlib\include;c:\sqlite;%INCLUDE%
-  #- SET INCLUDE=%INCLUDE%
-  #- dir C:\mingw-w64
-  #- vcpkg install zlib:"%platform%"-windows
-  #- vcpkg install sqlite3:"%platform%"-windows
-  #- SET INCLUDE=C:\Tools\vcpkg\packages\zlib_%platform%-windows\include;%INCLUDE%
-  #- SET INCLUDE=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\include;%INCLUDE%
-  #- SET LIB=C:\Tools\vcpkg\packages\zlib_%platform%-windows\lib;%LIB%
-  #- SET LIB=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\lib;%LIB%
-  #- SET PATH=C:\Tools\vcpkg\packages\zlib_%platform%-windows\bin;%PATH%
-  #- SET PATH=C:\Tools\vcpkg\packages\sqlite3_%platform%-windows\bin;%PATH%
-  #- pip install -U cibuildwheel
-  - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
   - if [%PYTHON_ARCH%] == [32] SET PATH=%MINGW_32%\bin;%PATH%
   - if [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
   - COPY %MINGW_32%\opt\include\sqlite3.h %MINGW_32%\i686-w64-mingw32\include\sqlite3.h
   - COPY %MINGW_32%\opt\lib\libsqlite3.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.a
   - COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
   - COPY %MINGW_64%\opt\lib\libsqlite3.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.a
-  - gendef %PYTHON%\vcruntime140.dll
-  - dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
   - python -m pip install -U pip setuptools wheel
-  - python ci\fix_compiler_error.py %PYTHON%
+  #- python ci\fix_compiler_error.py %PYTHON%
   - pip install -U twine
 
 build_script:
-  #- cibuildwheel --output-dir wheelhouse
-  - python setup.py build -c mingw32
-  - pip wheel -v -w wheelhouse .
+  - pip install -U cibuildwheel
+  - cibuildwheel --output-dir wheelhouse
+  #- python setup.py build -c mingw32
+  #- pip wheel -v -w wheelhouse .
   - IF "%APPVEYOR_REPO_TAG%" == "true" (twine upload --skip-existing wheelhouse/*.whl)
 
 artifacts:

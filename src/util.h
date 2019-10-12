@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "sqlite3.h"
 #include "zran.h"
+#include "pycompat.h"
 
 uint16_t file_exists(char *file_name);
 void remove_space(char *str);

@@ -4,6 +4,7 @@
 #include "zran.h"
 #include "kseq.h"
 #include "sqlite3.h"
+#include "pycompat.h"
 
 typedef struct {
 	PyObject_HEAD
