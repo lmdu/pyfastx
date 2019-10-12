@@ -454,7 +454,7 @@ Get all identifiers of sequence as a list-like object.
 Sort identifiers
 ----------------
 
-Sort identifiers by id, name, or length for iteration
+Sort identifiers by sequence id, name, or length for iteration
 
 New in ``pyfastx`` 0.5.0
 

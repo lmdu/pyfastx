@@ -518,6 +518,9 @@ Get read information
 Identifiers
 ===========
 
+Get identifiers
+---------------
+
 Get all identifiers of sequence as a list-like object.
 
 .. code:: python
@@ -545,9 +548,25 @@ Get all identifiers of sequence as a list-like object.
     >>> # convert to a list
     >>> list(ids)
 
-    >>> # sort identifier
-    >>> # New in pyfastx 0.5.0
+Sort identifiers
+----------------
+
+Sort identifiers by sequence id, name, or length for iteration
+
+New in ``pyfastx`` 0.5.0
+
+.. code:: python
+
+    >>> # sort identifiers by length with descending order 
     >>> for name in ids.sort(key='length', reverse=True):
+    >>>     print(name)
+
+    >>> # sort identifiers by name with ascending order
+    >>> for name in ids.sort(key='name'):
+    >>>     print(name)
+
+    >>> # sort identifiers by id with descending order
+    >>> for name in ids.sort(key='id', reverse=True)
     >>>     print(name)
 
 Testing
