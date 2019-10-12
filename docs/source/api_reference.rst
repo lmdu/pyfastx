@@ -298,7 +298,7 @@ pyfastx.Identifier
 
 		New in ``pyfastx`` 0.5.0
 
-		:param str key: order by key, only can be id, name, or length
+		:param str key: order by key, only can be id, name, or length, default is id
 
 		:param bool reverse: used to flag descending sorts, default is False
 
