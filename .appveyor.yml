@@ -17,10 +17,12 @@ install:
   - COPY %MINGW_32%\opt\lib\libsqlite3.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.a
   - COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
   - COPY %MINGW_64%\opt\lib\libsqlite3.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.a
+  - COPY ci\distutils.cfg C:\Python27\Lib\distutils\distutils.cfg
   - COPY ci\distutils.cfg C:\Python34\Lib\distutils\distutils.cfg
   - COPY ci\distutils.cfg C:\Python35\Lib\distutils\distutils.cfg
   - COPY ci\distutils.cfg C:\Python36\Lib\distutils\distutils.cfg
   - COPY ci\distutils.cfg C:\Python37\Lib\distutils\distutils.cfg
+  - COPY ci\distutils.cfg C:\Python27-x64\Lib\distutils\distutils.cfg
   - COPY ci\distutils.cfg C:\Python34-x64\Lib\distutils\distutils.cfg
   - COPY ci\distutils.cfg C:\Python35-x64\Lib\distutils\distutils.cfg
   - COPY ci\distutils.cfg C:\Python36-x64\Lib\distutils\distutils.cfg
