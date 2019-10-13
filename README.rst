@@ -609,7 +609,7 @@ Show statistics information
 Split FASTA/Q file
 ------------------
 
-..code:: bash
+.. code:: bash
 
     $ python3 pyfastx.py split -h
 
