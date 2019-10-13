@@ -64,19 +64,20 @@ Features
 ========
 
 - Single file for the Python extension
-- Lightweight, memory efficient for parsing FASTA file
-- Fast random access to sequences from ``gzipped`` FASTA file
+- Lightweight, memory efficient for parsing FASTA/Q file
+- Fast random access to sequences from ``gzipped`` FASTA/Q file
 - Read sequences from FASTA file line by line
-- Calculate assembly N50 and L50
+- Calculate N50 and L50 of sequences in FASTA file
 - Calculate GC content and nucleotides composition
-- Extract reverse, complement and antisense sequence
+- Extract reverse, complement and antisense sequences
 - Excellent compatibility, support for parsing nonstandard FASTA file
-- Support for random access reads from FASTQ file
+- Support for FASTQ quality score conversion
+- Provide command line interface for splitting FASTA/Q file
 
 Installation
 ============
 
-Make sure you have both `pip <https://pip.pypa.io/en/stable/installing/>`_ and at least version 3.5 of Python before starting.
+Currently, ``pyfastx`` supports Python 2.7, 3.4, 3.5, 3.6, 3.7. Make sure you have installed both `pip <https://pip.pypa.io/en/stable/installing/>`_ and Python before starting.
 
 You can install ``pyfastx`` via the Python Package Index (PyPI)
 
