@@ -1,7 +1,9 @@
 import os
+import re
 import sys
 import gzip
 import math
+import glob
 import pyfastx
 import argparse
 
@@ -34,6 +36,69 @@ def max_index(lst):
 def min_index(lst):
 	return min(range(len(lst)), key=lst.__getitem__)
 
+def is_glob(pattern):
+	if re.search(r'[\*\?]', pattern) or re.search(r'\[\!?.*\]', pattern):
+		return True
+	else:
+		return False
+
+def print_table(table):
+	width = [0] * len(table[0])
+
+	for row in table:
+		for i, col in enumerate(row):
+			l = len(str(col))
+
+			if l > width[i]:
+				width[i] = l
+
+	format_row = "\t".join(['{:%s}' % j for j in width])
+
+	for row in table:
+		print(format_row.format(row))
+
+def fastx_info(args):
+	#infiles = []
+	#for pattern in args.fastx:
+	#	if is_glob(pattern):
+	#		infiles.extend(glob.glob(pattern))
+
+	#	else:
+	#		infiles.append(pattern)
+
+	fastx_type = fastx_format_check(args.fastx)
+
+	if fastx_type == 'fasta':
+		fa = pyfastx.Fasta(args.fastx)
+		comp = fa.composition
+		print("Sequence counts: {}".format(len(fa)))
+		print("Total bases: {}".format(fa.size))
+		print("GC content: {:.2f}%".format(fa.gc_content))
+		print("A counts: {}".format(comp['A']))
+		print("T counts: {}".format(comp['T']))
+		print("C counts: {}".format(comp['C']))
+		print("G counts: {}".format(comp['G']))
+		print("N counts: {}".format(comp['N']))
+		print("Mean length: {:.2f}".format(fa.mean))
+		print("Median length: {:.2f}".format(fa.median))
+		print("Max length: {}".format(fa.longest[1]))
+		print("Min length: {}".format(fa.shortest[1]))
+		print("N50, L50: {}, {}".format(*fa.nl()))
+		print("length >= 1000: {}".format(fa.count(1000)))
+
+	elif fastx_type == 'fastq':
+		fq = pyfastx.Fastq(args.fastx)
+		comp = fq.composition
+		print("Read counts: {}".format(len(fq)))
+		print("Total bases: {}".format(fq.size))
+		print("GC content: {:.2f}%".format(fq.gc_content))
+		print("A counts: {}".format(comp['A']))
+		print("T counts: {}".format(comp['T']))
+		print("C counts: {}".format(comp['C']))
+		print("G counts: {}".format(comp['G']))
+		print("N counts: {}".format(comp['N']))
+		print("Quality encoding maybe: {}".format(", ".join(fq.guess)))
+
 def fasta_split(args):
 	fa = pyfastx.Fasta(args.fastx)
 
@@ -42,7 +107,11 @@ def fasta_split(args):
 	else:
 		parts_num = args.file_num
 
-	name, suffix = os.path.splitext(os.path.basename(args.fastx))
+	name, suffix1 = os.path.splitext(os.path.basename(args.fastx))
+
+	if fa.gzip:
+		name, suffix2 = os.path.splitext(name)
+
 	digit = len(str(parts_num))
 	lens = [0] * parts_num
 	
@@ -52,12 +121,15 @@ def fasta_split(args):
 	fhs = []
 
 	for i in range(1, parts_num+1):
-		subfile = "{}.{}{}".format(name, str(i).zfill(digit), suffix)
+		if args.out_gzip:
+			subfile = "{}.{}{}{}".format(name, str(i).zfill(digit), suffix2, suffix1)
+		else:
+			subfile = "{}.{}{}".format(name, str(i).zfill(digit), suffix2)
 
 		if args.out_dir != '.':
 			subfile = os.path.join(args.out_dir, subfile)
 
-		if fa.gzip:
+		if args.out_gzip:
 			fh = gzip.open(subfile, 'wt')
 		else:
 			fh = open(subfile, 'w')
@@ -89,7 +161,11 @@ def fastq_split(args):
 		seqs_num = args.seq_count
 		parts_num = math.ceil(len(fq)/seqs_num)
 
-	name, suffix = os.path.splitext(os.path.basename(args.fastx))
+	name, suffix1 = os.path.splitext(os.path.basename(args.fastx))
+
+	if fq.gzip:
+		name, suffix2 = os.path.splitext(name)
+
 	digit = len(str(parts_num))
 
 	seq_write = 0
@@ -99,12 +175,16 @@ def fastq_split(args):
 	for read in fq:
 		if seq_write == 0:
 			file_num += 1
-			subfile = "{}.{}{}".format(name, str(file_num).zfill(digit), suffix)
+
+			if args.out_gzip:
+				subfile = "{}.{}{}{}".format(name, str(file_num).zfill(digit), suffix2, suffix1)
+			else:
+				subfile = "{}.{}{}".format(name, str(file_num).zfill(digit), suffix2)
 
 			if args.out_dir != '.':
 				subfile = os.path.join(args.out_dir, subfile)
 
-			if fq.gzip:
+			if args.out_gzip:
 				fh = gzip.open(subfile, 'wt')
 			else:
 				fh = open(subfile, 'w')
@@ -132,8 +212,8 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(
 		prog = 'pyfastx',
 		usage = "pyfastx COMMAND [OPTIONS]",
-		description = "A tool for FASTA/Q file manipulation",
-		epilog = "Contact:\nLianming Du (dulianming@cdu.edu.cn)",
+		description = "A command line tool for FASTA/Q file manipulation",
+		#epilog = "Contact:\nLianming Du (dulianming@cdu.edu.cn)",
 		formatter_class = argparse.RawDescriptionHelpFormatter
 	)
 
@@ -148,6 +228,18 @@ if __name__ == '__main__':
 		metavar = ''
 	)
 
+	#statistics command
+	parser_info = subparsers.add_parser('info',
+		help = "Get detailed statistics information of FASTA/Q file"
+	)
+
+	parser_info.set_defaults(func=fastx_info)
+
+	parser_info.add_argument('fastx',
+		help = "input fasta or fastq file, gzip compressed support"
+	)
+
+	#split command
 	parser_split = subparsers.add_parser('split', 
 		help = "Split fasta file into multiple files"
 	)
