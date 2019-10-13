@@ -62,5 +62,6 @@ setup(
             "Operating System :: Unix",
             "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
+    scripts = ["scripts/pyfastx.py"],
     test_suite = "tests"
 )
