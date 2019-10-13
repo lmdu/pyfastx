@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 0.5.0 (2019-10-12)
+Version 0.5.0 (2019-10-13)
 --------------------------
 
 - Added support for python 2.7 and 3.4
