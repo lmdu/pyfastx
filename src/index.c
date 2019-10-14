@@ -316,37 +316,14 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 				//temp line length
 				temp_len++;
-
-				//c = toupper(c);
 				
 				//calculate base counts in sequence
 				switch(c){
-					case 65:
-						a_count++; break;
-					
-					case 67:
-						c_count++; break;
-					
-					case 71:
-						g_count++; break;
-					
-					case 84:
-						t_count++; break;
-
-					case 97:
-						a_count++; break;
-
-					case 99:
-						c_count++; break;
-
-					case 103:
-						g_count++; break;
-
-					case 116:
-						t_count++; break;
-
-					default:
-						n_count++;
+					case 'A': case: 'a': a_count++; break;
+					case 'C': case: 'c': c_count++; break;
+					case 'G': case: 'g': g_count++; break;
+					case 'T': case: 't': t_count++; break;
+					default: n_count++;
 				}
 			}
 		}
