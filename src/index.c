@@ -1,5 +1,6 @@
 #include "index.h"
 #include "util.h"
+#include "kseq.h"
 #include "sequence.h"
 
 /*
@@ -8,11 +9,14 @@ create a index
 @param uppercase, uppercase sequence
 @param uppercase
 */
-pyfastx_Index* pyfastx_init_index(char* file_name, uint16_t uppercase){
+pyfastx_Index* pyfastx_init_index(char* file_name, uint16_t uppercase, PyObject* key_func){
 	pyfastx_Index* index;
 
 	index = (pyfastx_Index *)malloc(sizeof(pyfastx_Index));
 	index->uppercase = uppercase;
+
+	//key function
+	index->key_func = key_func;
 
 	//check input file is gzip or not
 	index->gzip_format = is_gzip_format(file_name);
@@ -64,75 +68,6 @@ PyObject* pyfastx_get_next_seq(pyfastx_Index *index){
 	return NULL;
 }
 
-/*
-void pyfastx_build_gzip_index(pyfastx_Index *self){
-	sqlite3_stmt *stmt;
-
-	//rewind(self->fd);
-	//zran_init(self->gzip_index, self->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
-	zran_build_index(self->gzip_index, 0, 0);
-
-	//create temp gzip index file
-	char *temp_index = (char *)malloc(strlen(self->index_file) + 5);
-	strcpy(temp_index, self->index_file);
-	strcat(temp_index, ".tmp");
-	
-	FILE* fd = fopen(temp_index, "wb+");
-	
-	if(zran_export_index(self->gzip_index, fd) != ZRAN_EXPORT_OK){
-		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
-	}
-	
-	uint32_t fsize = ftell(fd);
-	rewind(fd);
-
-	char *buff = (char *)malloc(fsize + 1);
-
-	if(fread(buff, fsize, 1, fd) != 1){
-		return;
-	}
-
-	buff[fsize] = '\0';
-	
-	fclose(fd);
-	remove(temp_index);
-
-	sqlite3_prepare_v2(self->index_db, "INSERT INTO gzindex VALUES (NULL, ?)", -1, &stmt, NULL);
-	sqlite3_bind_blob(stmt, 1, buff, fsize, NULL);
-	sqlite3_step(stmt);
-	sqlite3_finalize(stmt);
-	free(buff);
-}
-
-void pyfastx_load_gzip_index(pyfastx_Index *self){
-	sqlite3_stmt *stmt;
-	uint32_t bytes = 0;
-	FILE *fh;
-	
-	//rewind(self->fd);
-	//zran_init(self->gzip_index, self->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
-	
-	char *temp_index = (char *)malloc(strlen(self->index_file) + 5);
-	strcpy(temp_index, self->index_file);
-	strcat(temp_index, ".tmp");
-	
-	fh = fopen(temp_index, "wb");
-
-	sqlite3_prepare_v2(self->index_db, "SELECT content FROM gzindex;", -1, &stmt, NULL);
-	if(sqlite3_step(stmt) == SQLITE_ROW){
-		bytes = sqlite3_column_bytes(stmt, 0);
-	}
-	
-	fwrite(sqlite3_column_blob(stmt, 0), bytes, 1, fh);
-	fclose(fh);
-
-	fh = fopen(temp_index, "rb");
-	if(zran_import_index(self->gzip_index, fh) != ZRAN_IMPORT_OK){
-		PyErr_SetString(PyExc_RuntimeError, "Failed to import gzip index.");
-	}
-	remove(temp_index);
-}*/
-
 void pyfastx_create_index(pyfastx_Index *self){
 	// seqlite3 return value
 	//int ret;
@@ -173,13 +108,19 @@ void pyfastx_create_index(pyfastx_Index *self){
 	uint32_t n_count = 0;
 
 	//current read base char
-	int c;
+	int i;
 
 	//reading file for kseq
-	kstream_t* ks = self->kseqs->f;
+	kstream_t* ks;
 
-	//sequence header description
-	kstring_t description = {0, 0, 0};
+	//read for line
+	kstring_t line = {0, 0, 0};
+
+	//description line
+	char* description = NULL;
+
+	//chromosome name
+	char* chrom = NULL;
 
 	if (sqlite3_open(self->index_file, &self->index_db) != SQLITE_OK) {
 		PyErr_SetString(PyExc_ConnectionError, sqlite3_errmsg(self->index_db));
@@ -223,132 +164,116 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_prepare_v2(self->index_db, insert_sql, -1, &stmt, NULL);
 
 	Py_BEGIN_ALLOW_THREADS
-	
-	while((c=ks_getc(ks)) >= 0){
-		position++;
-	
-		switch(c){
-			// c is >
-			case 62: {
-				if(start > 0){
 
-					//end of sequence and check whether normal fasta
-					seq_normal = (bad_line > 1) ? 0 : 1;
+	ks = ks_init(self->gzfd);
 
-					sqlite3_bind_null(stmt, 1);
-					sqlite3_bind_text(stmt, 2, self->kseqs->name.s, self->kseqs->name.l, NULL);
-					sqlite3_bind_int64(stmt, 3, start);
-					sqlite3_bind_int(stmt, 4, position-start-1);
-					sqlite3_bind_int(stmt, 5, seq_len);
-					sqlite3_bind_int(stmt, 6, line_len);
-					sqlite3_bind_int(stmt, 7, line_end);
-					sqlite3_bind_int(stmt, 8, seq_normal);
-					sqlite3_bind_int(stmt, 9, a_count);
-					sqlite3_bind_int(stmt, 10, c_count);
-					sqlite3_bind_int(stmt, 11, g_count);
-					sqlite3_bind_int(stmt, 12, t_count);
-					sqlite3_bind_int(stmt, 13, n_count);
-					sqlite3_bind_text(stmt, 14, description.s, description.l, NULL);
-					sqlite3_step(stmt);
-					sqlite3_reset(stmt);
-				}
+	while (ks_getuntil(ks, '\n', &line, 0) >= 0) {
+		position += line.l + 1;
 
-				position += ks_getuntil(ks, 0, &self->kseqs->name, &c);
-				position++;
+		if (line.s[0] == '>') {
+			if (start > 0) {
+				//end of sequence and check whether normal fasta
+				seq_normal = (bad_line > 1) ? 0 : 1;
 
-				//get sequence header description
-				if (c != 10) {
-					position += ks_getuntil(ks, '\n', &description, 0) + 1;
-
-					if (description.s[description.l-1] == '\r') {
-						description.s[description.l-1] = '\0';
-					}
-				}
-				
-				//while(c != 10){
-				//	c = ks_getc(ks);
-				//	position++;
-				//}
-				
-				start = position;
-				seq_len = 0;
-				g_count = 0;
-				c_count = 0;
-				a_count = 0;
-				t_count = 0;
-				n_count = 0;
-				temp_len = 0;
-				line_len = 0;
-				line_end = 1;
-				bad_line = 0;
-				seq_normal = 1;
-
-				break;
+				sqlite3_bind_null(stmt, 1);
+				sqlite3_bind_text(stmt, 2, chrom, -1, NULL);
+				sqlite3_bind_int64(stmt, 3, start);
+				sqlite3_bind_int(stmt, 4, position-start-line.l);
+				sqlite3_bind_int(stmt, 5, seq_len);
+				sqlite3_bind_int(stmt, 6, line_len);
+				sqlite3_bind_int(stmt, 7, line_end);
+				sqlite3_bind_int(stmt, 8, seq_normal);
+				sqlite3_bind_int(stmt, 9, a_count);
+				sqlite3_bind_int(stmt, 10, c_count);
+				sqlite3_bind_int(stmt, 11, g_count);
+				sqlite3_bind_int(stmt, 12, t_count);
+				sqlite3_bind_int(stmt, 13, n_count);
+				sqlite3_bind_text(stmt, 14, description, -1, NULL);
+				sqlite3_step(stmt);
+				sqlite3_reset(stmt);
 			}
 
-			// c is \r
-			case 13: {
-				temp_len++;
-				if(line_end != 2){
-					line_end = 2;
-				}
-				break;
-			}
-			
-			// c is \n
-			case 10: {
-				temp_len++;
-				
-				if(line_len > 0 && line_len != temp_len){
-					bad_line++;
-				}
-				//if(line_len == 0){
-				//get the longest line
-				if (temp_len > line_len){
-					line_len = temp_len;
-				}
-				temp_len = 0;
-				break;
+			//reset
+			start = position;
+			seq_len = 0;
+			g_count = 0;
+			c_count = 0;
+			a_count = 0;
+			t_count = 0;
+			n_count = 0;
+			temp_len = 0;
+			line_len = 0;
+			line_end = 1;
+			bad_line = 0;
+			seq_normal = 1;
+
+
+			description = (char *)malloc(line.l);
+			memcpy(description, line.s+1, line.l-1);
+
+			if (description[line.l-2] == '\r') {
+				description[line.l-2] = '\0';
+			} else {
+				description[line.l-1] = '\0';
 			}
 
-			default: {
-				seq_len++;
+			if (self->key_func == Py_None) {
+				chrom = strtok(description, " ");
+			} else {
+				PyObject *result = PyObject_CallFunction(self->key_func, "s", description);
+				chrom = PyUnicode_AsUTF8(result);
+			}
 
-				//temp line length
-				temp_len++;
-				
-				//calculate base counts in sequence
-				switch(c){
-					case 'A': case: 'a': a_count++; break;
-					case 'C': case: 'c': c_count++; break;
-					case 'G': case: 'g': g_count++; break;
-					case 'T': case: 't': t_count++; break;
-					default: n_count++;
-				}
+			continue;
+		}
+
+		temp_len = line.l + 1;
+
+		if (line.s[line.l-1] == '\r') {
+			if (line_end != 2) {
+				line_end = 2;
+			}
+		}
+
+		if (line_len > 0 && line_len != temp_len) {
+			bad_line++;
+		}
+
+		line_len = temp_len;
+		temp_len = 0;
+
+		//calculate atgc counts
+		for (i = 0; i <= (line.l - line_end); i++) {
+			switch (line.s[i]) {
+				case 'A': case 'a': a_count++; break;
+				case 'C': case 'c': c_count++; break;
+				case 'G': case 'g': g_count++; break;
+				case 'T': case 't': t_count++; break;
+				default: n_count++;
 			}
 		}
 	}
 	
 	//fixed file ended without \n
-	if( temp_len != 0) {
-		if (temp_len != line_len) {
-			bad_line++;
-		}
+	//if ( temp_len != 0) {
+	//	if (temp_len != line_len) {
+	//		bad_line++;
+	//	}
 		
-		if (temp_len > line_len) {
-			line_len = temp_len;
-		}
-	}
+	//	if (temp_len > line_len) {
+	//		line_len = temp_len;
+	//	}
+	//}
 
 	//end of sequenc and check whether normal fasta
 	seq_normal = (bad_line > 1) ? 0 : 1;
 
-	if(line_len == 0){
-		line_len = temp_len;
-	}
+	//if (line_len == 0){
+	//	line_len = temp_len;
+	//}
 
 	sqlite3_bind_null(stmt, 1);
-	sqlite3_bind_text(stmt, 2, self->kseqs->name.s, self->kseqs->name.l, NULL);
+	sqlite3_bind_text(stmt, 2, chrom, -1, NULL);
 	sqlite3_bind_int64(stmt, 3, start);
 	sqlite3_bind_int(stmt, 4, position-start);
 	sqlite3_bind_int(stmt, 5, seq_len);
@@ -360,12 +285,15 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_bind_int(stmt, 11, g_count);
 	sqlite3_bind_int(stmt, 12, t_count);
 	sqlite3_bind_int(stmt, 13, n_count);
-	sqlite3_bind_text(stmt, 14, description.s, description.l, NULL);
+	sqlite3_bind_text(stmt, 14, description, -1, NULL);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
 	sqlite3_exec(self->index_db, "CREATE INDEX chromidx ON seq (chrom);", NULL, NULL, NULL);
 	sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
+
+	ks_destroy(ks);
+	free(line.s);
 
 	//create gzip random access index
 	if(self->gzip_format){

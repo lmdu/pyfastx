@@ -54,10 +54,18 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//build index or not
 	int build_index = 1;
 
+	//key function for seperating name
+	PyObject *key_func = Py_None;
+
 	//paramters for fasta object construction
-	static char* keywords[] = {"file_name", "uppercase", "build_index", NULL};
+	static char* keywords[] = {"file_name", "uppercase", "build_index", "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|pp", keywords, &file_name, &uppercase, &build_index)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ppO", keywords, &file_name, &uppercase, &build_index, &key_func)){
+		return NULL;
+	}
+
+	if ((key_func != Py_None) && !PyCallable_Check(key_func)) {
+		PyErr_SetString(PyExc_TypeError, "key_func must be a callable function");
 		return NULL;
 	}
 
@@ -79,10 +87,11 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->uppercase = uppercase;
 
 	//create index
-	obj->index = pyfastx_init_index(obj->file_name, uppercase);
+	Py_XINCREF(key_func);
+	obj->index = pyfastx_init_index(obj->file_name, uppercase, key_func);
 
 	//if build_index is True
-	if(build_index){
+	if (build_index) {
 		pyfastx_build_index(obj->index);
 		pyfastx_calc_fasta_attrs(obj);
 	}

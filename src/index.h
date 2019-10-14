@@ -42,6 +42,9 @@ typedef struct {
 	uint32_t cache_start;
 	uint32_t cache_end;
 
+	//key function
+	PyObject* key_func;
+
 	//cache sequence
 	char* cache_seq;
 
@@ -61,7 +64,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt);
 PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name);
 PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id);
 
-pyfastx_Index *pyfastx_init_index(char* file_path, uint16_t uppercase);
+pyfastx_Index *pyfastx_init_index(char* file_path, uint16_t uppercase, PyObject* key_func);
 char *pyfastx_index_get_sub_seq(pyfastx_Index *self, uint32_t chrom, int64_t offset, int64_t bytes, uint32_t start, uint32_t end, uint32_t plen, uint16_t normal);
 char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom);
 
