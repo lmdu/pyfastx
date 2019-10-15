@@ -291,6 +291,16 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 }
 
 void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
+	if (self->index_db != NULL) {
+		sqlite3_close(self->index_db);
+	}
+
+	ks_destroy(self->ks);
+	kseq_destroy(self->kseq);
+	fclose(self->fd);
+	gzclose(self->gzfd);
+	zran_free(self->gzip_index);
+
 	Py_TYPE(self)->tp_free(self);
 }
 

@@ -60,7 +60,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//paramters for fasta object construction
 	static char* keywords[] = {"file_name", "uppercase", "build_index", "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ppO", keywords, &file_name, &uppercase, &build_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiO", keywords, &file_name, &uppercase, &build_index, &key_func)){
 		return NULL;
 	}
 
@@ -87,7 +87,6 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->uppercase = uppercase;
 
 	//create index
-	Py_XINCREF(key_func);
 	obj->index = pyfastx_init_index(obj->file_name, uppercase, key_func);
 
 	//if build_index is True
@@ -127,7 +126,9 @@ PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObjec
 }
 
 PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
-	if(file_exists(self->index->index_file)){
+	sqlite3_close(self->index->index_db);
+
+	if (file_exists(self->index->index_file)) {
 		remove(self->index->index_file);
 	}
 	pyfastx_build_index(self->index);

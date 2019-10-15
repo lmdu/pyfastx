@@ -108,7 +108,10 @@ void pyfastx_create_index(pyfastx_Index *self){
 	uint32_t n_count = 0;
 
 	//current read base char
-	int i;
+	uint32_t i;
+
+	//real line len
+	uint32_t real_len;
 
 	//reading file for kseq
 	kstream_t* ks;
@@ -168,7 +171,8 @@ void pyfastx_create_index(pyfastx_Index *self){
 	ks = ks_init(self->gzfd);
 
 	while (ks_getuntil(ks, '\n', &line, 0) >= 0) {
-		position += line.l + 1;
+		position += line.l;
+		position++;
 
 		if (line.s[0] == '>') {
 			if (start > 0) {
@@ -207,6 +211,10 @@ void pyfastx_create_index(pyfastx_Index *self){
 			bad_line = 0;
 			seq_normal = 1;
 
+			//get line end length \r\n or \n
+			if (line.s[line.l-1] == '\r') {
+				line_end = 2;
+			}
 
 			description = (char *)malloc(line.l);
 			memcpy(description, line.s+1, line.l-1);
@@ -220,7 +228,9 @@ void pyfastx_create_index(pyfastx_Index *self){
 			if (self->key_func == Py_None) {
 				chrom = strtok(description, " ");
 			} else {
+				PyGILState_STATE state = PyGILState_Ensure();
 				PyObject *result = PyObject_CallFunction(self->key_func, "s", description);
+				PyGILState_Release(state);
 				chrom = PyUnicode_AsUTF8(result);
 			}
 
@@ -228,12 +238,6 @@ void pyfastx_create_index(pyfastx_Index *self){
 		}
 
 		temp_len = line.l + 1;
-
-		if (line.s[line.l-1] == '\r') {
-			if (line_end != 2) {
-				line_end = 2;
-			}
-		}
 
 		if (line_len > 0 && line_len != temp_len) {
 			bad_line++;
@@ -243,13 +247,15 @@ void pyfastx_create_index(pyfastx_Index *self){
 		temp_len = 0;
 
 		//calculate atgc counts
-		for (i = 0; i <= (line.l - line_end); i++) {
+		real_len = line.l - line_end;
+
+		for (i = 0; i <= real_len; i++) {
 			switch (line.s[i]) {
-				case 'A': case 'a': a_count++; break;
-				case 'C': case 'c': c_count++; break;
-				case 'G': case 'g': g_count++; break;
-				case 'T': case 't': t_count++; break;
-				default: n_count++;
+				case 65: case 97: -~a_count; break;
+				case 67: case 99: -~c_count; break;
+				case 71: case 103: -~g_count; break;
+				case 84: case 116: -~t_count; break;
+				default: -~n_count; break;
 			}
 		}
 	}
@@ -324,14 +330,21 @@ void pyfastx_build_index(pyfastx_Index *self){
 }
 
 void pyfastx_index_free(pyfastx_Index *self){
-	if(self->gzip_format){
+	if (self->gzip_format) {
 		zran_free(self->gzip_index);
 	}
-	if(self->index_db != NULL){
+
+	if (self->index_db != NULL) {
 		sqlite3_close(self->index_db);
 	}
+
+	if (self->cache_seq != NULL) {
+		free(self->cache_seq);
+	}
+
 	kseq_destroy(self->kseqs);
 	gzclose(self->gzfd);
+	fclose(self->fd);
 }
 
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
