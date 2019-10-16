@@ -251,11 +251,11 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 		for (i = 0; i <= real_len; i++) {
 			switch (line.s[i]) {
-				case 65: case 97: -~a_count; break;
-				case 67: case 99: -~c_count; break;
-				case 71: case 103: -~g_count; break;
-				case 84: case 116: -~t_count; break;
-				default: -~n_count; break;
+				case 65: case 97: ++a_count; break;
+				case 67: case 99: ++c_count; break;
+				case 71: case 103: ++g_count; break;
+				case 84: case 116: ++t_count; break;
+				default: ++n_count; break;
 			}
 		}
 	}
