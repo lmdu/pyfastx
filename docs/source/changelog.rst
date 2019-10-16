@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.5.1 (2019-10-16)
+--------------------------
+
+- Added key function for custom sequence identifier
+- Optimized speed of fasta indexing
+- Fixed bool args parsing error in py2.7
+
 Version 0.5.0 (2019-10-13)
 --------------------------
 

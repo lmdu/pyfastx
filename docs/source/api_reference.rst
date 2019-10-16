@@ -15,7 +15,7 @@ pyfastx.version
 pyfastx.Fasta
 -------------
 
-.. py:class:: pyfastx.Fasta(file_name, uppercase=True, build_index=True)
+.. py:class:: pyfastx.Fasta(file_name, uppercase=True, build_index=True, key_func=None)
 
 	Read and parse fasta files. Fasta can be used as dict or list, you can use index or sequence name to get a sequence object, e.g. ``fasta[0]``, ``fasta['seq1']``
 
@@ -24,6 +24,8 @@ pyfastx.Fasta
 	:param bool uppercase: always output uppercase sequence, default: ``True``
 
 	:param bool build_index: build index for random access to FASTA sequence, default: ``True``
+
+	:param function key_func: new in 0.5.1, key function is generally a lambda expression to split header and obtain a shortened identifer, default: None
 
 	:return: Fasta object
 

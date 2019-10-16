@@ -105,7 +105,7 @@ PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyOb
 	static char* kwlist[] = {"key", "reverse", NULL};
 
 	// cannot use uint16_t to parse Python bool, should use int declare
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sp", kwlist, &key, &reverse)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|si", kwlist, &key, &reverse)) {
 		return NULL;
 	}
 

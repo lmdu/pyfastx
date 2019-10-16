@@ -102,7 +102,7 @@ The fastest way to parse flat or gzipped FASTA file without building index.
 .. code:: python
 
     >>> import pyfastx
-    >>> for name, seq in pyfastx.Fasta('test/data/test.fa.gz', build_index=False):
+    >>> for name, seq in pyfastx.Fasta('tests/data/test.fa.gz', build_index=False):
     >>>     print(name, seq)
 
 Read flat or gzipped FASTA file and build index, support for random access to FASTA.
@@ -110,9 +110,9 @@ Read flat or gzipped FASTA file and build index, support for random access to FA
 .. code:: python
 
     >>> import pyfastx
-    >>> fa = pyfastx.Fasta('test/data/test.fa.gz')
+    >>> fa = pyfastx.Fasta('tests/data/test.fa.gz')
     >>> fa
-    <Fasta> test/data/test.fa.gz contains 211 seqs
+    <Fasta> tests/data/test.fa.gz contains 211 seqs
 
 .. note::
 
@@ -232,6 +232,21 @@ Subseuqneces can be retrieved from FASTA file by using a list of [start, end] co
     >>> # get subsequences with reverse strand
     >>> fa.fetch('JZ822577.1', (1, 10), strand='-')
     'ATCTCTAGAG'
+
+Key function
+------------
+
+New in ``pyfastx`` 0.5.1
+
+Sometimes your fasta will have a long header which contains multiple identifiers and description, for example, ">JZ822577.1 contig1 cDNA library of flower petals in tree peony by suppression subtractive hybridization Paeonia suffruticosa cDNA, mRNA sequence". In this case, both "JZ822577.1" and "contig1" can be used as identifer. you can specify the key function to select one as identifier.
+
+.. code:: python
+
+	>>> #default use JZ822577.1 as identifier
+	>>> #specify key_func to select contig1 as identifer
+	>>> fa = pyfastx.Fasta('tests/data/test.fa.gz', key_func=lambda x: x.split()[1])
+	>>> fa
+	<Fasta> tests/data/test.fa.gz contains 211 seqs
 
 Sequence
 ========

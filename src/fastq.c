@@ -238,7 +238,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	static char* keywords[] = {"file_name", "phred", "build_index", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ip", keywords, &file_name, &phred, &build_index)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ii", keywords, &file_name, &phred, &build_index)) {
 		return NULL;
 	}
 
