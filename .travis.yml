@@ -22,7 +22,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       cd "$(brew --repo)";
       git remote set-url origin https://mirrors.aliyun.com/homebrew/brew.git;
-      cd;
+      cd "$TRAVIS_BUILD_DIR";
     fi
   - $PIP install cpp-coveralls
   - $PIP install pyfaidx
