@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 0.5.1 (2019-10-16)
+Version 0.5.1 (2019-10-17)
 --------------------------
 
 - Added key function for custom sequence identifier

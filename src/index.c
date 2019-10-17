@@ -182,7 +182,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 				sqlite3_bind_null(stmt, 1);
 				sqlite3_bind_text(stmt, 2, chrom, -1, NULL);
 				sqlite3_bind_int64(stmt, 3, start);
-				sqlite3_bind_int(stmt, 4, position-start-line.l);
+				sqlite3_bind_int(stmt, 4, position-start-line.l-1);
 				sqlite3_bind_int(stmt, 5, seq_len);
 				sqlite3_bind_int(stmt, 6, line_len);
 				sqlite3_bind_int(stmt, 7, line_end);
@@ -217,16 +217,14 @@ void pyfastx_create_index(pyfastx_Index *self){
 			}
 
 			description = (char *)malloc(line.l);
-			memcpy(description, line.s+1, line.l-1);
-
-			if (description[line.l-2] == '\r') {
-				description[line.l-2] = '\0';
-			} else {
-				description[line.l-1] = '\0';
-			}
+			memcpy(description, line.s+1, line.l-line_end);
+			description[line.l-line_end] = '\0';
+			
 
 			if (self->key_func == Py_None) {
-				chrom = strtok(description, " ");
+				chrom = (char *)malloc(line.l);
+				strcpy(chrom, description);
+				strtok(chrom, " ");
 			} else {
 				PyGILState_STATE state = PyGILState_Ensure();
 				PyObject *result = PyObject_CallFunction(self->key_func, "s", description);
@@ -243,13 +241,18 @@ void pyfastx_create_index(pyfastx_Index *self){
 			bad_line++;
 		}
 
-		line_len = temp_len;
-		temp_len = 0;
+		//record first line length
+		if (line_len == 0) {
+			line_len = temp_len;
+		}
 
 		//calculate atgc counts
-		real_len = line.l - line_end;
+		real_len = line.l - line_end + 1;
 
-		for (i = 0; i <= real_len; i++) {
+		//calculate seq len
+		seq_len += real_len;
+
+		for (i = 0; i < real_len; i++) {
 			switch (line.s[i]) {
 				case 65: case 97: ++a_count; break;
 				case 67: case 99: ++c_count; break;
@@ -259,24 +262,9 @@ void pyfastx_create_index(pyfastx_Index *self){
 			}
 		}
 	}
-	
-	//fixed file ended without \n
-	//if ( temp_len != 0) {
-	//	if (temp_len != line_len) {
-	//		bad_line++;
-	//	}
-		
-	//	if (temp_len > line_len) {
-	//		line_len = temp_len;
-	//	}
-	//}
 
-	//end of sequenc and check whether normal fasta
+	//end of sequence and check whether normal fasta
 	seq_normal = (bad_line > 1) ? 0 : 1;
-
-	//if (line_len == 0){
-	//	line_len = temp_len;
-	//}
 
 	sqlite3_bind_null(stmt, 1);
 	sqlite3_bind_text(stmt, 2, chrom, -1, NULL);
