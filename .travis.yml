@@ -4,7 +4,7 @@ env:
   global:
     #- CIBW_SKIP=""
     - CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel"
-    - CIBW_BEFORE_BUILD_MACOS="brew install zlib"
+    - CIBW_BEFORE_BUILD_MACOS="brew install zlib sqlite3"
     - PIP=pip3
     - TWINE_REPOSITORY=pypi
     - TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
@@ -20,9 +20,7 @@ matrix:
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      cd "$(brew --repo)";
-      git remote set-url origin https://mirrors.aliyun.com/homebrew/brew.git;
-      cd "$TRAVIS_BUILD_DIR";
+      git -C "$(brew --repo)" remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git
     fi
   - $PIP install cpp-coveralls
   - $PIP install pyfaidx
