@@ -19,6 +19,11 @@ matrix:
       language: generic
 
 before_install:
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      cd "$(brew --repo)";
+      git remote set-url origin https://mirrors.aliyun.com/homebrew/brew.git;
+      cd;
+    fi
   - $PIP install cpp-coveralls
   - $PIP install pyfaidx
 
