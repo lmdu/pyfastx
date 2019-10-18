@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.5.2 (2019-10-18)
+--------------------------
+
+- Fixed command line interface running error
+
 Version 0.5.1 (2019-10-17)
 --------------------------
 

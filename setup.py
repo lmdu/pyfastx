@@ -5,7 +5,7 @@ import sys
 import glob
 import platform
 #from distutils.core import setup, Extension
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 
 link_args = ['-lz', '-lsqlite3']
 comp_args = []
@@ -36,6 +36,7 @@ with open(os.path.join('src', 'version.h')) as fh:
 setup(
     name = 'pyfastx',
     version = version,
+    packages = find_packages(),
     ext_modules = [extension],
     description = description,
     long_description = long_description,
@@ -62,6 +63,8 @@ setup(
             "Operating System :: Unix",
             "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
-    scripts = ["scripts/pyfastx.py"],
+    entry_points = {
+        'console_scripts': ['pyfastx = scripts.cli:main']
+    },
     test_suite = "tests"
 )
