@@ -15,6 +15,11 @@ gzip_fastq = 'tests/data/test.fq.gz'
 class FastaTest(unittest.TestCase):
 	def setUp(self):
 		self.fastx = pyfastx.Fasta(gzip_fasta)
+		del self.fastx
+
+		#reload index
+		self.fastx = pyfastx.Fasta(gzip_fasta)
+
 		self.faidx = pyfaidx.Fasta(flat_fasta, sequence_always_upper=True)
 		self.fastq = pyfastx.Fastq(gzip_fastq)
 		self.count = len(self.fastx)
