@@ -606,6 +606,7 @@ New in ``pyfastx`` 0.5.0
 
         info         Get detailed statistics information of FASTA/Q file
         split        Split fasta file into multiple files
+        fq2fa        Convert fastq file to fasta file
 
 Show statistics information
 ---------------------------

@@ -59,6 +59,15 @@ class FastaTest(unittest.TestCase):
 	def get_random_read(self):
 		return random.randint(0, len(self.fastq)-1)
 
+	def test_module(self):
+		# gzip check test
+		self.assertTrue(pyfastx.gzip_check(gzip_fasta))
+
+		# version test
+		with open('src/version.h') as fh:
+			version = fh.read().split()[2].strip('"')
+			self.assertEqual(version, pyfastx.version())
+
 	def test_fasta(self):
 		#gzip format
 		self.assertTrue(self.fastx.gzip)
@@ -322,14 +331,23 @@ class FastaTest(unittest.TestCase):
 		result = self.fastq[idx]
 		expect = self.reads[idx]
 
+		# test length
+		self.assertEqual(len(result), len(expect[1]))
+
 		# test name
 		self.assertEqual(result.name, expect[0])
+
+		# test str
+		self.assertEqual(str(result), expect[1])
 
 		# test seq
 		self.assertEqual(result.seq, expect[1])
 
 		# test quality
 		self.assertEqual(result.qual, expect[2])
+
+		# test quality integer
+		self.assertEqual(result.quali, [ord(b)-33 for b in expect[2]])
 
 		result = self.fastq[expect[0]]
 
