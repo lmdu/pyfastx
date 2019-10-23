@@ -74,6 +74,7 @@ void complement_seq(char *seq){
 	}
 }
 
+/*
 PyObject *clean_seq(PyObject *self, PyObject *args){
 	char *seq;
 	if (!PyArg_ParseTuple(args, "s", &seq)){
@@ -143,6 +144,7 @@ PyObject *sub_seq(PyObject *self, PyObject *args){
 	seq[j] = '\0';
 	return Py_BuildValue("s", seq);
 }
+*/
 
 /*check input file is whether gzip file
 @para file_name str, input file path string

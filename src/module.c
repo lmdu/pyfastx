@@ -27,8 +27,8 @@ PyObject *pyfastx_gzip_check(PyObject *self, PyObject *args) {
 
 static PyMethodDef module_methods[] = {
 	//{"test", (PyCFunction)pyfastx_test, METH_VARARGS | METH_KEYWORDS, NULL},
-	{"clean_seq", clean_seq, METH_VARARGS, NULL},
-	{"sub_seq", sub_seq, METH_VARARGS, NULL},
+	//{"clean_seq", clean_seq, METH_VARARGS, NULL},
+	//{"sub_seq", sub_seq, METH_VARARGS, NULL},
 	{"version", pyfastx_version, METH_VARARGS, NULL},
 	{"gzip_check", pyfastx_gzip_check, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL}

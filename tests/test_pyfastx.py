@@ -1,4 +1,5 @@
 import os
+import gzip
 import random
 import pyfastx
 import pyfaidx
@@ -9,12 +10,38 @@ import statistics
 
 gzip_fasta = 'tests/data/test.fa.gz'
 flat_fasta = 'tests/data/test.fa'
+gzip_fastq = 'tests/data/test.fq.gz'
 
 class FastaTest(unittest.TestCase):
 	def setUp(self):
 		self.fastx = pyfastx.Fasta(gzip_fasta)
 		self.faidx = pyfaidx.Fasta(flat_fasta, sequence_always_upper=True)
+		self.fastq = pyfastx.Fastq(gzip_fastq)
 		self.count = len(self.fastx)
+
+		self.reads = {}
+		self.bases = {'A': 0, 'T': 0, 'G': 0, 'C':0, 'N': 0}
+		i = 0
+		c = -1
+		with gzip.open(gzip_fastq, 'rt') as fh:
+			for line in fh:
+				i += 1
+				
+				if i % 4 == 1:
+					c += 1
+					self.reads[c] = [line[1:].strip().split()[0], 0, 0]
+
+				elif i % 4 == 2:
+					self.reads[c][1] = line.strip()
+					
+					self.bases['A'] += line.count('A')
+					self.bases['T'] += line.count('T')
+					self.bases['G'] += line.count('G')
+					self.bases['C'] += line.count('C')
+					self.bases['N'] += line.count('N')
+
+				elif i % 4 == 0:
+					self.reads[c][2] = line.strip()
 
 	def tearDown(self):
 		if os.path.exists('tests/data/test.fa.gz.fxi'):
@@ -23,10 +50,19 @@ class FastaTest(unittest.TestCase):
 		if os.path.exists('tests/data/test.fa.fai'):
 			os.remove('tests/data/test.fa.fai')
 
+		if os.path.exists('tests/data/test.fq.gz.fxi'):
+			os.remove('tests/data/test.fq.gz.fxi')
+
 	def get_random_index(self):
 		return random.randint(0, self.count-1)
 
+	def get_random_read(self):
+		return random.randint(0, len(self.fastq)-1)
+
 	def test_fasta(self):
+		#gzip format
+		self.assertTrue(self.fastx.gzip)
+
 		#seq counts
 		self.assertEqual(len(self.fastx), len(self.faidx.keys()))
 
@@ -128,6 +164,23 @@ class FastaTest(unittest.TestCase):
 
 		self.assertTrue(name in ids)
 
+		#sor by id
+		expect = [seq.name for seq in self.faidx]
+		expect.reverse()
+		result = [name for name in self.fastx.keys().sort('id', reverse=True)]
+		self.assertEqual(expect, result)
+
+		#sort by name
+		expect = sorted([seq.name for seq in self.faidx])
+		result = [name for name in self.fastx.keys().sort('name')]
+		self.assertEqual(expect, result)
+
+		#sort by length
+		lens = [(seq.name, len(seq)) for seq in self.faidx]
+		expect = [it[0] for it in sorted(lens, key=lambda x: x[1])]
+		result = [name for name in self.fastx.keys().sort('length')]
+		self.assertEqual(expect, result)
+
 	def test_seq_by_index(self):
 		#test get seq by index
 		idx = self.get_random_index()
@@ -197,6 +250,31 @@ class FastaTest(unittest.TestCase):
 		self.assertEqual(result.composition, content)
 		self.assertEqual(round(result.gc_content, 3), round(expect_gc, 3))
 
+	def test_seq_iter(self):
+		idx = self.get_random_index()
+		fai_seq = self.faidx[idx]
+		fxi_seq = self.fastx[idx]
+
+		# test read seq line by line
+		for expect, result in zip(fai_seq, fxi_seq):
+			self.assertEqual(str(expect), result)
+
+		# test seq long name
+		self.assertEqual(fai_seq.long_name.strip(), fxi_seq.description)
+
+		# test seq str
+		self.assertEqual(str(fai_seq), str(fxi_seq))
+
+		# test seq contains
+		s, e = sorted(random.sample(range(1, len(fai_seq)), 2))
+		segment = str(fai_seq)[s-1:e]
+		self.assertTrue(segment in fxi_seq)
+
+		# test seq search
+		expect = str(fai_seq).index(segment) + 1
+		result = fxi_seq.search(segment)
+		self.assertEqual(expect, result)
+
 	def test_get_seq(self):
 		idx = self.get_random_index()
 		name = list(self.faidx.keys())[idx]
@@ -206,12 +284,68 @@ class FastaTest(unittest.TestCase):
 		a = int(l/2)
 		interval = (random.randint(1, a), random.randint(a+1, l))
 
-		#expect = self.faidx.get_seq(name, interval[0], interval[1]).seq
-		#expect = self.faidx[name][interval[0]-1:interval[1]].seq
 		expect = str(self.faidx[name])[interval[0]-1:interval[1]]
 		result = self.fastx.fetch(name, interval)
 
-		if len(expect) > len(result):
-			expect = expect[0:-1]
+		self.assertEqual(expect, result)
+
+		#test multiple intervals
+		intervals = []
+		intervals.append((random.randint(1, int(a/2)), random.randint(int(a/2)+1, a)))
+		intervals.append((random.randint(a+1, int((a+l)/2)), random.randint(int((a+l)/2)+1, l)))
+
+		expect = "".join([str(self.faidx[name])[s-1:e] for s, e in intervals])
+		result = self.fastx.fetch(name, intervals)
 
 		self.assertEqual(expect, result)
+
+	def test_fastq(self):
+		# test gzip format
+		self.assertTrue(self.fastq.gzip)
+
+		# test seq length
+		self.assertEqual(self.fastq.size, sum(self.bases.values()))
+		
+		# test length
+		self.assertEqual(len(self.reads), len(self.fastq))
+
+		# test gc content
+		result = round(self.fastq.gc_content, 2)
+		expect = round((self.bases['G']+self.bases['C'])/(sum(self.bases.values()))*100, 2)
+		self.assertEqual(expect, result)
+
+		# test composition
+		self.assertEqual(self.fastq.composition, self.bases)
+
+	def test_read(self):
+		idx = self.get_random_read()
+		result = self.fastq[idx]
+		expect = self.reads[idx]
+
+		# test name
+		self.assertEqual(result.name, expect[0])
+
+		# test seq
+		self.assertEqual(result.seq, expect[1])
+
+		# test quality
+		self.assertEqual(result.qual, expect[2])
+
+		result = self.fastq[expect[0]]
+
+		# test subscript
+		self.assertEqual(result.seq, expect[1])
+
+		# test contain
+		self.assertTrue(result.name in self.fastq)
+
+		# test read iter
+		i = -1
+		for read in self.fastq:
+			i += 1
+			self.assertEqual(read.name, self.reads[i][0])
+			self.assertEqual(read.seq, self.reads[i][1])
+			self.assertEqual(read.qual, self.reads[i][2])
+
+		# test guess platform
+		self.assertTrue('Illumina 1.8+ Phred+33' in self.fastq.guess)

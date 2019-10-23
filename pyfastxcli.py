@@ -210,8 +210,32 @@ def fastx_split(args):
 	elif fastx_type == 'fastq':
 		fastq_split(args)
 
+def fastx_fq2fa(args):
+	fq = pyfastx.Fastq(args.fastq)
 
-if __name__ == '__main__':
+	name, suffix1 = os.path.splitext(os.path.basename(args.fastq))
+	if fq.gzip:
+		name, suffix2 = os.path.splitext(name)
+
+	if args.out_gzip:
+		fafile = "{}.fa.gz".format(name)
+	else:
+		fafile = "{}.fa".format(name)
+
+	if args.out_dir != '.':
+		fafile = os.path.join(args.out_dir, fafile)
+
+	if args.out_gzip:
+		fh = gzip.open(fafile, 'wt')
+	else:
+		fh = open(fafile, 'w')
+
+	for read in fq:
+		fh.write(">{}\n{}\n".format(read.name, read.seq))
+	
+	fh.close()
+
+def main():
 	parser = argparse.ArgumentParser(
 		prog = 'pyfastx',
 		usage = "pyfastx COMMAND [OPTIONS]",
@@ -281,6 +305,29 @@ if __name__ == '__main__':
 		help = 'input fasta or fastq file, gzip compressed support'
 	)
 
+	#convert fastq to fasta command
+	parser_fq2fa = subparsers.add_parser('fq2fa',
+		help = "Convert fastq file to fasta file"
+	)
+
+	parser_fq2fa.set_defaults(func=fastx_fq2fa)
+
+	parser_fq2fa.add_argument('-o', '--out_dir',
+		dest = 'out_dir',
+		help = "output directory, default is current folder",
+		default = '.'
+	)
+
+	parser_fq2fa.add_argument('-g', '--gzip_compress',
+		dest = 'out_gzip',
+		action = 'store_true',
+		default = False,
+		help = 'use gzip to compress output files',
+	)
+
+	parser_fq2fa.add_argument('fastq',
+		help = "input fastq file, gzip compressed support"
+	)
 
 	args = parser.parse_args()
 
@@ -290,4 +337,6 @@ if __name__ == '__main__':
 	except AttributeError:
 		parser.print_help()
 
-
+if __name__ == '__main__':
+	main()
+	

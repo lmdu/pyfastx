@@ -592,7 +592,7 @@ New in ``pyfastx`` 0.5.0
 
 .. code:: bash
 
-    $ python3 pyfastx.py -h
+    $ pyfastx -h
     
     usage: pyfastx COMMAND [OPTIONS]
 
@@ -612,7 +612,7 @@ Show statistics information
 
 .. code:: bash
 
-    $ python3 pyfastx.py info -h
+    $ pyfastx info -h
 
     usage: pyfastx info [-h] fastx
 
@@ -627,7 +627,7 @@ Split FASTA/Q file
 
 .. code:: bash
 
-    $ python3 pyfastx.py split -h
+    $ pyfastx split -h
 
     usage: pyfastx split [-h] (-n FILE_NUM | -c SEQ_COUNT) [-o OUT_DIR] [-g] fastx
 
@@ -642,6 +642,23 @@ Split FASTA/Q file
       -c SEQ_COUNT, --seq_count SEQ_COUNT
                             split a fasta or fastq file into multiple files with
                             the same sequence counts
+      -o OUT_DIR, --out_dir OUT_DIR
+                            output directory, default is current folder
+      -g, --gzip_compress   use gzip to compress output files
+
+Convert FASTQ to FASTA file
+---------------------------
+
+.. code:: bash
+
+    $ pyfastx fq2fa -h
+    usage: pyfastx fq2fa [-h] [-o OUT_DIR] [-g] fastq
+
+    positional arguments:
+      fastq                 input fastq file, gzip compressed support
+
+    optional arguments:
+      -h, --help            show this help message and exit
       -o OUT_DIR, --out_dir OUT_DIR
                             output directory, default is current folder
       -g, --gzip_compress   use gzip to compress output files
