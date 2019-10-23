@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.5.3 (2019-10-23)
+--------------------------
+
+- Added support for coverting fastq to fasta
+- Updated command line interface docs
+- Fixed command line entry points
+
 Version 0.5.2 (2019-10-18)
 --------------------------
 
