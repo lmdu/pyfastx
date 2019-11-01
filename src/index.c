@@ -101,11 +101,11 @@ void pyfastx_create_index(pyfastx_Index *self){
 	uint32_t seq_len = 0;
 
 	//number of bases
-	uint32_t g_count = 0;
-	uint32_t c_count = 0;
-	uint32_t a_count = 0;
-	uint32_t t_count = 0;
-	uint32_t n_count = 0;
+	uint32_t g = 0;
+	uint32_t c = 0;
+	uint32_t a = 0;
+	uint32_t t = 0;
+	uint32_t n = 0;
 
 	//current read base char
 	uint32_t i;
@@ -171,10 +171,10 @@ void pyfastx_create_index(pyfastx_Index *self){
 	ks = ks_init(self->gzfd);
 
 	while (ks_getuntil(ks, '\n', &line, 0) >= 0) {
-		position += line.l;
-		position++;
+		position += line.l + 1;
 
-		if (line.s[0] == '>') {
+		//first char is >
+		if (line.s[0] == 62) {
 			if (start > 0) {
 				//end of sequence and check whether normal fasta
 				seq_normal = (bad_line > 1) ? 0 : 1;
@@ -187,11 +187,11 @@ void pyfastx_create_index(pyfastx_Index *self){
 				sqlite3_bind_int(stmt, 6, line_len);
 				sqlite3_bind_int(stmt, 7, line_end);
 				sqlite3_bind_int(stmt, 8, seq_normal);
-				sqlite3_bind_int(stmt, 9, a_count);
-				sqlite3_bind_int(stmt, 10, c_count);
-				sqlite3_bind_int(stmt, 11, g_count);
-				sqlite3_bind_int(stmt, 12, t_count);
-				sqlite3_bind_int(stmt, 13, n_count);
+				sqlite3_bind_int(stmt, 9, a);
+				sqlite3_bind_int(stmt, 10, c);
+				sqlite3_bind_int(stmt, 11, g);
+				sqlite3_bind_int(stmt, 12, t);
+				sqlite3_bind_int(stmt, 13, n);
 				sqlite3_bind_text(stmt, 14, description, -1, NULL);
 				sqlite3_step(stmt);
 				sqlite3_reset(stmt);
@@ -200,11 +200,11 @@ void pyfastx_create_index(pyfastx_Index *self){
 			//reset
 			start = position;
 			seq_len = 0;
-			g_count = 0;
-			c_count = 0;
-			a_count = 0;
-			t_count = 0;
-			n_count = 0;
+			g = 0;
+			c = 0;
+			a = 0;
+			t = 0;
+			n = 0;
 			temp_len = 0;
 			line_len = 0;
 			line_end = 1;
@@ -212,7 +212,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			seq_normal = 1;
 
 			//get line end length \r\n or \n
-			if (line.s[line.l-1] == '\r') {
+			if (line.s[line.l-1] == 10) {
 				line_end = 2;
 			}
 
@@ -254,11 +254,11 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 		for (i = 0; i < real_len; i++) {
 			switch (line.s[i]) {
-				case 65: case 97: ++a_count; break;
-				case 67: case 99: ++c_count; break;
-				case 71: case 103: ++g_count; break;
-				case 84: case 116: ++t_count; break;
-				default: ++n_count; break;
+				case 65: case 97: ++a; break;
+				case 84: case 116: ++t; break;
+				case 71: case 103: ++g; break;
+				case 67: case 99: ++c; break;
+				default: ++n; break;
 			}
 		}
 	}
@@ -274,11 +274,11 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_bind_int(stmt, 6, line_len);
 	sqlite3_bind_int(stmt, 7, line_end);
 	sqlite3_bind_int(stmt, 8, seq_normal);
-	sqlite3_bind_int(stmt, 9, a_count);
-	sqlite3_bind_int(stmt, 10, c_count);
-	sqlite3_bind_int(stmt, 11, g_count);
-	sqlite3_bind_int(stmt, 12, t_count);
-	sqlite3_bind_int(stmt, 13, n_count);
+	sqlite3_bind_int(stmt, 9, a);
+	sqlite3_bind_int(stmt, 10, c);
+	sqlite3_bind_int(stmt, 11, g);
+	sqlite3_bind_int(stmt, 12, t);
+	sqlite3_bind_int(stmt, 13, n);
 	sqlite3_bind_text(stmt, 14, description, -1, NULL);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
