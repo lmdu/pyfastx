@@ -100,16 +100,6 @@ void pyfastx_create_index(pyfastx_Index *self){
 	//sequence length
 	uint32_t seq_len = 0;
 
-	//number of bases
-	uint32_t g = 0;
-	uint32_t c = 0;
-	uint32_t a = 0;
-	uint32_t t = 0;
-	uint32_t n = 0;
-
-	//current read base char
-	uint32_t i;
-
 	//real line len
 	uint32_t real_len;
 
@@ -141,11 +131,6 @@ void pyfastx_create_index(pyfastx_Index *self){
 			llen INTEGER, --line lenght\n \
 			elen INTEGER, --end length\n \
 			norm INTEGER, --line with the same length or not\n \
-			a INTEGER, --A base counts\n \
-			c INTEGER, --C base counts\n \
-			g INTEGER, --G base counts\n \
-			t INTEGER, --T base counts\n \
-			n INTEGER, --unknown base counts\n \
 			descr TEXT --sequence description\n \
 		); \
 		CREATE TABLE gzindex ( \
@@ -187,12 +172,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 				sqlite3_bind_int(stmt, 6, line_len);
 				sqlite3_bind_int(stmt, 7, line_end);
 				sqlite3_bind_int(stmt, 8, seq_normal);
-				sqlite3_bind_int(stmt, 9, a);
-				sqlite3_bind_int(stmt, 10, c);
-				sqlite3_bind_int(stmt, 11, g);
-				sqlite3_bind_int(stmt, 12, t);
-				sqlite3_bind_int(stmt, 13, n);
-				sqlite3_bind_text(stmt, 14, description, -1, NULL);
+				sqlite3_bind_text(stmt, 9, description, -1, NULL);
 				sqlite3_step(stmt);
 				sqlite3_reset(stmt);
 			}
@@ -200,11 +180,6 @@ void pyfastx_create_index(pyfastx_Index *self){
 			//reset
 			start = position;
 			seq_len = 0;
-			g = 0;
-			c = 0;
-			a = 0;
-			t = 0;
-			n = 0;
 			temp_len = 0;
 			line_len = 0;
 			line_end = 1;
@@ -252,7 +227,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 		//calculate seq len
 		seq_len += real_len;
 
-		for (i = 0; i < real_len; i++) {
+		/*for (i = 0; i < real_len; i++) {
 			switch (line.s[i]) {
 				case 65: case 97: ++a; break;
 				case 84: case 116: ++t; break;
@@ -260,7 +235,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 				case 67: case 99: ++c; break;
 				default: ++n; break;
 			}
-		}
+		}*/
 	}
 
 	//end of sequence and check whether normal fasta
@@ -274,12 +249,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_bind_int(stmt, 6, line_len);
 	sqlite3_bind_int(stmt, 7, line_end);
 	sqlite3_bind_int(stmt, 8, seq_normal);
-	sqlite3_bind_int(stmt, 9, a);
-	sqlite3_bind_int(stmt, 10, c);
-	sqlite3_bind_int(stmt, 11, g);
-	sqlite3_bind_int(stmt, 12, t);
-	sqlite3_bind_int(stmt, 13, n);
-	sqlite3_bind_text(stmt, 14, description, -1, NULL);
+	sqlite3_bind_text(stmt, 9, description, -1, NULL);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 

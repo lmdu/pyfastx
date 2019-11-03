@@ -3,7 +3,7 @@ import time
 import pyfaidx
 import pyfastx
 
-fa_file = '/mnt/d/research/tandem/data/Danio_rerio.GRCz10.dna.chromosome.1.fa'
+fa_file = '/mnt/d/research/tandem/data/t.fa'
 
 if os.path.exists('%s.fai' % fa_file):
 	os.remove('%s.fai' % fa_file)

@@ -8,7 +8,7 @@ composition (ATGCN count) and GC content
 */
 void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	//ACGTN nucleotide counts
-	int64_t a, c, g, t, n;
+	//int64_t a, c, g, t, n;
 
 	sqlite3_stmt *stmt;
 	
@@ -25,7 +25,7 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	sqlite3_reset(stmt);
 
 	//calculate base counts
-	sqlite3_prepare_v2(self->index->index_db, "SELECT SUM(a),SUM(c),SUM(g),SUM(t),SUM(n) FROM seq LIMIT 1;", -1, &stmt, NULL);
+	/*sqlite3_prepare_v2(self->index->index_db, "SELECT SUM(a),SUM(c),SUM(g),SUM(t),SUM(n) FROM seq LIMIT 1;", -1, &stmt, NULL);
 	sqlite3_step(stmt);
 	a = sqlite3_column_int64(stmt, 0);
 	c = sqlite3_column_int64(stmt, 1);
@@ -38,7 +38,7 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	self->gc_content = (float)(g+c)/(a+c+g+t)*100;
 
 	//calc GC skew
-	self->gc_skew = (float)(g-c)/(g+c);
+	self->gc_skew = (float)(g-c)/(g+c);*/
 
 	sqlite3_finalize(stmt);
 }
@@ -421,6 +421,9 @@ static PyGetSetDef pyfastx_fasta_getsets[] = {
 	{"mean", (getter)pyfastx_fasta_mean, NULL, NULL, NULL},
 	{"median", (getter)pyfastx_fasta_median, NULL, NULL, NULL},
 	{"gzip", (getter)pyfastx_fasta_format, NULL, NULL, NULL},
+	//{"gc_content", (getter)pyfastx_fasta_gc_content, NULL, NULL, NULL},
+	//{"gc_skew", (getter)pyfastx_fasta_gc_skew, NULL, NULL, NULL, NULL},
+	//{"composition", (getter)pyfastx_fasta_composition, NULL, NULL, NULL},
 	{NULL}
 };
 
@@ -428,9 +431,9 @@ static PyMemberDef pyfastx_fasta_members[] = {
 	{"file_name", T_STRING, offsetof(pyfastx_Fasta, file_name), READONLY},
 	{"size", T_LONG, offsetof(pyfastx_Fasta, seq_length), READONLY},
 	//{"count", T_INT, offsetof(pyfastx_Fasta, seq_counts), READONLY},
-	{"gc_content", T_FLOAT, offsetof(pyfastx_Fasta, gc_content), READONLY},
-	{"gc_skew", T_FLOAT, offsetof(pyfastx_Fasta, gc_skew), READONLY},
-	{"composition", T_OBJECT, offsetof(pyfastx_Fasta, composition), READONLY},
+	//{"gc_content", T_FLOAT, offsetof(pyfastx_Fasta, gc_content), READONLY},
+	//{"gc_skew", T_FLOAT, offsetof(pyfastx_Fasta, gc_skew), READONLY},
+	//{"composition", T_OBJECT, offsetof(pyfastx_Fasta, composition), READONLY},
 	{NULL}
 };
 

@@ -26,13 +26,13 @@ typedef struct {
 	uint64_t seq_length;
 
 	//a float for GC content (%)
-	float gc_content;
+	//float gc_content;
 
 	//GC skew
-	float gc_skew;
+	//float gc_skew;
 
 	//a dict for storing A T G C N (unknown base) counts in fasta
-	PyObject* composition;
+	//PyObject* composition;
 
 	//index for fast random access to sequence
 	pyfastx_Index* index;
