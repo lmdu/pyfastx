@@ -133,6 +133,35 @@ void pyfastx_create_index(pyfastx_Index *self){
 			norm INTEGER, --line with the same length or not\n \
 			descr TEXT --sequence description\n \
 		); \
+		CREATE TABLE comp ( \
+			ID INTEGER PRIMARY KEY, \
+			a INTEGER, \
+			b INTEGER, \
+			c INTEGER, \
+			d INTEGER, \
+			e INTEGER, \
+			f INTEGER, \
+			g INTEGER, \
+			h INTEGER, \
+			i INTEGER, \
+			j INTEGER, \
+			k INTEGER, \
+			l INTEGER, \
+			m INTEGER, \
+			n INTEGER, \
+			o INTEGER, \
+			p INTEGER, \
+			q INTEGER, \
+			r INTEGER, \
+			s INTEGER, \
+			t INTEGER, \
+			u INTEGER, \
+			v INTEGER, \
+			w INTEGER, \
+			x INTEGER, \
+			y INTEGER, \
+			z INTEGER \
+		); \
 		CREATE TABLE gzindex ( \
 			ID INTEGER PRIMARY KEY, \
 			content BLOB \

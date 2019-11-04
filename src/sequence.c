@@ -178,7 +178,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		}
 
 		seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
-		return Py_BuildValue("C", *(seq+i));
+		return Py_BuildValue("s", int_to_str(*(seq+i)));
 	
 	} else if (PySlice_Check(item)) {
 		Py_ssize_t slice_start, slice_stop, slice_step, slice_len;
@@ -274,6 +274,98 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 	return Py_BuildValue("I", start);
 }
 
+PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
+	int64_t a = 0, c = 0, g = 0, t = 0;
+
+	sqlite3_stmt *stmt;
+	const char *sql = "SELECT a, c, g, t FROM comp WHERE ID=? LIMIT 1";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_int(stmt, 1, self->id);
+
+	if (self->start == 1 && self->end == self->seq_len && sqlite3_step(stmt) == SQLITE_ROW) {
+		a = sqlite3_column_int(stmt, 0);
+		c = sqlite3_column_int(stmt, 1);
+		g = sqlite3_column_int(stmt, 2);
+		t = sqlite3_column_int(stmt, 3);
+	} else {
+		char *seq;
+		uint32_t i;
+		seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+		for (i = 0; i < self->seq_len; i++) {
+			switch (seq[i]) {
+				case 65: case 97: ++a; break;
+				case 84: case 116: ++t; break;
+				case 71: case 103: ++g; break;
+				case 67: case 99: ++c; break;
+			}
+		}
+	}
+
+	return Py_BuildValue("f", (float)(g+c)/(a+c+g+t)*100);
+}
+
+PyObject *pyfastx_sequence_gc_skew(pyfastx_Sequence *self, void* closure) {
+	int64_t c = 0, g = 0;
+
+	sqlite3_stmt *stmt;
+	const char *sql = "SELECT c, g FROM comp WHERE ID=? LIMIT 1";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_int(stmt, 1, self->id);
+
+	if (self->start == 1 && self->end == self->seq_len && sqlite3_step(stmt) == SQLITE_ROW) {
+		c = sqlite3_column_int(stmt, 0);
+		g = sqlite3_column_int(stmt, 1);
+	} else {
+		char *seq;
+		uint32_t i;
+		seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+		for (i = 0; i < self->seq_len; i++) {
+			switch (seq[i]) {
+				case 71: case 103: ++g; break;
+				case 67: case 99: ++c; break;
+			}
+		}
+	}
+
+	return Py_BuildValue("f", (float)(g-c)/(g+c));
+}
+
+PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
+	sqlite3_stmt *stmt;
+	int i;
+	int64_t c;
+	const char *sql = "SELECT * FROM comp WHERE ID=?";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_int(stmt, 1, self->id);
+
+	PyObject *d = PyDict_New();
+	
+	if (self->start == 1 && self->end == self->seq_len && sqlite3_step(stmt) == SQLITE_ROW) {
+		for (i = 1; i < 27; i++) {
+			c = sqlite3_column_int64(stmt, i);
+			if (c > 0) {
+				PyDict_SetItem(d, Py_BuildValue("s", int_to_str(i+64)), Py_BuildValue("i", c));
+			}
+		}
+	} else {
+		char *seq;
+		int seq_comp[26] = {0};
+		seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+		for (c = 0; c < self->seq_len; c++) {
+			++seq_comp[seq[c]-65];
+		}
+
+		for (i = 0; i < 26; i++) {
+			c = seq_comp[i];
+			if (c > 0) {
+				PyDict_SetItem(d, Py_BuildValue("s", int_to_str(i+65)), Py_BuildValue("i", c));
+			}
+		}
+	}
+
+	return d;
+}
+
 static PyMappingMethods pyfastx_sequence_as_mapping = {
 	(lenfunc)pyfastx_sequence_length,
 	(binaryfunc)pyfastx_seqeunce_subscript,
@@ -305,6 +397,9 @@ static PyGetSetDef pyfastx_sequence_getsets[] = {
 	{"complement", (getter)pyfastx_sequence_complement, NULL, NULL, NULL},
 	{"antisense", (getter)pyfastx_sequence_antisense, NULL, NULL, NULL},
 	{"description", (getter)pyfastx_sequence_description, NULL, NULL, NULL},
+	{"gc_content", (getter)(pyfastx_sequence_gc_content), NULL, NULL, NULL},
+	{"gc_skew", (getter)(pyfastx_sequence_gc_skew), NULL, NULL, NULL},
+	{"composition", (getter)(pyfastx_sequence_composition), NULL, NULL, NULL},
 	{NULL}
 };
 
@@ -314,9 +409,6 @@ static PyMemberDef pyfastx_sequence_members[] = {
 	{"start", T_INT, offsetof(pyfastx_Sequence, start), READONLY},
 	{"end", T_INT, offsetof(pyfastx_Sequence, end), READONLY},
 	//{"length", T_INT, offsetof(pyfastx_Sequence, seq_len), READONLY},
-	{"gc_content", T_FLOAT, offsetof(pyfastx_Sequence, gc_content), READONLY},
-	{"gc_skew", T_FLOAT, offsetof(pyfastx_Sequence, gc_skew), READONLY},
-	{"composition", T_OBJECT, offsetof(pyfastx_Sequence, composition), READONLY},
 	{NULL}
 };
 

@@ -447,7 +447,7 @@ PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
 	return NULL;
 }
 
-PyObject* pyfastx_fastq_guess(pyfastx_Fastq* self, void* closure) {
+PyObject* pyfastx_fastq_guess_encoding_type(pyfastx_Fastq* self, void* closure) {
 	sqlite3_stmt *stmt;
 	int maxqs, minqs;
 	const char *sql = "SELECT * FROM meta LIMIT 1;";
@@ -515,7 +515,7 @@ static PyMappingMethods pyfastx_fastq_as_mapping = {
 };
 
 static PyGetSetDef pyfastx_fastq_getsets[] = {
-	{"guess", (getter)pyfastx_fastq_guess, NULL, NULL, NULL},
+	{"encoding_type", (getter)pyfastx_fastq_guess_encoding_type, NULL, NULL, NULL},
 	{NULL}
 };
 

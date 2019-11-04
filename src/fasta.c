@@ -43,7 +43,6 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	sqlite3_finalize(stmt);
 }
 
-
 PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 	//fasta file path
 	char *file_name;
@@ -415,15 +414,224 @@ PyObject *pyfastx_fasta_format(pyfastx_Fasta *self, void* closure) {
 	Py_RETURN_FALSE;
 }
 
+void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
+	const char *sql = "SELECT * FROM comp LIMIT 1";
+
+	printf("%s\n", "first");
+
+	if (sqlite3_exec(self->index->index_db, sql, NULL, NULL, NULL) == SQLITE_OK) {
+		return;
+	}
+
+	printf("%s\n", "yes");
+
+	if (sqlite3_exec(self->index->index_db, "BEGIN TRANSACTION;", NULL, NULL, NULL) != SQLITE_OK){
+		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index->index_db));
+		return;
+	}
+
+	sqlite3_stmt *stmt;
+	sql = "INSERT INTO comp VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+
+	printf("%s\n", "no");
+
+	//reading file for kseq
+	kstream_t* ks;
+	
+	//read for line
+	kstring_t line = {0, 0, 0};
+
+	//ascii char statistics
+	uint32_t seq_comp[128] = {0};
+	uint64_t fa_comp[26] = {0};
+
+	uint32_t i;
+	uint16_t c;
+	uint16_t j;
+
+	Py_BEGIN_ALLOW_THREADS
+
+	ks = ks_init(self->index->gzfd);
+
+	while (ks_getuntil(ks, '\n', &line, 0) >= 0) {
+		if (line.s[0] == 62) {
+
+			printf("%s\n", "yes");
+			if (sum_array(seq_comp, 128) > 0) {
+				j = 0;
+				sqlite3_bind_null(stmt, ++j);
+				for (c = 65; c <= 90; c++) {
+					sqlite3_bind_int(stmt, ++j, seq_comp[c]+seq_comp[c+32]);
+					fa_comp[c-65] += seq_comp[c]+seq_comp[c+32];
+				}
+				sqlite3_step(stmt);
+				sqlite3_reset(stmt);
+			}
+			memset(seq_comp, 0, sizeof(seq_comp));
+			continue;
+		}
+
+		for (i = 0; i < line.l; i++) {
+			c = line.s[i];
+			if (c == 10 || c == 13) {
+				continue;
+			}
+			++seq_comp[c];
+		}
+	}
+
+	if (sum_array(seq_comp, 128) > 0) {
+		j = 0;
+		sqlite3_bind_null(stmt, ++j);
+		for (c = 65; c <= 90; c++) {
+			sqlite3_bind_int(stmt, ++j, seq_comp[c]+seq_comp[c+32]);
+			fa_comp[c-65] += seq_comp[c]+seq_comp[c+32];
+		}
+		sqlite3_step(stmt);
+		sqlite3_reset(stmt);
+	}
+
+	//write total bases to db
+	sqlite3_bind_null(stmt, 1);
+	for (j = 0; j < 26; j++) {
+		sqlite3_bind_int64(stmt, j+2, fa_comp[j]);
+	}
+	sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	sqlite3_exec(self->index->index_db, "COMMIT;", NULL, NULL, NULL);
+
+	ks_destroy(ks);
+	free(line.s);
+
+	Py_END_ALLOW_THREADS
+}
+
+PyObject *pyfastx_fasta_gc_content(pyfastx_Fasta *self, void* closure) {
+	sqlite3_stmt *stmt;
+	int64_t a, c, g, t;
+	printf("%s\n", "start");
+	pyfastx_fasta_calc_composition(self);
+	printf("%s\n", "end");
+	const char *sql = "SELECT a, c, g, t FROM comp WHERE ID=? LIMIT 1";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_int(stmt, 1, self->seq_counts+1);
+
+	printf("%s\n", "start fetch");
+	
+	if (sqlite3_step(stmt) != SQLITE_ROW) {
+		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index->index_db));
+		return NULL;
+	}
+
+	printf("%s\n", "end fetch");
+
+	a = sqlite3_column_int64(stmt, 0);
+	c = sqlite3_column_int64(stmt, 1);
+	g = sqlite3_column_int64(stmt, 2);
+	t = sqlite3_column_int64(stmt, 3);
+
+	return Py_BuildValue("f", (float)(g+c)/(a+c+g+t)*100);
+}
+
+PyObject *pyfastx_fasta_gc_skew(pyfastx_Fasta *self, void* closure) {
+	sqlite3_stmt *stmt;
+	int64_t c, g;
+	pyfastx_fasta_calc_composition(self);
+	const char *sql = "SELECT c, g FROM comp WHERE ID=?";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_int(stmt, 1, self->seq_counts+1);
+	
+	if (sqlite3_step(stmt) != SQLITE_ROW) {
+		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index->index_db));
+		return NULL;
+	}
+	
+	c = sqlite3_column_int64(stmt, 0);
+	g = sqlite3_column_int64(stmt, 1);
+	
+	return Py_BuildValue("f", (float)(g-c)/(g+c));
+}
+
+PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
+	sqlite3_stmt *stmt;
+	int i;
+	int64_t c;
+	pyfastx_fasta_calc_composition(self);
+	const char *sql = "SELECT * FROM comp WHERE ID=?";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_int(stmt, 1, self->seq_counts+1);
+	
+	if (sqlite3_step(stmt) != SQLITE_ROW) {
+		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index->index_db));
+		return NULL;
+	}
+
+	PyObject *d = PyDict_New();
+
+	for (i = 1; i < 27; i++) {
+		c = sqlite3_column_int64(stmt, i);
+		if (c > 0) {
+			PyDict_SetItem(d, Py_BuildValue("s", int_to_str(i+64)), Py_BuildValue("l", c));
+		}
+	}
+
+	return d;
+}
+
+//support for guess sequence type according to IUPAC codes
+//https://www.bioinformatics.org/sms/iupac.html
+PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
+	sqlite3_stmt *stmt;
+	int i, j;
+	int64_t c;
+	char *alphabets;
+	char *ret;
+
+	pyfastx_fasta_calc_composition(self);
+
+	const char *sql = "SELECT * FROM comp WHERE ID=?";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_int(stmt, 1, self->seq_counts+1);
+	
+	if (sqlite3_step(stmt) != SQLITE_ROW) {
+		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index->index_db));
+		return NULL;
+	}
+
+	alphabets = (char *)malloc(26);
+	j = 0;
+	for (i = 1; i < 27; i++) {
+		c = sqlite3_column_int64(stmt, i);
+		if (c > 0) {
+			alphabets[j++] = i+64;
+		}
+	}
+	alphabets[j] = '\0';
+
+	if (is_subset("ACGTN", alphabets) || is_subset("ABCDGHKMNRSTVWY", alphabets)) {
+		ret = "DNA";
+	} else if (is_subset("ACGUN", alphabets) || is_subset("ABCDGHKMNRSUVWY", alphabets)) {
+		ret = "RNA";
+	} else if (is_subset("ACDEFGHIKLMNPQRSTVWY", alphabets)) {
+		ret = "protein";
+	} else {
+		ret = "undetermined";
+	}
+
+	return Py_BuildValue("s", ret);
+}
+
 static PyGetSetDef pyfastx_fasta_getsets[] = {
 	{"longest", (getter)pyfastx_fasta_longest, NULL, NULL, NULL},
 	{"shortest", (getter)pyfastx_fasta_shortest, NULL, NULL, NULL},
 	{"mean", (getter)pyfastx_fasta_mean, NULL, NULL, NULL},
 	{"median", (getter)pyfastx_fasta_median, NULL, NULL, NULL},
 	{"gzip", (getter)pyfastx_fasta_format, NULL, NULL, NULL},
-	//{"gc_content", (getter)pyfastx_fasta_gc_content, NULL, NULL, NULL},
-	//{"gc_skew", (getter)pyfastx_fasta_gc_skew, NULL, NULL, NULL, NULL},
-	//{"composition", (getter)pyfastx_fasta_composition, NULL, NULL, NULL},
+	{"gc_content", (getter)pyfastx_fasta_gc_content, NULL, NULL, NULL},
+	{"gc_skew", (getter)pyfastx_fasta_gc_skew, NULL, NULL, NULL},
+	{"composition", (getter)pyfastx_fasta_composition, NULL, NULL, NULL},
+	{"type", (getter)pyfastx_fasta_guess_type, NULL, NULL, NULL},
 	{NULL}
 };
 

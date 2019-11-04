@@ -74,6 +74,39 @@ void complement_seq(char *seq){
 	}
 }
 
+uint32_t sum_array(uint32_t arr[], int num) {
+	int i, sum=0;
+	for (i = 0; i < num; i++) {
+		sum += arr[i];
+	}
+
+	return sum;
+}
+
+char *int_to_str(int c) {
+	char *str = (char *)malloc(2);
+	str[0] = c;
+	str[1] = '\0';
+	return str;
+}
+
+int is_subset(char *seq1, char *seq2) {
+	int i, j, m, n;
+	m = strlen(seq1);
+	n = strlen(seq2);
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < m; j++) {
+			if (seq2[i] == seq1[j]) {
+				break;
+			}
+		}
+		if (j == m) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 /*
 PyObject *clean_seq(PyObject *self, PyObject *args){
 	char *seq;
