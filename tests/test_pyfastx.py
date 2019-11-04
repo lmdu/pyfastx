@@ -25,7 +25,7 @@ class FastaTest(unittest.TestCase):
 		self.count = len(self.fastx)
 
 		self.reads = {}
-		self.bases = {'A': 0, 'T': 0, 'G': 0, 'C':0, 'N': 0}
+		self.bases = {'A': 0, 'T': 0, 'G': 0, 'C':0, 'N':0}
 		i = 0
 		c = -1
 		with gzip.open(gzip_fastq, 'rt') as fh:
@@ -66,7 +66,7 @@ class FastaTest(unittest.TestCase):
 
 	def test_module(self):
 		# gzip check test
-		self.assertTrue(pyfastx.gzip_check(gzip_fasta))
+		self.assertEqual(pyfastx.gzip_check(gzip_fasta), self.fastx.is_gzip)
 
 		# version test
 		with open('src/version.h') as fh:
@@ -74,8 +74,8 @@ class FastaTest(unittest.TestCase):
 			self.assertEqual(version, pyfastx.version())
 
 	def test_fasta(self):
-		#gzip format
-		self.assertTrue(self.fastx.gzip)
+		#fasta format
+		self.assertEqual(self.fastx.type, 'DNA')
 
 		#seq counts
 		self.assertEqual(len(self.fastx), len(self.faidx.keys()))
@@ -85,13 +85,12 @@ class FastaTest(unittest.TestCase):
 		self.assertEqual(self.fastx.size, expect_size)
 
 		#test composition
-		expect = {'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0}
+		expect = {'A': 0, 'C': 0, 'G': 0, 'T': 0}
 		for s in self.faidx:
 			expect['A'] += s[:].seq.count('A')
 			expect['C'] += s[:].seq.count('C')
 			expect['G'] += s[:].seq.count('G')
 			expect['T'] += s[:].seq.count('T')
-			expect['N'] += s[:].seq.count('N')
 		self.assertEqual(self.fastx.composition, expect)
 
 		#test GC content
@@ -252,12 +251,11 @@ class FastaTest(unittest.TestCase):
 		result = self.fastx[idx]
 		expect = self.faidx[idx]
 
-		content = {'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0}
+		content = {'A': 0, 'C': 0, 'G': 0, 'T': 0}
 		content['A'] += expect[:].seq.count('A')
 		content['C'] += expect[:].seq.count('C')
 		content['G'] += expect[:].seq.count('G')
 		content['T'] += expect[:].seq.count('T')
-		content['N'] += expect[:].seq.count('N')
 
 		expect_gc = (content['G']+content['C'])/sum(content.values())*100
 
@@ -315,7 +313,7 @@ class FastaTest(unittest.TestCase):
 
 	def test_fastq(self):
 		# test gzip format
-		self.assertTrue(self.fastq.gzip)
+		self.assertEqual(pyfastx.gzip_check(gzip_fastq), self.fastq.is_gzip)
 
 		# test seq length
 		self.assertEqual(self.fastq.size, sum(self.bases.values()))
@@ -330,6 +328,12 @@ class FastaTest(unittest.TestCase):
 
 		# test composition
 		self.assertEqual(self.fastq.composition, self.bases)
+
+		# test encoding type
+		self.assertEqual(['Sanger Phred+33', 'Illumina 1.8+ Phred+33'], self.fastq.encoding_type)
+
+		# test phred
+		self.assertEqual(self.fastq.phred, 33)
 
 	def test_read(self):
 		idx = self.get_random_read()
@@ -369,6 +373,3 @@ class FastaTest(unittest.TestCase):
 			self.assertEqual(read.name, self.reads[i][0])
 			self.assertEqual(read.seq, self.reads[i][1])
 			self.assertEqual(read.qual, self.reads[i][2])
-
-		# test guess platform
-		self.assertTrue('Illumina 1.8+ Phred+33' in self.fastq.guess)

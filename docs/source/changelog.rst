@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.5.4 (2019-11-04)
+--------------------------
+
+- Added guess fasta type (DNA, RNA, protein)
+- Optimized the speed of index building
+- Calculate sequence composition when get gc content or composition
+- Fixed char return in python 2.7
+
 Version 0.5.3 (2019-10-23)
 --------------------------
 
