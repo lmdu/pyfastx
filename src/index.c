@@ -121,7 +121,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	}
 
 	//create index database
-	const char *create_sql = " \
+	const char *sql = " \
 		CREATE TABLE seq ( \
 			ID INTEGER PRIMARY KEY, --seq identifier\n \
 			chrom TEXT, --seq name\n \
@@ -167,18 +167,20 @@ void pyfastx_create_index(pyfastx_Index *self){
 			content BLOB \
 		);";
 
-	if(sqlite3_exec(self->index_db, create_sql, NULL, NULL, NULL) != SQLITE_OK){
+	if(sqlite3_exec(self->index_db, sql, NULL, NULL, NULL) != SQLITE_OK){
 		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index_db));
 		return;
 	}
 
-	if(sqlite3_exec(self->index_db, "PRAGMA synchronous=OFF;BEGIN;", NULL, NULL, NULL) != SQLITE_OK){
+	sql = "PRAGMA synchronous=OFF;PRAGMA journal_mode = OFF;BEGIN TRANSACTION;";
+
+	if(sqlite3_exec(self->index_db, sql, NULL, NULL, NULL) != SQLITE_OK){
 		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index_db));
 		return;
 	}
 
-	const char *insert_sql = "INSERT INTO seq VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
-	sqlite3_prepare_v2(self->index_db, insert_sql, -1, &stmt, NULL);
+	sql = "INSERT INTO seq VALUES (?,?,?,?,?,?,?,?,?);";
+	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 
 	Py_BEGIN_ALLOW_THREADS
 
@@ -289,7 +291,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	free(line.s);
 
 	//create gzip random access index
-	if(self->gzip_format){
+	if (self->gzip_format) {
 		pyfastx_build_gzip_index(self->gzip_index, self->index_db, self->index_file);
 	}
 

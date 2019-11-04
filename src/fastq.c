@@ -523,7 +523,7 @@ static PyMemberDef pyfastx_fastq_members[] = {
 	{"file_name", T_STRING, offsetof(pyfastx_Fastq, file_name), READONLY},
 	{"phred", T_INT, offsetof(pyfastx_Fastq, phred), READONLY},
 	{"size", T_LONG, offsetof(pyfastx_Fastq, seq_length), READONLY},
-	{"gzip", T_BOOL, offsetof(pyfastx_Fastq, gzip_format), READONLY},
+	{"is_gzip", T_BOOL, offsetof(pyfastx_Fastq, gzip_format), READONLY},
 	{"gc_content", T_FLOAT, offsetof(pyfastx_Fastq, gc_content), READONLY},
 	{"composition", T_OBJECT, offsetof(pyfastx_Fastq, composition), READONLY},
 	{NULL}

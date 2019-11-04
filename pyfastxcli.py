@@ -112,7 +112,7 @@ def fasta_split(args):
 
 	name, suffix1 = os.path.splitext(os.path.basename(args.fastx))
 
-	if fa.gzip:
+	if fa.is_gzip:
 		name, suffix2 = os.path.splitext(name)
 
 	digit = len(str(parts_num))
@@ -166,7 +166,7 @@ def fastq_split(args):
 
 	name, suffix1 = os.path.splitext(os.path.basename(args.fastx))
 
-	if fq.gzip:
+	if fq.is_gzip:
 		name, suffix2 = os.path.splitext(name)
 
 	digit = len(str(parts_num))
@@ -214,7 +214,7 @@ def fastx_fq2fa(args):
 	fq = pyfastx.Fastq(args.fastq)
 
 	name, suffix1 = os.path.splitext(os.path.basename(args.fastq))
-	if fq.gzip:
+	if fq.is_gzip:
 		name, suffix2 = os.path.splitext(name)
 
 	if args.out_gzip:

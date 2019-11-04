@@ -22,7 +22,7 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	sqlite3_prepare_v2(self->index->index_db, "SELECT SUM(slen) FROM seq LIMIT 1;", -1, &stmt, NULL);
 	sqlite3_step(stmt);
 	self->seq_length = sqlite3_column_int64(stmt, 0);
-	sqlite3_reset(stmt);
+	//sqlite3_reset(stmt);
 
 	//calculate base counts
 	/*sqlite3_prepare_v2(self->index->index_db, "SELECT SUM(a),SUM(c),SUM(g),SUM(t),SUM(n) FROM seq LIMIT 1;", -1, &stmt, NULL);
@@ -415,26 +415,22 @@ PyObject *pyfastx_fasta_format(pyfastx_Fasta *self, void* closure) {
 }
 
 void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
+	sqlite3_stmt *stmt;
 	const char *sql = "SELECT * FROM comp LIMIT 1";
 
-	printf("%s\n", "first");
-
-	if (sqlite3_exec(self->index->index_db, sql, NULL, NULL, NULL) == SQLITE_OK) {
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		return;
 	}
-
-	printf("%s\n", "yes");
 
 	if (sqlite3_exec(self->index->index_db, "BEGIN TRANSACTION;", NULL, NULL, NULL) != SQLITE_OK){
 		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index->index_db));
 		return;
 	}
 
-	sqlite3_stmt *stmt;
+	
 	sql = "INSERT INTO comp VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-
-	printf("%s\n", "no");
 
 	//reading file for kseq
 	kstream_t* ks;
@@ -456,8 +452,6 @@ void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
 
 	while (ks_getuntil(ks, '\n', &line, 0) >= 0) {
 		if (line.s[0] == 62) {
-
-			printf("%s\n", "yes");
 			if (sum_array(seq_comp, 128) > 0) {
 				j = 0;
 				sqlite3_bind_null(stmt, ++j);
@@ -510,21 +504,14 @@ void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
 PyObject *pyfastx_fasta_gc_content(pyfastx_Fasta *self, void* closure) {
 	sqlite3_stmt *stmt;
 	int64_t a, c, g, t;
-	printf("%s\n", "start");
 	pyfastx_fasta_calc_composition(self);
-	printf("%s\n", "end");
-	const char *sql = "SELECT a, c, g, t FROM comp WHERE ID=? LIMIT 1";
+	const char *sql = "SELECT a, c, g, t FROM comp ORDER BY ID DESC LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_int(stmt, 1, self->seq_counts+1);
-
-	printf("%s\n", "start fetch");
 	
 	if (sqlite3_step(stmt) != SQLITE_ROW) {
 		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index->index_db));
 		return NULL;
 	}
-
-	printf("%s\n", "end fetch");
 
 	a = sqlite3_column_int64(stmt, 0);
 	c = sqlite3_column_int64(stmt, 1);
@@ -538,9 +525,8 @@ PyObject *pyfastx_fasta_gc_skew(pyfastx_Fasta *self, void* closure) {
 	sqlite3_stmt *stmt;
 	int64_t c, g;
 	pyfastx_fasta_calc_composition(self);
-	const char *sql = "SELECT c, g FROM comp WHERE ID=?";
+	const char *sql = "SELECT c, g FROM comp ORDER BY ID DESC LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_int(stmt, 1, self->seq_counts+1);
 	
 	if (sqlite3_step(stmt) != SQLITE_ROW) {
 		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index->index_db));
@@ -558,7 +544,7 @@ PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
 	int i;
 	int64_t c;
 	pyfastx_fasta_calc_composition(self);
-	const char *sql = "SELECT * FROM comp WHERE ID=?";
+	const char *sql = "SELECT * FROM comp ORDER BY ID DESC LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, self->seq_counts+1);
 	
@@ -590,10 +576,9 @@ PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 
 	pyfastx_fasta_calc_composition(self);
 
-	const char *sql = "SELECT * FROM comp WHERE ID=?";
+	const char *sql = "SELECT * FROM comp ORDER BY ID DESC LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_int(stmt, 1, self->seq_counts+1);
-	
+
 	if (sqlite3_step(stmt) != SQLITE_ROW) {
 		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index->index_db));
 		return NULL;
@@ -616,7 +601,7 @@ PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 	} else if (is_subset("ACDEFGHIKLMNPQRSTVWY", alphabets)) {
 		ret = "protein";
 	} else {
-		ret = "undetermined";
+		ret = "unknown";
 	}
 
 	return Py_BuildValue("s", ret);
@@ -627,7 +612,7 @@ static PyGetSetDef pyfastx_fasta_getsets[] = {
 	{"shortest", (getter)pyfastx_fasta_shortest, NULL, NULL, NULL},
 	{"mean", (getter)pyfastx_fasta_mean, NULL, NULL, NULL},
 	{"median", (getter)pyfastx_fasta_median, NULL, NULL, NULL},
-	{"gzip", (getter)pyfastx_fasta_format, NULL, NULL, NULL},
+	{"is_gzip", (getter)pyfastx_fasta_format, NULL, NULL, NULL},
 	{"gc_content", (getter)pyfastx_fasta_gc_content, NULL, NULL, NULL},
 	{"gc_skew", (getter)pyfastx_fasta_gc_skew, NULL, NULL, NULL},
 	{"composition", (getter)pyfastx_fasta_composition, NULL, NULL, NULL},

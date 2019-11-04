@@ -12,6 +12,18 @@ pyfastx.version
 
 	:rtype: str
 
+.. py:function:: pyfastx.gzip_check(file_name)
+
+	New in pyfastx 0.5.4
+
+	Check file is gzip compressed or not
+
+	:param str file_name: the path of input file
+
+	:return: Ture if file is gzip compressed else False
+
+	:rtype: bool
+
 pyfastx.Fasta
 -------------
 
@@ -37,7 +49,13 @@ pyfastx.Fasta
 
 		total length of sequences in FASTA file
 
-	.. py:attribute:: gzip
+	.. py:attribute:: type
+
+		New in ``pyfastx`` 0.5.4
+
+		get fasta type, return DNA, RNA, protein, or unknown
+
+	.. py:attribute:: is_gzip
 
 		New in pyfastx 0.5.0
 
@@ -234,7 +252,7 @@ New in ``pyfastx`` 0.4.0
 
 		total bases in FASTQ file
 
-	.. py:attribute:: gzip
+	.. py:attribute:: is_gzip
 
 		New in pyfastx 0.5.0
 
@@ -252,11 +270,11 @@ New in ``pyfastx`` 0.4.0
 
 		get phred value
 
-	.. py:attribute:: guess
+	.. py:attribute:: encoding_type
 
 		New in ``pyfastx`` 0.4.1
 
-		Guess the quality encoding system used by FASTQ sequence file
+		Guess the quality encoding type used by FASTQ sequence file
 
 pyfastx.Read
 ------------

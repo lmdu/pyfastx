@@ -142,7 +142,15 @@ Get FASTA information
 
     >>> # get composition of nucleotides in FASTA
     >>> fa.composition
-    {'A': 24534, 'C': 18694, 'G': 18855, 'T': 24179, 'N': 0}
+    {'A': 24534, 'C': 18694, 'G': 18855, 'T': 24179}
+
+    >>> # get fasta type (DNA, RNA, or protein)
+    >>> fa.type
+    'DNA'
+
+    >>> # check fasta file is gzip compressed
+    >>> fa.is_gzip
+    True
 
 Get longest and shortest sequence
 ---------------------------------
