@@ -98,20 +98,11 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 		
 			for(i = 0; i < read.l; i++) {
 				switch (read.s[i]) {
-					case 65:
-						a++; break;
-
-					case 67:
-						c++; break;
-
-					case 71:
-						g++; break;
-
-					case 84:
-						t++; break;
-
-					default:
-						n++;
+					case 65: ++a; break;
+					case 67: ++c; break;
+					case 71: ++g; break;
+					case 84: ++t; break;
+					default: ++n;
 				}
 			}
 

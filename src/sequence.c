@@ -60,9 +60,11 @@ PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
 			zran_seek(self->index->gzip_index, startpos+strlen(buff)+1, SEEK_SET, NULL);
 		}
 
-		remove_space(buff);
+		
 		if (self->index->uppercase) {
-			upper_string(buff);
+			remove_space_uppercase(buff);
+		} else {
+			remove_space(buff);
 		}
 
 		return Py_BuildValue("s", buff);

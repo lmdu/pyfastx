@@ -39,7 +39,7 @@ void upper_string(char *str) {
 	}
 }
 
-void reverse_seq(char *seq){
+void reverse_seq(char *seq) {
 	char *p1 = seq;
 	char *p2 = seq + strlen(seq) - 1;
 	int tmp;
@@ -74,72 +74,53 @@ References:
 https://droog.gs.washington.edu/parc/images/iupac.html
 http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html
 */
-int complement_base(int b) {
-	switch (b) {
-		case 65: case 97: return 84;
-		case 71: case 103: return 67;
-		case 67: case 99: return 71;
-		case 84: case 116: return 65;
-		case 78: case 110: return 78;
-		case 77: case 109: return 75;
-		case 82: case 114: return 89;
-		case 87: case 119: return 87;
-		case 83: case 115: return 83;
-		case 89: case 121: return 82;
-		case 75: case 107: return 77;
-		case 86: case 118: return 66;
-		case 72: case 104: return 68;
-		case 68: case 100: return 72;
-		case 66: case 98: return 86;
-		case 85: case 117: return 65;
-	}
+void generate_complement_map(int arr[]) {
+	arr[65] = arr[97] = 84;
+	arr[71] = arr[103] = 67;
+	arr[67] = arr[99] = 71;
+	arr[84] = arr[116] = 65;
+	arr[78] = arr[110] = 78;
+	arr[77] = arr[109] = 75;
+	arr[82] = arr[114] = 89;
+	arr[87] = arr[119] = 87;
+	arr[83] = arr[115] = 83;
+	arr[89] = arr[121] = 82;
+	arr[75] = arr[107] = 77;
+	arr[86] = arr[118] = 66;
+	arr[72] = arr[104] = 68;
+	arr[68] = arr[100] = 72;
+	arr[66] = arr[98] = 86;
+	arr[85] = arr[117] = 65;
 }
 
-void reverse_complement_seq(char *seq){
+void reverse_complement_seq(char *seq) {
 	char *p1 = seq;
 	char *p2 = seq + strlen(seq) - 1;
 	int tmp;
 
+	//generate complement mapping
+	int mapping[125];
+	generate_complement_map(mapping);
+
 	while (p1 < p2) {
-		tmp = complement_base(*p1);
-		*p1++ = complement_base(*p2);
+		tmp = mapping[Py_CHARMASK(*p1)];
+		*p1++ = mapping[Py_CHARMASK(*p2)];
 		*p2-- = tmp;
 	}
 
 	if (p1 == p2) {
-		*p1 = complement_base(*p1);
+		*p1 = mapping[Py_CHARMASK(*p1)];
 	}
 }
 
-void complement_seq(char *seq){
-	uint32_t i;
+void complement_seq(char *seq) {
+	//generate complement mapping
+	int mapping[125];
+	int c;
+	generate_complement_map(mapping);
 
-	for(i=0; seq[i]; i++){
-		switch(seq[i]){
-			case 65: 
-				seq[i]=84; break;
-			
-			case 67:
-				seq[i]=71; break;
-			
-			case 71:
-				seq[i]=67; break;
-			
-			case 84:
-				seq[i]=65; break;
-
-			case 97:
-				seq[i]=116; break;
-
-			case 99:
-				seq[i]=103; break;
-
-			case 103:
-				seq[i]=99; break;
-
-			case 116:
-				seq[i]=97; break;
-		}
+	while ((c=*seq)) {
+		*seq++ = mapping[Py_CHARMASK(c)];
 	}
 }
 

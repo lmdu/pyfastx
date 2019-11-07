@@ -9,6 +9,10 @@
 uint16_t file_exists(char *file_name);
 void remove_space(char *str);
 void upper_string(char *str);
+void remove_space_uppercase(char *str);
+void reverse_seq(char *seq);
+void reverse_complement_seq(char *seq);
+
 uint16_t is_gzip_format(char *file_name);
 //void truncate_seq(char *seq, uint32_t start, uint32_t end);
 void complement_seq(char *seq);
@@ -16,6 +20,7 @@ void reverse_seq(char *seq);
 uint32_t sum_array(uint32_t arr[], int num);
 char *int_to_str(int c);
 int is_subset(char *seq1, char *seq2);
+
 
 //PyObject* clean_seq(PyObject *self, PyObject *args);
 //PyObject* sub_seq(PyObject *self, PyObject *args);

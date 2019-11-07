@@ -1,10 +1,19 @@
 Changelog
 =========
 
+Version 0.5.5 (2019-11-07)
+--------------------------
+
+- Added Support for IUPAC code complement
+- Speedup reverse complement
+- Speedup space removing and uppercase
+
+
 Version 0.5.4 (2019-11-04)
 --------------------------
 
 - Added guess fasta type (DNA, RNA, protein)
+- Added support for calculating protein sequence composition
 - Optimized the speed of index building
 - Calculate sequence composition when get gc content or composition
 - Fixed char return in python 2.7

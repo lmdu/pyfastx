@@ -440,12 +440,12 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	}
 
 	Py_BEGIN_ALLOW_THREADS
+
+	buff = (char *)malloc(bytes + 1);
 	
 	if(self->gzip_format){
-		buff = (char *)malloc(bytes + 1);
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, buff, bytes);
-		
 	} else {
 		gzseek(self->gzfd, offset, SEEK_SET);
 		gzread(self->gzfd, buff, bytes);
