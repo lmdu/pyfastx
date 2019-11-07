@@ -445,30 +445,19 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 		buff = (char *)malloc(bytes + 1);
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, buff, bytes);
-		buff[bytes] = '\0';
-		remove_space(buff);
+		
 	} else {
 		gzseek(self->gzfd, offset, SEEK_SET);
-		kstream_t *ks;
-		kstring_t seq = {0, 0, 0};
-		seq.m = 256;
-		seq.s = (char*)malloc(seq.m);
-
-		ks = ks_init(self->gzfd);
-		
-		int c;
-		while((c = ks_getc(ks)) >= 0 && c != '>'){
-			if(c == '\n') continue;
-			seq.s[seq.l++] = c;
-			ks_getuntil2(ks, 2, &seq, 0, 1);
-		}
-
-		seq.s[seq.l] = 0;
-		buff = seq.s;
+		gzread(self->gzfd, buff, bytes);
 	}
+
+	buff[bytes] = '\0';
+		
 	
-	if(self->uppercase) {
-		upper_string(buff);
+	if (self->uppercase) {
+		remove_space_uppercase(buff);
+	} else {
+		remove_space(buff);
 	}
 
 	Py_END_ALLOW_THREADS
@@ -525,10 +514,10 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, uint32_t chrom, int64_t off
 
 	buff[bytes] = '\0';
 
-	remove_space(buff);
-
-	if(self->uppercase){
-		upper_string(buff);
+	if (self->uppercase) {
+		remove_space_uppercase(buff);
+	} else {
+		remove_space(buff);
 	}
 
 	Py_END_ALLOW_THREADS

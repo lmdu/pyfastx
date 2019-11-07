@@ -13,8 +13,18 @@ uint16_t file_exists(char *file_name){
 void remove_space(char *str) {
 	uint32_t i, j = 0;
 	for(i = 0; str[i]; i++){
-		if(!isspace(str[i])){
+		if(!Py_ISSPACE(str[i])){
 			str[j++] = str[i];
+		}
+	}
+	str[j] = '\0';
+}
+
+void remove_space_uppercase(char *str) {
+	uint32_t i, j = 0;
+	for(i = 0; str[i]; i++){
+		if(!Py_ISSPACE(str[i])){
+			str[j++] = Py_TOUPPER((unsigned char) str[i]);
 		}
 	}
 	str[j] = '\0';
@@ -30,15 +40,74 @@ void upper_string(char *str) {
 }
 
 void reverse_seq(char *seq){
-	char *p1, *p2;
+	char *p1 = seq;
+	char *p2 = seq + strlen(seq) - 1;
+	int tmp;
 
-	if (! seq || ! *seq){
-		return;
+	while (p1 < p2) {
+		tmp = *p1;
+		*p1++ = *p2;
+		*p2-- = tmp;
 	}
-	for (p1 = seq, p2 = seq + strlen(seq) - 1; p2 > p1; ++p1, --p2){
-		*p1 ^= *p2;
-		*p2 ^= *p1;
-		*p1 ^= *p2;
+}
+
+/* 
+DNA IUPAC Ambiguity Codes
+IUPAC Codes	Meaning		Complement
+A			A			T
+C			C			G
+G			G			C
+T/U			T			A
+M			A,C			K
+R			A,G			Y
+W			A,T			W
+S			C,G			S
+Y			C,T			R
+K			G,T			M
+V			A,C,G		B
+H			A,C,T		D
+D			A,G,T		H
+B			C,G,T		V
+N			G,A,T,C		N
+
+References:
+https://droog.gs.washington.edu/parc/images/iupac.html
+http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html
+*/
+int complement_base(int b) {
+	switch (b) {
+		case 65: case 97: return 84;
+		case 71: case 103: return 67;
+		case 67: case 99: return 71;
+		case 84: case 116: return 65;
+		case 78: case 110: return 78;
+		case 77: case 109: return 75;
+		case 82: case 114: return 89;
+		case 87: case 119: return 87;
+		case 83: case 115: return 83;
+		case 89: case 121: return 82;
+		case 75: case 107: return 77;
+		case 86: case 118: return 66;
+		case 72: case 104: return 68;
+		case 68: case 100: return 72;
+		case 66: case 98: return 86;
+		case 85: case 117: return 65;
+	}
+}
+
+void reverse_complement_seq(char *seq){
+	char *p1 = seq;
+	char *p2 = seq + strlen(seq) - 1;
+	int tmp;
+
+	while (p1 < p2) {
+		tmp = complement_base(*p1);
+		*p1++ = complement_base(*p2);
+		*p2-- = tmp;
+	}
+
+	if (p1 == p2) {
+		*p1 = complement_base(*p1);
 	}
 }
 
@@ -47,7 +116,7 @@ void complement_seq(char *seq){
 
 	for(i=0; seq[i]; i++){
 		switch(seq[i]){
-			case 65:
+			case 65: 
 				seq[i]=84; break;
 			
 			case 67:
