@@ -360,3 +360,10 @@ void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* 
 	fclose(fh);
 	remove(temp_index);
 }
+
+//return large string and release memory
+PyObject* make_large_sequence(char *seq) {
+	PyObject *obj = Py_BuildValue("s", seq);
+	free(seq);
+	return obj;
+}

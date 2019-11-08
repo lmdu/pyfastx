@@ -20,7 +20,7 @@ void reverse_seq(char *seq);
 uint32_t sum_array(uint32_t arr[], int num);
 char *int_to_str(int c);
 int is_subset(char *seq1, char *seq2);
-
+PyObject* make_large_sequence(char *seq);
 
 //PyObject* clean_seq(PyObject *self, PyObject *args);
 //PyObject* sub_seq(PyObject *self, PyObject *args);

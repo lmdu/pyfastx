@@ -41,12 +41,10 @@ typedef struct {
 	uint32_t cache_chrom;
 	uint32_t cache_start;
 	uint32_t cache_end;
+	char* cache_seq;
 
 	//key function
-	PyObject* key_func;
-
-	//cache sequence
-	char* cache_seq;
+	PyObject* key_func;	
 
 } pyfastx_Index;
 

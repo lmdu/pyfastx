@@ -530,3 +530,11 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, uint32_t chrom, int64_t off
 
 	return buff;
 }
+
+//clear index cached sequence
+void pyfastx_index_cache_clear(pyfastx_Index *self) {
+	self->cache_chrom = 0;
+	self->cache_start = 0;
+	self->cache_end = 0;
+	self->cache_seq = NULL;
+}
