@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.5.6 (2019-11-08)
+--------------------------
+
+- Optimized random access from plain file
+- Reduced memory consumption
+
 Version 0.5.5 (2019-11-07)
 --------------------------
 

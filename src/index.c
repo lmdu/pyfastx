@@ -443,12 +443,12 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 
 	buff = (char *)malloc(bytes + 1);
 	
-	if(self->gzip_format){
+	if (self->gzip_format) {
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, buff, bytes);
 	} else {
-		gzseek(self->gzfd, offset, SEEK_SET);
-		gzread(self->gzfd, buff, bytes);
+		fseek(self->fd, offset, SEEK_SET);
+		fread(buff, bytes, 1, self->fd);
 	}
 
 	buff[bytes] = '\0';
@@ -508,8 +508,8 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, uint32_t chrom, int64_t off
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, buff, bytes);
 	} else {
-		gzseek(self->gzfd, offset, SEEK_SET);
-		gzread(self->gzfd, buff, bytes);
+		fseek(self->fd, offset, SEEK_SET);
+		fread(buff, bytes, 1, self->fd);
 	}
 
 	buff[bytes] = '\0';
