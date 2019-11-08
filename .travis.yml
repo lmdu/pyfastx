@@ -32,6 +32,7 @@ install:
   - python3 setup.py sdist --dist-dir wheelhouse
 
 script:
+  - sqlite3 --version
   - ls wheelhouse
   - if [ "$TRAVIS_TAG" != "" ]; then
       python -m pip install -U twine;
