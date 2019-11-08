@@ -99,8 +99,8 @@ uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
 	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
-	char *seq1 = malloc(strlen(seq)+1);
-	strcpy(seq1, seq);
+	char *seq1 = malloc(self->seq_len + 1);
+	memcpy(seq1, seq, self->seq_len + 1);
 	return seq1;
 }
 
@@ -148,8 +148,7 @@ PyObject *pyfastx_sequence_complement(pyfastx_Sequence* self, void* closure){
 //complement reverse sequence
 PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure){
 	char *seq = pyfastx_sequence_acquire(self);
-	reverse_seq(seq);
-	complement_seq(seq);
+	reverse_complement_seq(seq);
 	return Py_BuildValue("s", seq);
 }
 
@@ -256,7 +255,7 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 		return NULL;
 	}
 
-	if(strand == '-'){
+	if (strand == '-') {
 		reverse_seq(subseq);
 		complement_seq(subseq);
 	}
