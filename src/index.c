@@ -53,17 +53,17 @@ pyfastx_Index* pyfastx_init_index(char* file_name, uint16_t uppercase, PyObject*
 	return index;
 }
 
-void pyfastx_rewind_index(pyfastx_Index *index){
-	kseq_rewind(index->kseqs);
-	gzrewind(index->gzfd);
+void pyfastx_rewind_index(pyfastx_Index *self){
+	kseq_rewind(self->kseqs);
+	gzrewind(self->gzfd);
 }
 
-PyObject* pyfastx_get_next_seq(pyfastx_Index *index){
-	if(kseq_read(index->kseqs) >= 0){
-		if(index->uppercase){
-			upper_string(index->kseqs->seq.s);
+PyObject* pyfastx_get_next_seq(pyfastx_Index *self){
+	if (kseq_read(self->kseqs) >= 0) {
+		if (self->uppercase) {
+			upper_string(self->kseqs->seq.s);
 		}
-		return Py_BuildValue("(ss)", index->kseqs->name.s, index->kseqs->seq.s);
+		return Py_BuildValue("(ss)", self->kseqs->name.s, self->kseqs->seq.s);
 	}
 	return NULL;
 }
@@ -420,7 +420,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	uint32_t seq_len;
 	int64_t offset;
 	uint32_t bytes;
-	char *buff;
+	//char *buff;
 	
 	//select sql statement, chrom indicates seq or chromomsome id
 	const char* sql = "SELECT boff,blen,slen FROM seq WHERE ID=? LIMIT 1;";
@@ -441,23 +441,26 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 
 	Py_BEGIN_ALLOW_THREADS
 
-	buff = (char *)malloc(bytes + 1);
+	self->cache_seq = (char *)malloc(bytes + 1);
 	
 	if (self->gzip_format) {
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
-		zran_read(self->gzip_index, buff, bytes);
+		zran_read(self->gzip_index, self->cache_seq, bytes);
 	} else {
 		fseek(self->fd, offset, SEEK_SET);
-		fread(buff, bytes, 1, self->fd);
+		if (fread(self->cache_seq, bytes, 1, self->fd) != 1) {
+			PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
+			return NULL;
+		}
 	}
 
-	buff[bytes] = '\0';
+	self->cache_seq[bytes] = '\0';
 		
 	
 	if (self->uppercase) {
-		remove_space_uppercase(buff);
+		remove_space_uppercase(self->cache_seq);
 	} else {
-		remove_space(buff);
+		remove_space(self->cache_seq);
 	}
 
 	Py_END_ALLOW_THREADS
@@ -465,7 +468,6 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	self->cache_chrom = chrom;
 	self->cache_start = 1;
 	self->cache_end = seq_len;
-	self->cache_seq = buff;
 
 	return self->cache_seq;
 }
@@ -482,42 +484,45 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 */
 char *pyfastx_index_get_sub_seq(pyfastx_Index *self, uint32_t chrom, int64_t offset, int64_t bytes, uint32_t start, uint32_t end, uint32_t plen, uint16_t normal){
 	uint32_t seq_len;
-	char *buff;
+	
 	seq_len = end - start + 1;
 
-	if(!normal || (plen == end && start == 1)) {
-		buff = pyfastx_index_get_full_seq(self, chrom);
+	if (!normal || (plen == end && start == 1)) {
+		pyfastx_index_get_full_seq(self, chrom);
 	}
 	
-	if((chrom == self->cache_chrom) && (start==self->cache_start) && (end==self->cache_end)){
+	if ((chrom == self->cache_chrom) && (start==self->cache_start) && (end==self->cache_end)){
 		return self->cache_seq;
 	}
 
-	if((chrom == self->cache_chrom) && (start>=self->cache_start) && (end<=self->cache_end)){
-		buff = (char *)malloc(seq_len + 1);
+	if ((chrom == self->cache_chrom) && (start>=self->cache_start) && (end<=self->cache_end)){
+		char *buff = (char *)malloc(seq_len + 1);
 		memcpy(buff, self->cache_seq + (start - self->cache_start), seq_len);
 		buff[seq_len] = '\0';
 		return buff;
 	}
 	
-	buff = (char *)malloc(bytes + 1);
+	self->cache_seq = (char *)malloc(bytes + 1);
 
 	Py_BEGIN_ALLOW_THREADS
 
 	if(self->gzip_format){
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
-		zran_read(self->gzip_index, buff, bytes);
+		zran_read(self->gzip_index, self->cache_seq, bytes);
 	} else {
 		fseek(self->fd, offset, SEEK_SET);
-		fread(buff, bytes, 1, self->fd);
+		if (fread(self->cache_seq, bytes, 1, self->fd) != 1) {
+			PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
+			return NULL;
+		}
 	}
 
-	buff[bytes] = '\0';
+	self->cache_seq[bytes] = '\0';
 
 	if (self->uppercase) {
-		remove_space_uppercase(buff);
+		remove_space_uppercase(self->cache_seq);
 	} else {
-		remove_space(buff);
+		remove_space(self->cache_seq);
 	}
 
 	Py_END_ALLOW_THREADS
@@ -525,10 +530,8 @@ char *pyfastx_index_get_sub_seq(pyfastx_Index *self, uint32_t chrom, int64_t off
 	self->cache_chrom = chrom;
 	self->cache_start = start;
 	self->cache_end = end;
-	self->cache_seq = buff;
 
-
-	return buff;
+	return self->cache_seq;
 }
 
 //clear index cached sequence

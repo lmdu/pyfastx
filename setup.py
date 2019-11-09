@@ -3,11 +3,12 @@
 import os
 import sys
 import glob
+import unittest
 import platform
 #from distutils.core import setup, Extension
 from setuptools import setup, Extension, find_packages
 
-link_args = ['-lz', '-lsqlite3'] 
+link_args = ['-lz', '-lsqlite3']
 comp_args = []
 
 if os.name == 'nt' and '64' in platform.architecture()[0]:
@@ -32,6 +33,11 @@ with open('README.rst') as fh:
 
 with open(os.path.join('src', 'version.h')) as fh:
     version = fh.read().split()[2].strip('"')
+
+#def my_test_suite():
+#    test_loader = unittest.TestLoader()
+#    test_suite = test_loader.discover('tests', pattern='test_*.py')
+#    return test_suite
 
 setup(
     name = 'pyfastx',

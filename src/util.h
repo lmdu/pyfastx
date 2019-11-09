@@ -18,9 +18,11 @@ uint16_t is_gzip_format(char *file_name);
 void complement_seq(char *seq);
 void reverse_seq(char *seq);
 uint32_t sum_array(uint32_t arr[], int num);
-char *int_to_str(int c);
+//char *int_to_str(int c);
 int is_subset(char *seq1, char *seq2);
-PyObject* make_large_sequence(char *seq);
+//PyObject* make_large_sequence(char *seq);
+int integer_check(PyObject* num);
+int64_t integer_to_long(PyObject* num);
 
 //PyObject* clean_seq(PyObject *self, PyObject *args);
 //PyObject* sub_seq(PyObject *self, PyObject *args);

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
+from __future__ import division
 
 import os
 import re
@@ -77,11 +78,8 @@ def fastx_info(args):
 		print("Sequence counts: {}".format(len(fa)))
 		print("Total bases: {}".format(fa.size))
 		print("GC content: {:.2f}%".format(fa.gc_content))
-		print("A counts: {}".format(comp['A']))
-		print("T counts: {}".format(comp['T']))
-		print("C counts: {}".format(comp['C']))
-		print("G counts: {}".format(comp['G']))
-		print("N counts: {}".format(comp['N']))
+		for b in comp:
+			print("{} counts: {}".format(b, comp[b]))
 		print("Mean length: {:.2f}".format(fa.mean))
 		print("Median length: {:.2f}".format(fa.median))
 		print("Max length: {}".format(fa.longest[1]))
@@ -95,11 +93,8 @@ def fastx_info(args):
 		print("Read counts: {}".format(len(fq)))
 		print("Total bases: {}".format(fq.size))
 		print("GC content: {:.2f}%".format(fq.gc_content))
-		print("A counts: {}".format(comp['A']))
-		print("T counts: {}".format(comp['T']))
-		print("C counts: {}".format(comp['C']))
-		print("G counts: {}".format(comp['G']))
-		print("N counts: {}".format(comp['N']))
+		for b in comp:
+			print("{} counts: {}".format(b, comp[b]))
 		print("Quality encoding maybe: {}".format(", ".join(fq.guess)))
 
 def fasta_split(args):

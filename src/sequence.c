@@ -89,28 +89,18 @@ uint32_t pyfastx_sequence_length(pyfastx_Sequence* self){
 }
 
 uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
+	if (!PyString_CheckExact(key)) {
+		return 0;
+	}
+
 	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 	char *subseq = PyUnicode_AsUTF8(key);
+	
 	if(strstr(seq, subseq) != NULL){
 		return 1;
 	}
-	return 0;
-}
-
-char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
-	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
-	char *seq1;
-
-	//when sequence > 100M, clear cache to reduce memory
-	if (self->seq_len > 100000000) {
-		seq1 = seq;
-		pyfastx_index_cache_clear(self->index);
-	} else {
-		seq1 = malloc(self->seq_len + 1);
-		memcpy(seq1, seq, self->seq_len + 1);
-	}
 	
-	return seq1;
+	return 0;
 }
 
 PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
@@ -137,6 +127,15 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	Py_RETURN_NONE;
 }
 
+char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
+	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+	
+	//clear cache to reduce memory
+	pyfastx_index_cache_clear(self->index);
+	
+	return seq;
+}
+
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
 	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
 	return Py_BuildValue("s", seq);
@@ -145,22 +144,20 @@ PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
 PyObject *pyfastx_sequence_reverse(pyfastx_Sequence* self, void* closure){
 	char *seq = pyfastx_sequence_acquire(self);
 	reverse_seq(seq);
-	return make_large_sequence(seq);
+	return Py_BuildValue("s", seq);
 }
 
 PyObject *pyfastx_sequence_complement(pyfastx_Sequence* self, void* closure){
 	char *seq = pyfastx_sequence_acquire(self);
 	complement_seq(seq);
-	return make_large_sequence(seq);
-	//return Py_BuildValue("s", seq);
+	return Py_BuildValue("s", seq);
 }
 
 //complement reverse sequence
 PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure){
 	char *seq = pyfastx_sequence_acquire(self);
 	reverse_complement_seq(seq);
-	//return Py_BuildValue("s", seq);
-	return make_large_sequence(seq);
+	return Py_BuildValue("s", seq);
 }
 
 PyObject *pyfastx_sequence_repr(pyfastx_Sequence* self){
@@ -267,8 +264,7 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 	}
 
 	if (strand == '-') {
-		reverse_seq(subseq);
-		complement_seq(subseq);
+		reverse_complement_seq(subseq);
 	}
 
 	seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
@@ -344,7 +340,7 @@ PyObject *pyfastx_sequence_gc_skew(pyfastx_Sequence *self, void* closure) {
 
 PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	sqlite3_stmt *stmt;
-	int i;
+	int16_t i;
 	int64_t c;
 	const char *sql = "SELECT * FROM comp WHERE ID=?";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
@@ -356,7 +352,7 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 		for (i = 1; i < 27; i++) {
 			c = sqlite3_column_int64(stmt, i);
 			if (c > 0) {
-				PyDict_SetItem(d, Py_BuildValue("s", int_to_str(i+64)), Py_BuildValue("i", c));
+				PyDict_SetItem(d, int_to_str(i+64), Py_BuildValue("i", c));
 			}
 		}
 	} else {
@@ -370,7 +366,7 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 		for (i = 0; i < 26; i++) {
 			c = seq_comp[i];
 			if (c > 0) {
-				PyDict_SetItem(d, Py_BuildValue("s", int_to_str(i+65)), Py_BuildValue("i", c));
+				PyDict_SetItem(d, int_to_str(i+65), Py_BuildValue("i", c));
 			}
 		}
 	}

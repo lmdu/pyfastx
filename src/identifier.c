@@ -6,9 +6,11 @@ PyObject *pyfastx_identifier_new(PyTypeObject *type, PyObject *args, PyObject *k
 }
 
 void pyfastx_identifier_dealloc(pyfastx_Identifier *self){
-	if(self->stmt != NULL){
+	if (self->stmt != NULL) {
 		sqlite3_finalize(self->stmt);
 	}
+
+	Py_TYPE(self)->tp_free(self);
 }
 
 PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self){
@@ -81,7 +83,7 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 }
 
 int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
-	if(!PyUnicode_Check(key)){
+	if(!PyString_CheckExact(key)){
 		return 0;
 	}
 

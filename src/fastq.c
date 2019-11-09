@@ -249,9 +249,10 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//check input file is gzip or not
 	obj->gzip_format = is_gzip_format(file_name);
 
-	//initial kstream
+	//initial kstream and kseq
 	obj->gzfd = gzopen(file_name, "rb");
 	obj->ks = ks_init(obj->gzfd);
+	obj->kseq = kseq_init(obj->gzfd);
 
 	//create index file
 	obj->index_file = (char *)malloc(strlen(file_name) + 5);
@@ -290,7 +291,10 @@ void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
 	kseq_destroy(self->kseq);
 	fclose(self->fd);
 	gzclose(self->gzfd);
-	zran_free(self->gzip_index);
+
+	if (self->gzip_format) {
+		zran_free(self->gzip_index);
+	}
 
 	Py_TYPE(self)->tp_free(self);
 }
@@ -375,12 +379,13 @@ PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
 
 		return pyfastx_fastq_get_read_by_id(self, i+1);
 		
-	} else if (PyUnicode_CheckExact(item)) {
+	} else if (PyString_CheckExact(item)) {
 		char *key = PyUnicode_AsUTF8(item);
 
 		return pyfastx_fastq_get_read_by_name(self, key);
 
 	} else {
+		PyErr_SetString(PyExc_KeyError, "key error");
 		return NULL;
 	}
 }
@@ -390,6 +395,10 @@ PyObject* pyfastx_fastq_repr(pyfastx_Fastq *self) {
 }
 
 int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
+	if (!PyString_CheckExact(key)) {
+		return 0;
+	}
+
 	sqlite3_stmt *stmt;
 	char *name = PyUnicode_AsUTF8(key);
 	const char *sql = "SELECT * FROM read WHERE name=? LIMIT 1;";
@@ -404,8 +413,8 @@ int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
 }
 
 PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
-	gzseek(self->gzfd, 0, SEEK_SET);
-	self->kseq = kseq_init(self->gzfd);
+	gzrewind(self->gzfd);
+	kseq_rewind(self->kseq);
 	Py_INCREF(self);
 	return (PyObject *)self;
 }

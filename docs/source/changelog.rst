@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.5.7 (2019-11-09)
+--------------------------
+
+- Fixed SystemError caused caused by Python 2.7 seperated int and long type
+- Fixed objects memory deallocation
+
 Version 0.5.6 (2019-11-08)
 --------------------------
 

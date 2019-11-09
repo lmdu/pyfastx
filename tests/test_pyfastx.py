@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# coding: utf-8
+from __future__ import division
+
 import os
 import gzip
 import random
@@ -15,7 +19,6 @@ gzip_fastq = 'tests/data/test.fq.gz'
 class FastaTest(unittest.TestCase):
 	def setUp(self):
 		self.fastx = pyfastx.Fasta(gzip_fasta)
-		del self.fastx
 
 		#reload index
 		self.fastx = pyfastx.Fasta(gzip_fasta)
@@ -227,10 +230,9 @@ class FastaTest(unittest.TestCase):
 		expect = self.faidx[idx][:]
 		result = self.fastx[idx]
 
-		self.assertEqual(expect.reverse.seq, result.reverse)
-		self.assertEqual(expect.complement.seq, result.complement)
-		expect = -expect
-		self.assertEqual(expect.seq, result.antisense)
+		self.assertEqual(str(expect.reverse), result.reverse)
+		self.assertEqual(str(expect.complement), result.complement)
+		self.assertEqual(str(-expect), result.antisense)
 
 	def test_seq_slice(self):
 		idx = self.get_random_index()

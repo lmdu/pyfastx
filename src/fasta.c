@@ -154,13 +154,11 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		return NULL;
 	}
 
-	if(PyList_Check(intervals)){
+	if (PyList_Check(intervals)) {
 		intervals = PyList_AsTuple(intervals);
 	}
 
-	PyObject *item;
-
-	item = PyTuple_GetItem(intervals, 0);
+	PyObject *item = PyTuple_GetItem(intervals, 0);
 	Py_ssize_t size = PyTuple_Size(intervals);
 
 	// sqlite3 prepare object
@@ -181,12 +179,18 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 
 	seq = pyfastx_index_get_full_seq(self->index, chrom);
 
-	if(size == 2 && PyLong_Check(item)){
-		start = PyLong_AsLong(item);
-		end = PyLong_AsLong(PyTuple_GetItem(intervals, 1));
+	if (integer_check(item)) {
+		if (size != 2) {
+			PyErr_SetString(PyExc_ValueError, "list or tuple should include only start and end");
+			return NULL;
+		}
 
-		if(start > end){
-			PyErr_SetString(PyExc_ValueError, "start position > end position");
+		start = integer_to_long(item);
+		item = PyTuple_GetItem(intervals, 1);
+		end = integer_to_long(item);
+
+		if (start > end) {
+			PyErr_SetString(PyExc_ValueError, "start position should less than end position");
 			return NULL;
 		}
 
@@ -200,17 +204,19 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		uint32_t j = 0;
 		sub_seq = (char *)malloc(strlen(seq) + 1);
 
-		for(i=0; i<size; i++){
+		for (i=0; i<size; i++) {
 			item = PyTuple_GetItem(intervals, i);
-			if(PyList_Check(item)){
+			
+			if (PyList_Check(item)) {
 				item = PyList_AsTuple(item);
 			}
-			start = PyLong_AsLong(PyTuple_GetItem(item, 0));
-			end = PyLong_AsLong(PyTuple_GetItem(item, 1));
+
+			start = integer_to_long(PyTuple_GetItem(item, 0));
+			end = integer_to_long(PyTuple_GetItem(item, 1));
 			seq_len = end - start + 1;
 
-			if(start > end){
-				PyErr_SetString(PyExc_ValueError, "start position > end position");
+			if (start > end) {
+				PyErr_SetString(PyExc_ValueError, "start position should less than end position");
 				return NULL;
 			}
 
@@ -220,17 +226,18 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		sub_seq[j] = '\0';
 	}
 
-	if(strand == '-'){
-		reverse_seq(sub_seq);
-		complement_seq(sub_seq);
+	if (strand == '-') {
+		reverse_complement_seq(sub_seq);
 	}
 
 	return Py_BuildValue("s", sub_seq);
+	//return make_large_sequence(sub_seq);
 }
 
 PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
 	pyfastx_Identifier *ids = PyObject_New(pyfastx_Identifier, &pyfastx_IdentifierType);
-	if(!ids){
+	
+	if (!ids) {
 		return NULL;
 	}
 
@@ -254,19 +261,20 @@ PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
 			i += self->seq_counts;
 		}
 
-		if(i >= self->seq_counts){
+		if (i >= self->seq_counts) {
 			PyErr_SetString(PyExc_IndexError, "index out of range");
 			return NULL;
 		}
 
 		return pyfastx_index_get_seq_by_id(self->index, i+1);
 		
-	} else if (PyUnicode_CheckExact(item)) {
+	} else if (PyString_CheckExact(item)) {
 		char *key = PyUnicode_AsUTF8(item);
 
 		return pyfastx_index_get_seq_by_name(self->index, key);
 
 	} else {
+		PyErr_SetString(PyExc_KeyError, "key error");
 		return NULL;
 	}
 }
@@ -276,6 +284,9 @@ int pyfastx_fasta_length(pyfastx_Fasta *self){
 }
 
 int pyfastx_fasta_contains(pyfastx_Fasta *self, PyObject *key){
+	if (!PyString_CheckExact(key)) {
+		return 0;
+	}
 	sqlite3_stmt *stmt;
 	
 	char *name = PyUnicode_AsUTF8(key);
@@ -558,7 +569,7 @@ PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
 	for (i = 1; i < 27; i++) {
 		c = sqlite3_column_int64(stmt, i);
 		if (c > 0) {
-			PyDict_SetItem(d, Py_BuildValue("s", int_to_str(i+64)), Py_BuildValue("l", c));
+			PyDict_SetItem(d, int_to_str(i+64), Py_BuildValue("l", c));
 		}
 	}
 

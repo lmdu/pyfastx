@@ -24,7 +24,7 @@ void remove_space_uppercase(char *str) {
 	uint32_t i, j = 0;
 	for(i = 0; str[i]; i++){
 		if(!Py_ISSPACE(str[i])){
-			str[j++] = Py_TOUPPER((unsigned char) str[i]);
+			str[j++] = Py_TOUPPER(Py_CHARMASK(str[i]));
 		}
 	}
 	str[j] = '\0';
@@ -33,21 +33,7 @@ void remove_space_uppercase(char *str) {
 void upper_string(char *str) {
 	uint32_t i;
 	for(i = 0; str[i]; i++) {
-		if(str[i] >= 'a' && str[i] <= 'z'){
-			str[i] = str[i] - 32;
-		}
-	}
-}
-
-void reverse_seq(char *seq) {
-	char *p1 = seq;
-	char *p2 = seq + strlen(seq) - 1;
-	int tmp;
-
-	while (p1 < p2) {
-		tmp = *p1;
-		*p1++ = *p2;
-		*p2-- = tmp;
+		str[i] = Py_TOUPPER(Py_CHARMASK(str[i]));
 	}
 }
 
@@ -73,54 +59,49 @@ N			G,A,T,C		N
 References:
 https://droog.gs.washington.edu/parc/images/iupac.html
 http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html
+complement mapping array was extracted from samtools source code
+https://github.com/samtools/samtools/blob/f6bd3b22ea4c9e4897cda455e786180fe650e494/faidx.c
 */
-void generate_complement_map(int arr[]) {
-	arr[65] = arr[97] = 84;
-	arr[71] = arr[103] = 67;
-	arr[67] = arr[99] = 71;
-	arr[84] = arr[116] = 65;
-	arr[78] = arr[110] = 78;
-	arr[77] = arr[109] = 75;
-	arr[82] = arr[114] = 89;
-	arr[87] = arr[119] = 87;
-	arr[83] = arr[115] = 83;
-	arr[89] = arr[121] = 82;
-	arr[75] = arr[107] = 77;
-	arr[86] = arr[118] = 66;
-	arr[72] = arr[104] = 68;
-	arr[68] = arr[100] = 72;
-	arr[66] = arr[98] = 86;
-	arr[85] = arr[117] = 65;
-}
+unsigned char comp_map[128] = {
+  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
+ 16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
+ 32, '!', '"', '#', '$', '%', '&', '\'','(', ')', '*', '+', ',', '-', '.', '/',
+'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
+'@', 'T', 'V', 'G', 'H', 'E', 'F', 'C', 'D', 'I', 'J', 'M', 'L', 'K', 'N', 'O',
+'P', 'Q', 'Y', 'S', 'A', 'A', 'B', 'W', 'X', 'R', 'Z', '[', '\\',']', '^', '_',
+'`', 't', 'v', 'g', 'h', 'e', 'f', 'c', 'd', 'i', 'j', 'm', 'l', 'k', 'n', 'o',
+'p', 'q', 'y', 's', 'a', 'a', 'b', 'w', 'x', 'r', 'z', '{', '|', '}', '~', 127,
+};
 
 void reverse_complement_seq(char *seq) {
 	char *p1 = seq;
 	char *p2 = seq + strlen(seq) - 1;
-	int tmp;
+	int c;
 
-	//generate complement mapping
-	int mapping[125];
-	generate_complement_map(mapping);
+	while (p1 <= p2) {
+		c = comp_map[Py_CHARMASK(*p1)];
+		*p1++ = comp_map[Py_CHARMASK(*p2)];
+		*p2-- = c;
+	}
+}
+
+void reverse_seq(char *seq) {
+	char *p1 = seq;
+	char *p2 = seq + strlen(seq) - 1;
+	int c;
 
 	while (p1 < p2) {
-		tmp = mapping[Py_CHARMASK(*p1)];
-		*p1++ = mapping[Py_CHARMASK(*p2)];
-		*p2-- = tmp;
-	}
-
-	if (p1 == p2) {
-		*p1 = mapping[Py_CHARMASK(*p1)];
+		c = *p1;
+		*p1++ = *p2;
+		*p2-- = c;
 	}
 }
 
 void complement_seq(char *seq) {
-	//generate complement mapping
-	int mapping[125];
 	int c;
-	generate_complement_map(mapping);
 
-	while ((c=*seq)) {
-		*seq++ = mapping[Py_CHARMASK(c)];
+	while ((c = *seq)) {
+		*seq++ = comp_map[Py_CHARMASK(c)];
 	}
 }
 
@@ -133,12 +114,13 @@ uint32_t sum_array(uint32_t arr[], int num) {
 	return sum;
 }
 
+/*
 char *int_to_str(int c) {
 	char *str = (char *)malloc(2);
 	str[0] = c;
 	str[1] = '\0';
 	return str;
-}
+}*/
 
 int is_subset(char *seq1, char *seq2) {
 	int i, j, m, n;
@@ -347,6 +329,9 @@ void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* 
 	sqlite3_prepare_v2(index_db, "SELECT content FROM gzindex;", -1, &stmt, NULL);
 	if (sqlite3_step(stmt) == SQLITE_ROW){
 		bytes = sqlite3_column_bytes(stmt, 0);
+	} else {
+		PyErr_SetString(PyExc_RuntimeError, "failed to get bytes of index");
+		return;
 	}
 	
 	fwrite(sqlite3_column_blob(stmt, 0), bytes, 1, fh);
@@ -354,16 +339,37 @@ void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* 
 
 	fh = fopen(temp_index, "rb");
 
-	if (zran_import_index(gzip_index, fh) != ZRAN_IMPORT_OK){
-		PyErr_SetString(PyExc_RuntimeError, "Failed to import gzip index.");
+	if (zran_import_index(gzip_index, fh) != ZRAN_IMPORT_OK) {
+		PyErr_SetString(PyExc_RuntimeError, "failed to import gzip index");
+		return;
 	}
 	fclose(fh);
 	remove(temp_index);
 }
 
 //return large string and release memory
-PyObject* make_large_sequence(char *seq) {
+/*PyObject* make_large_sequence(char *seq) {
 	PyObject *obj = Py_BuildValue("s", seq);
 	free(seq);
 	return obj;
+}*/
+
+//integer check and coversion
+int integer_check(PyObject* num) {
+	if (PyInt_Check(num) || PyLong_Check(num)) {
+		return 1;
+	}
+
+	return 0;
+}
+
+int64_t integer_to_long(PyObject* num) {
+	if (PyInt_Check(num)) {
+		return PyInt_AsLong(num);
+	} else if (PyLong_Check(num)) {
+		return PyLong_AsLong(num);
+	}
+
+	PyErr_SetString(PyExc_ValueError, "the object is not an integer");
+	return 0;
 }

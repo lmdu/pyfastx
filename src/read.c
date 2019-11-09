@@ -7,6 +7,14 @@ PyObject *pyfastx_read_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 }
 
 void pyfastx_read_dealloc(pyfastx_Read *self) {
+    if (self->seq != NULL) {
+        free(self->seq);
+    }
+
+    if (self->qual != NULL) {
+        free(self->qual);
+    }
+
     Py_TYPE(self)->tp_free(self);
 }
 
