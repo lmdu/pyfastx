@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.5.8 (2019-11-10)
+--------------------------
+
+- Fixed fasta NL function parameter check
+- Fixed read id error when fastq iteration
+
 Version 0.5.7 (2019-11-09)
 --------------------------
 

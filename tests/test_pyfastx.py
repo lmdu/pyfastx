@@ -120,7 +120,7 @@ class FastaTest(unittest.TestCase):
 
 		#test contains
 		idx = self.get_random_index()
-		name = self.faidx[0].name
+		name = self.faidx[idx].name
 		self.assertTrue(name in self.fastx)
 
 	def test_iter(self):
@@ -176,9 +176,7 @@ class FastaTest(unittest.TestCase):
 
 		#check contains
 		idx = self.get_random_index()
-		name = self.faidx[idx].name
-
-		self.assertTrue(name in ids)
+		self.assertTrue(self.faidx[idx].name in ids)
 
 		#sor by id
 		expect = [seq.name for seq in self.faidx]
@@ -319,7 +317,7 @@ class FastaTest(unittest.TestCase):
 
 		# test seq length
 		self.assertEqual(self.fastq.size, sum(self.bases.values()))
-		
+
 		# test length
 		self.assertEqual(len(self.reads), len(self.fastq))
 

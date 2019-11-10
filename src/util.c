@@ -88,10 +88,10 @@ void reverse_complement_seq(char *seq) {
 void reverse_seq(char *seq) {
 	char *p1 = seq;
 	char *p2 = seq + strlen(seq) - 1;
-	int c;
 
 	while (p1 < p2) {
-		c = *p1;
+
+		int c = *p1;
 		*p1++ = *p2;
 		*p2-- = c;
 	}
@@ -298,7 +298,8 @@ void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char*
 
 	char *buff = (char *)malloc(fsize + 1);
 
-	if(fread(buff, fsize, 1, fd) != 1){
+	if (fread(buff, fsize, 1, fd) != 1) {
+		free(buff);
 		return;
 	}
 
@@ -330,6 +331,7 @@ void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* 
 	if (sqlite3_step(stmt) == SQLITE_ROW){
 		bytes = sqlite3_column_bytes(stmt, 0);
 	} else {
+		fclose(fh);
 		PyErr_SetString(PyExc_RuntimeError, "failed to get bytes of index");
 		return;
 	}

@@ -69,8 +69,9 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 
 	//check input sequence file is whether exists
-	if(!file_exists(file_name)){
-		return PyErr_Format(PyExc_FileExistsError, "input fasta file %s does not exists", file_name);
+	if (!file_exists(file_name)) {
+		PyErr_Format(PyExc_FileExistsError, "input fasta file %s does not exists", file_name);
+		return NULL;
 	}
 
 	//create Fasta class
@@ -80,7 +81,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 	
 	//initial sequence file name
-	obj->file_name = (char *)malloc(strlen(file_name)+1);
+	obj->file_name = (char *)malloc(strlen(file_name) + 1);
 	strcpy(obj->file_name, file_name);
 
 	obj->uppercase = uppercase;
@@ -302,7 +303,6 @@ int pyfastx_fasta_contains(pyfastx_Fasta *self, PyObject *key){
 
 PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args){
 	uint32_t l;
-	uint32_t c;
 	sqlite3_stmt *stmt;
 
 	if (!PyArg_ParseTuple(args, "I", &l)) {
@@ -313,7 +313,7 @@ PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args){
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, l);
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		c = sqlite3_column_int(stmt, 0);
+		uint32_t c = sqlite3_column_int(stmt, 0);
 		return Py_BuildValue("I", c);
 	}
 
@@ -326,14 +326,15 @@ PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 	float half_size;
 	uint64_t temp_size = 0;
 	uint32_t i = 0;
-	uint32_t j = 0;
+	uint32_t j;
 
 	if (!PyArg_ParseTuple(args, "|i", &p)) {
 		return NULL;
 	}
 
-	if (p <= 0 && p >= 100){
-		return PyErr_Format(PyExc_ValueError, "the value must between 0 and 100");
+	if (p < 0 || p > 100){
+		PyErr_SetString(PyExc_ValueError, "the value must between 0 and 100");
+		return NULL;
 	}
 
 	half_size = p/100.0 * self->seq_length;
@@ -370,14 +371,12 @@ PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
 
 PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	const char *name;
-	uint32_t len;
 	const char *sql = "SELECT chrom,MIN(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		name = (const char *)sqlite3_column_text(stmt, 0);
-		len = sqlite3_column_int(stmt, 1);
+		const char *name = (const char *)sqlite3_column_text(stmt, 0);
+		uint32_t len = sqlite3_column_int(stmt, 1);
 		return Py_BuildValue("sI", name, len);
 	}
 
@@ -386,12 +385,12 @@ PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure){
 
 PyObject *pyfastx_fasta_mean(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	double len;
+
 	const char *sql = "SELECT AVG(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		len = sqlite3_column_double(stmt, 0);
+		double len = sqlite3_column_double(stmt, 0);
 		return Py_BuildValue("d", len);
 	}
 
@@ -400,7 +399,7 @@ PyObject *pyfastx_fasta_mean(pyfastx_Fasta *self, void* closure){
 
 PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	double m;
+
 	const char *sql;
 	if (self->seq_counts % 2 == 0) {
 		sql = "SELECT AVG(slen) FROM (SELECT slen FROM seq ORDER BY slen LIMIT ?,2) LIMIT 1";
@@ -410,7 +409,7 @@ PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, (self->seq_counts - 1)/2);
 	if(sqlite3_step(stmt) == SQLITE_ROW){
-		m = sqlite3_column_double(stmt, 0);
+		double m = sqlite3_column_double(stmt, 0);
 		return Py_BuildValue("d", m);
 	}
 
@@ -581,7 +580,6 @@ PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
 PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 	sqlite3_stmt *stmt;
 	int i, j;
-	int64_t c;
 	char *alphabets;
 	char *ret;
 
@@ -598,7 +596,7 @@ PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 	alphabets = (char *)malloc(26);
 	j = 0;
 	for (i = 1; i < 27; i++) {
-		c = sqlite3_column_int64(stmt, i);
+		int64_t c = sqlite3_column_int64(stmt, i);
 		if (c > 0) {
 			alphabets[j++] = i+64;
 		}

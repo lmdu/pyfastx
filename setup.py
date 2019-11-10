@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-import sys
 import glob
-import unittest
 import platform
+#import unittest
 #from distutils.core import setup, Extension
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, Extension
 
 link_args = ['-lz', '-lsqlite3']
 comp_args = []

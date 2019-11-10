@@ -65,19 +65,17 @@ PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
 }
 
 PyObject* pyfastx_read_quali(pyfastx_Read *self, void* closure) {
-    int i;
-    PyObject* q;
-
     if (self->qual == NULL) {
         pyfastx_read_qual(self, NULL);
     }
 
     if (self->qual != NULL) {
         PyObject *quals = PyList_New(0);
-
+        int i;
         for (i = 0; i < self->read_len; i++) {
-            q = Py_BuildValue("i", self->qual[i] - self->phred);
+            PyObject *q = Py_BuildValue("i", self->qual[i] - self->phred);
             PyList_Append(quals, q);
+            Py_DECREF(q);
         }
 
         return quals;

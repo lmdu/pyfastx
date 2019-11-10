@@ -4,10 +4,9 @@ from __future__ import division
 
 import os
 import re
-import sys
 import gzip
 import math
-import glob
+#import glob
 import pyfastx
 import argparse
 
@@ -210,7 +209,7 @@ def fastx_fq2fa(args):
 
 	name, suffix1 = os.path.splitext(os.path.basename(args.fastq))
 	if fq.is_gzip:
-		name, suffix2 = os.path.splitext(name)
+		name, _ = os.path.splitext(name)
 
 	if args.out_gzip:
 		fafile = "{}.fa.gz".format(name)
@@ -227,7 +226,7 @@ def fastx_fq2fa(args):
 
 	for read in fq:
 		fh.write(">{}\n{}\n".format(read.name, read.seq))
-	
+
 	fh.close()
 
 def main():
@@ -262,7 +261,7 @@ def main():
 	)
 
 	#split command
-	parser_split = subparsers.add_parser('split', 
+	parser_split = subparsers.add_parser('split',
 		help = "Split fasta file into multiple files"
 	)
 	parser_split.set_defaults(func=fastx_split)

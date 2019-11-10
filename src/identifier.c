@@ -18,14 +18,12 @@ PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self){
 	char *order;
 	char *sql;
 
-	if (self->sort == 1) {
-		key = "ID";
-	} else if (self->sort == 2) {
+	if (self->sort == 2) {
 		key = "chrom";
 	} else if (self->sort == 3) {
 		key = "slen";
 	} else {
-		key = NULL;
+		key = "ID";
 	}
 
 	if (self->order == 0) {

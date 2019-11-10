@@ -29,7 +29,7 @@ PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
 		int64_t ret;
 		int64_t startpos;
 		char *lend;
-		char *buff = (char*)malloc(self->line_len + 1);
+		char *buff; 
 		int64_t max_offset = self->offset + self->byte_len;
 
 		startpos = zran_tell(self->index->gzip_index);
@@ -38,6 +38,7 @@ PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
 			return NULL;
 		}
 		
+		buff = (char*)malloc(self->line_len + 1);
 		ret = zran_read(self->index->gzip_index, buff, self->line_len);
 		if (ret == ZRAN_READ_EOF) {
 			return NULL;
@@ -113,14 +114,13 @@ PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
 
 PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	sqlite3_stmt *stmt;
-	char *detail;
 
 	const char *sql = "SELECT descr FROM seq WHERE chrom=? LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, self->name, -1, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		detail = (char*)sqlite3_column_text(stmt, 0);
+		char *detail = (char*)sqlite3_column_text(stmt, 0);
 		return Py_BuildValue("s", detail);
 	}
 
@@ -173,7 +173,6 @@ PyObject *pyfastx_sequence_str(pyfastx_Sequence* self){
 }
 
 PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
-	char *seq;
 	if (PyIndex_Check(item)) {
 		Py_ssize_t i;
 		i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -186,8 +185,8 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			i += self->seq_len;
 		}
 
-		seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
-		return Py_BuildValue("s", int_to_str(*(seq+i)));
+		char *sub_seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+		return int_to_str(*(sub_seq+i));
 	
 	} else if (PySlice_Check(item)) {
 		Py_ssize_t slice_start, slice_stop, slice_step, slice_len;

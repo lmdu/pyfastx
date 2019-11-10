@@ -234,8 +234,9 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 
 	//check input sequence file is whether exists
-	if(!file_exists(file_name)){
-		return PyErr_Format(PyExc_FileExistsError, "input fastq file %s does not exists", file_name);
+	if (!file_exists(file_name)) {
+		PyErr_Format(PyExc_FileExistsError, "input fastq file %s does not exists", file_name);
+		return NULL; 
 	}
 
 	pyfastx_Fastq *obj = (pyfastx_Fastq *)type->tp_alloc(type, 0);
@@ -253,6 +254,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->gzfd = gzopen(file_name, "rb");
 	obj->ks = ks_init(obj->gzfd);
 	obj->kseq = kseq_init(obj->gzfd);
+	obj->current_read = 0;
 
 	//create index file
 	obj->index_file = (char *)malloc(strlen(file_name) + 5);
@@ -415,14 +417,14 @@ int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
 PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 	gzrewind(self->gzfd);
 	kseq_rewind(self->kseq);
+	self->current_read = 0;
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
 
 PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
-	int l;
-	uint64_t i = 0;
-	if ((l = kseq_read(self->kseq)) >= 0) {
+
+	if (kseq_read(self->kseq) >= 0) {
 		//return Py_BuildValue("sss", self->kseq->name.s, self->kseq->seq.s, self->kseq->qual.s);
 
 		pyfastx_Read *read = PyObject_New(pyfastx_Read, &pyfastx_ReadType);
@@ -431,9 +433,8 @@ PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
 			return NULL;
 		}
 
-		i++;
-
-		read->id = i;
+		++self->current_read;
+		read->id = self->current_read;
 		read->name = self->kseq->name.s;
 		read->read_len = self->kseq->seq.l;
 		read->seq = self->kseq->seq.s;
