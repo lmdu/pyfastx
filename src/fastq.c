@@ -7,9 +7,9 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 
 	int64_t a = 0, t = 0, g = 0, c = 0, n = 0;
 	int64_t soff = 0, qoff = 0, pos = 0;
-	char* name = NULL;
+	char* name;
 	char* space;
-	int i, l, rlen = 0;
+	int i, l, c, rlen = 0;
 
 	//min and max quality score
 	int minqs = 104, maxqs = 33;
@@ -51,7 +51,6 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 	}
 
 	const char *optimize_sql = " PRAGMA synchronous = OFF; \
-		PRAGMA journal_mode = OFF; \
 		BEGIN TRANSACTION;";
 
 	if(sqlite3_exec(self->index_db, optimize_sql, NULL, NULL, NULL) != SQLITE_OK){
@@ -68,71 +67,83 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 	Py_BEGIN_ALLOW_THREADS
 
 	while ((l=ks_getuntil(self->ks, '\n', &read, 0)) >= 0) {
-		line_num++;
-		l++;
+		++line_num;
+		++l;
 
-		if (line_num % 4 == 1) {
-			name = (char *)malloc(read.l);
-			strcpy(name, read.s+1);
-			space = strchr(name, '\r');
-			if (space != NULL) {
-				*space = '\0';
-			} else {
-				name[read.l] = '\0';
-			}
+		c = line_num % 4;
 
-			space = strchr(name, ' ');
-			if (space != NULL) {
-				*space = '\0';
-			}
-		} else if (line_num % 4 == 2) {
-			soff = pos;
-
-			space = strchr(read.s, '\r');
-			if (space != NULL) {
-				*space = '\0';
-				read.l--;
-			}
-
-			rlen = read.l;
-		
-			for(i = 0; i < read.l; i++) {
-				switch (read.s[i]) {
-					case 65: ++a; break;
-					case 67: ++c; break;
-					case 71: ++g; break;
-					case 84: ++t; break;
-					default: ++n;
-				}
-			}
-
-		} else if (line_num % 4 == 0) {
-			qoff = pos;
-
-			space = strchr(read.s, '\r');
-			if (space != NULL) {
-				*space = '\0';
-				read.l--;
-			}
-
-			for(i = 0; i < read.l; i++) {
-				if (read.s[i] < minqs) {
-					minqs = read.s[i];
+		switch(c) {
+			case 1: 
+				name = (char *)malloc(read.l+1);
+				memcpy(name, read.s+1, read.l);
+				
+				space = strchr(name, '\r');
+				
+				if (space != NULL) {
+					*space = '\0';
+				} else {
+					name[read.l] = '\0';
 				}
 
-				if (read.s[i] > maxqs) {
-					maxqs = read.s[i];
+				space = strchr(name, ' ');
+				
+				if (space != NULL) {
+					*space = '\0';
 				}
-			}
 
-			//write to sqlite3
-			sqlite3_bind_null(stmt, 1);
-			sqlite3_bind_text(stmt, 2, name, -1, NULL);
-			sqlite3_bind_int(stmt, 3, rlen);
-			sqlite3_bind_int64(stmt, 4, soff);
-			sqlite3_bind_int64(stmt, 5, qoff);
-			sqlite3_step(stmt);
-			sqlite3_reset(stmt);
+				break;
+			
+			case 2:
+				soff = pos;
+
+				space = strchr(read.s, '\r');
+				
+				if (space != NULL) {
+					*space = '\0';
+					read.l--;
+				}
+
+				rlen = read.l;
+			
+				for(i = 0; i < read.l; i++) {
+					switch (read.s[i]) {
+						case 65: ++a; break;
+						case 67: ++c; break;
+						case 71: ++g; break;
+						case 84: ++t; break;
+						default: ++n;
+					}
+				}
+
+				break;
+			
+			case 0:
+				qoff = pos;
+
+				space = strchr(read.s, '\r');
+				
+				if (space != NULL) {
+					*space = '\0';
+					read.l--;
+				}
+
+				for(i = 0; i < read.l; i++) {
+					if (read.s[i] < minqs) {
+						minqs = read.s[i];
+					}
+
+					if (read.s[i] > maxqs) {
+						maxqs = read.s[i];
+					}
+				}
+
+				//write to sqlite3
+				sqlite3_bind_null(stmt, 1);
+				sqlite3_bind_text(stmt, 2, name, -1, NULL);
+				sqlite3_bind_int(stmt, 3, rlen);
+				sqlite3_bind_int64(stmt, 4, soff);
+				sqlite3_bind_int64(stmt, 5, qoff);
+				break;
 		}
 		pos += l;
 	}
@@ -147,7 +158,7 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 	sqlite3_step(stmt);
 
 	sqlite3_exec(self->index_db, "CREATE INDEX readidx ON read (name);", NULL, NULL, NULL);
-	sqlite3_exec(self->index_db, "COMMIT TRANSACTION;", NULL, NULL, NULL);
+	sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
 
 	//check phred
 	if (self->phred == 0) {
@@ -244,7 +255,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		return NULL;
 	}
 
-	obj->file_name = (char *)malloc(strlen(file_name)+1);
+	obj->file_name = (char *)malloc(strlen(file_name) + 1);
 	strcpy(obj->file_name, file_name);
 
 	//check input file is gzip or not
