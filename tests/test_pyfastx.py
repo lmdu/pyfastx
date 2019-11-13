@@ -18,13 +18,20 @@ gzip_fastq = 'tests/data/test.fq.gz'
 
 class FastaTest(unittest.TestCase):
 	def setUp(self):
-		self.fastx = pyfastx.Fasta(gzip_fasta)
+		self.fastx = pyfastx.Fasta(gzip_fasta, build_index=False)
+		self.fastx.build_index()
+		self.fastx.rebuild_index()
 
 		#reload index
 		self.fastx = pyfastx.Fasta(gzip_fasta)
 
 		self.faidx = pyfaidx.Fasta(flat_fasta, sequence_always_upper=True)
+		
 		self.fastq = pyfastx.Fastq(gzip_fastq)
+
+		#reload index
+		self.fastq = pyfastx.Fastq(gzip_fastq)
+		
 		self.count = len(self.fastx)
 
 		self.reads = {}
@@ -246,6 +253,9 @@ class FastaTest(unittest.TestCase):
 		
 		self.assertEqual(expect, result)
 
+		#test sequence index
+		self.assertEqual(str(expect)[0], result[0])
+
 	def test_seq_content(self):
 		idx = self.get_random_index()
 		result = self.fastx[idx]
@@ -261,6 +271,10 @@ class FastaTest(unittest.TestCase):
 
 		self.assertEqual(result.composition, content)
 		self.assertEqual(round(result.gc_content, 3), round(expect_gc, 3))
+
+		#test gc skew
+		expect_skew = (content['G']-content['C'])/(content['G']+content['C'])
+		self.assertEqual(round(result.gc_skew, 3), round(expect_skew, 3))
 
 	def test_seq_iter(self):
 		idx = self.get_random_index()
@@ -340,20 +354,28 @@ class FastaTest(unittest.TestCase):
 		result = self.fastq[idx]
 		expect = self.reads[idx]
 
+		print(1)
+		read0 = pyfastx.Fastq(gzip_fastq.strip('.gz'))[idx]
+
+		print(2)
 		# test length
 		self.assertEqual(len(result), len(expect[1]))
 
+		print(3)
 		# test name
 		self.assertEqual(result.name, expect[0])
 
+		print(4)
 		# test str
 		self.assertEqual(str(result), expect[1])
 
 		# test seq
 		self.assertEqual(result.seq, expect[1])
+		self.assertEqual(read0.seq, expect[1])
 
 		# test quality
 		self.assertEqual(result.qual, expect[2])
+		self.assertEqual(read0.seq, expect[2])
 
 		# test quality integer
 		self.assertEqual(result.quali, [ord(b)-33 for b in expect[2]])
@@ -373,3 +395,5 @@ class FastaTest(unittest.TestCase):
 			self.assertEqual(read.name, self.reads[i][0])
 			self.assertEqual(read.seq, self.reads[i][1])
 			self.assertEqual(read.qual, self.reads[i][2])
+
+		del result

@@ -57,7 +57,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	int memory_index = 0;
 
 	//key function for seperating name
-	PyObject *key_func = NULL;
+	PyObject *key_func = Py_None;
 
 	//paramters for fasta object construction
 	static char* keywords[] = {"file_name", "uppercase", "build_index", "memory_index" "key_func", NULL};
@@ -66,7 +66,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		return NULL;
 	}
 
-	if ((key_func != NULL) && !PyCallable_Check(key_func)) {
+	if ((key_func != Py_None) && !PyCallable_Check(key_func)) {
 		PyErr_SetString(PyExc_TypeError, "key_func must be a callable function");
 		return NULL;
 	}
@@ -121,19 +121,19 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 }
 
 PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
-	if (strcmp(self->index->index_file, ":memory:") != 0) {
-		if (!file_exists(self->index->index_file)) {
-			pyfastx_build_index(self->index);
-			pyfastx_calc_fasta_attrs(self);
-		}
+	if (self->index->index_db != NULL) {
+		pyfastx_build_index(self->index);
+		pyfastx_calc_fasta_attrs(self);
 	}
-	
+
 	Py_RETURN_TRUE;
 }
 
 PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
-	sqlite3_close(self->index->index_db);
-
+	if (self->index->index_db != NULL) {
+		sqlite3_close(self->index->index_db);
+	}
+	
 	if (file_exists(self->index->index_file)) {
 		remove(self->index->index_file);
 	}

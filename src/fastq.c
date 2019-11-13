@@ -256,6 +256,7 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 	name = (char *)sqlite3_column_text(stmt, 1);
 	read->name = (char *)malloc(strlen(name) + 1);
 	strcpy(read->name, name);
+	//read->name = (char *)sqlite3_column_text(stmt, 1);
 	read->read_len = sqlite3_column_int(stmt, 2);
 	read->seq_offset = sqlite3_column_int64(stmt, 3);
 	read->qual_offset = sqlite3_column_int64(stmt, 4);

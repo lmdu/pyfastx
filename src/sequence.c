@@ -341,6 +341,7 @@ PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
 	const char *sql = "SELECT a, c, g, t FROM comp WHERE ID=? LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, self->id);
+	sqlite3_step(stmt);
 
 	if (self->start == 1 && self->end == self->seq_len && sqlite3_step(stmt) == SQLITE_ROW) {
 		a = sqlite3_column_int(stmt, 0);

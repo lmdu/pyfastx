@@ -305,7 +305,7 @@ void pyfastx_load_index(pyfastx_Index *self){
 }
 
 void pyfastx_build_index(pyfastx_Index *self){
-	if(file_exists(self->index_file)) {
+	if (file_exists(self->index_file)) {
 		pyfastx_load_index(self);
 	} else {
 		pyfastx_create_index(self);
@@ -331,7 +331,7 @@ void pyfastx_index_free(pyfastx_Index *self){
 }
 
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
-	int32_t a, c, g, t, n;
+	//int32_t a, c, g, t, n;
 	char* name;
 
 	pyfastx_Sequence *seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);
@@ -340,9 +340,10 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	}
 
 	seq->id = sqlite3_column_int(stmt, 0);
-	name = (char *)sqlite3_column_text(stmt, 1);
-	seq->name = (char *)malloc(strlen(name) + 1);
-	strcpy(seq->name, name);
+	//name = (char *)sqlite3_column_text(stmt, 1);
+	//seq->name = (char *)malloc(strlen(name) + 1);
+	//strcpy(seq->name, name);
+	seq->name = (char *)sqlite3_column_text(stmt, 1);
 	seq->offset = (int64_t)sqlite3_column_int64(stmt, 2);
 	seq->byte_len = sqlite3_column_int(stmt, 3);
 	seq->seq_len = sqlite3_column_int(stmt, 4);
@@ -350,26 +351,11 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	seq->line_len = sqlite3_column_int(stmt, 5);
 	seq->end_len = sqlite3_column_int(stmt, 6);
 	seq->normal = sqlite3_column_int(stmt, 7);
-	a = sqlite3_column_int(stmt, 8);
-	c = sqlite3_column_int(stmt, 9);
-	g = sqlite3_column_int(stmt, 10);
-	t = sqlite3_column_int(stmt, 11);
-	n = sqlite3_column_int(stmt, 12);
-
 	sqlite3_finalize(stmt);
 
 	//position
 	seq->start = 1;
 	seq->end = seq->seq_len;
-
-	//composition
-	seq->composition = Py_BuildValue("{s:I,s:I,s:I,s:I,s:I}", "A", a, "C", c, "G", g, "T", t, "N", n);
-
-	//calc GC content
-	seq->gc_content = (float)(g+c)/(a+c+g+t)*100;
-
-	//calc GC skew
-	seq->gc_skew = (float)(g-c)/(g+c);
 
 	//index
 	seq->index = self;

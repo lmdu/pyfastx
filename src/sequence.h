@@ -27,20 +27,8 @@ typedef struct {
 	//subsequence parent length
 	uint32_t parent_len;
 
-	//GC content
-	float gc_content;
-
-	//GC skew
-	float gc_skew;
-
-	//a dict for storing ATGCN counts
-	PyObject* composition;
-
 	//fasta index
 	pyfastx_Index* index;
-
-	//id in db
-	//int index_id;
 
 	//start offset in fasta file
 	int64_t offset;
