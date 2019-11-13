@@ -32,7 +32,7 @@ typedef struct {
 	float gc_content;
 
 	//base composition
-	PyObject* composition;
+	//PyObject* composition;
 
 	//is gzip file
 	uint16_t gzip_format;

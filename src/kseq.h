@@ -5,6 +5,17 @@
 #include <ctype.h>
 #include "zlib.h"
 
+#define KS_SEP_SPACE 0 // isspace(): \t, \n, \v, \f, \r
+#define KS_SEP_TAB   1 // isspace() && !' '
+#define KS_SEP_LINE  2 // line separator: "\n" (Unix) or "\r\n" (Windows)
+#define KS_SEP_MAX   2
+
+#define BUF_SIZE     16384
+
+#define ks_err(ks) ((ks)->end == -1)
+#define ks_eof(ks) ((ks)->is_eof && (ks)->begin >= (ks)->end)
+#define ks_rewind(ks) ((ks)->is_eof = (ks)->begin = (ks)->end = 0)
+
 #define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
 
 typedef struct __kstream_t {

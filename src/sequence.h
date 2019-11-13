@@ -68,6 +68,8 @@ uint32_t pyfastx_sequence_length(pyfastx_Sequence* self);
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self);
 uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key);
 
+char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self);
+
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure);
 PyObject *pyfastx_sequence_reverse(pyfastx_Sequence* self, void* closure);
 PyObject *pyfastx_sequence_complement(pyfastx_Sequence* self, void* closure);

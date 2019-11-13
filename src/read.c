@@ -69,11 +69,13 @@ PyObject* pyfastx_read_quali(pyfastx_Read *self, void* closure) {
         pyfastx_read_qual(self, NULL);
     }
 
+    int phred = self->phred ? self->phred : 33;
+
     if (self->qual != NULL) {
         PyObject *quals = PyList_New(0);
         int i;
         for (i = 0; i < self->read_len; i++) {
-            PyObject *q = Py_BuildValue("i", self->qual[i] - self->phred);
+            PyObject *q = Py_BuildValue("i", self->qual[i] - phred);
             PyList_Append(quals, q);
             Py_DECREF(q);
         }

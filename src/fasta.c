@@ -53,17 +53,20 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//build index or not
 	int build_index = 1;
 
+	//just keep index into memory, do not generate index file
+	int memory_index = 0;
+
 	//key function for seperating name
-	PyObject *key_func = Py_None;
+	PyObject *key_func = NULL;
 
 	//paramters for fasta object construction
-	static char* keywords[] = {"file_name", "uppercase", "build_index", "key_func", NULL};
+	static char* keywords[] = {"file_name", "uppercase", "build_index", "memory_index" "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiO", keywords, &file_name, &uppercase, &build_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiO", keywords, &file_name, &uppercase, &build_index, &memory_index, &key_func)){
 		return NULL;
 	}
 
-	if ((key_func != Py_None) && !PyCallable_Check(key_func)) {
+	if ((key_func != NULL) && !PyCallable_Check(key_func)) {
 		PyErr_SetString(PyExc_TypeError, "key_func must be a callable function");
 		return NULL;
 	}
@@ -87,7 +90,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->uppercase = uppercase;
 
 	//create index
-	obj->index = pyfastx_init_index(obj->file_name, uppercase, key_func);
+	obj->index = pyfastx_init_index(obj->file_name, uppercase, memory_index, key_func);
 
 	//if build_index is True
 	if (build_index) {
@@ -118,11 +121,14 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 }
 
 PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
-	if(!file_exists(self->index->index_file)){
-		pyfastx_build_index(self->index);
-		pyfastx_calc_fasta_attrs(self);
+	if (strcmp(self->index->index_file, ":memory:") != 0) {
+		if (!file_exists(self->index->index_file)) {
+			pyfastx_build_index(self->index);
+			pyfastx_calc_fasta_attrs(self);
+		}
 	}
-	Py_RETURN_NONE;
+	
+	Py_RETURN_TRUE;
 }
 
 PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
@@ -131,9 +137,10 @@ PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObj
 	if (file_exists(self->index->index_file)) {
 		remove(self->index->index_file);
 	}
+
 	pyfastx_build_index(self->index);
 	pyfastx_calc_fasta_attrs(self);
-	Py_RETURN_NONE;
+	Py_RETURN_TRUE;
 }
 
 PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
@@ -554,9 +561,10 @@ PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
 	int i;
 	int64_t c;
 	pyfastx_fasta_calc_composition(self);
+
+	//the last row store the sum of the each base
 	const char *sql = "SELECT * FROM comp ORDER BY ID DESC LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_int(stmt, 1, self->seq_counts+1);
 	
 	if (sqlite3_step(stmt) != SQLITE_ROW) {
 		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index->index_db));

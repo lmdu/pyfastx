@@ -2,6 +2,59 @@
 #include "structmember.h"
 #include "util.h"
 
+char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
+	uint32_t seq_len;
+	
+	seq_len = self->end - self->start + 1;
+
+	if (!self->normal || (self->parent_len == self->end && self->start == 1)) {
+		pyfastx_index_get_full_seq(self->index, self->id);
+	}
+	
+	if ((self->id == self->index->cache_chrom) && (self->start==self->index->cache_start) && (self->end==self->index->cache_end)){
+		return self->index->cache_seq;
+	}
+
+	if ((self->id == self->index->cache_chrom) && (self->start>=self->index->cache_start) && (self->end<=self->index->cache_end)){
+		char *buff = (char *)malloc(seq_len + 1);
+		memcpy(buff, self->index->cache_seq + (self->start - self->index->cache_start), seq_len);
+		buff[seq_len] = '\0';
+		return buff;
+	}
+	
+	self->index->cache_seq = (char *)malloc(self->byte_len + 1);
+
+	Py_BEGIN_ALLOW_THREADS
+
+	if(self->index->gzip_format){
+		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
+		zran_read(self->index->gzip_index, self->index->cache_seq, self->byte_len);
+	} else {
+		fseek(self->index->fd, self->offset, SEEK_SET);
+		if (fread(self->index->cache_seq, self->byte_len, 1, self->index->fd) != 1) {
+			PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
+			return NULL;
+		}
+	}
+
+	self->index->cache_seq[self->byte_len] = '\0';
+
+	if (self->index->uppercase) {
+		remove_space_uppercase(self->index->cache_seq);
+	} else {
+		remove_space(self->index->cache_seq);
+	}
+
+	Py_END_ALLOW_THREADS
+
+	self->index->cache_chrom = self->id;
+	self->index->cache_start = self->start;
+	self->index->cache_end = self->end;
+
+	return self->index->cache_seq;
+}
+
+
 PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 	pyfastx_Sequence *obj = (pyfastx_Sequence *)type->tp_alloc(type, 0);
 	return (PyObject *)obj;
@@ -94,7 +147,7 @@ uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 		return 0;
 	}
 
-	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+	char *seq = pyfastx_sequence_get_subseq(self);
 	char *subseq = PyUnicode_AsUTF8(key);
 	
 	if(strstr(seq, subseq) != NULL){
@@ -128,7 +181,7 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 }
 
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
-	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+	char *seq = pyfastx_sequence_get_subseq(self);
 	
 	//clear cache to reduce memory
 	pyfastx_index_cache_clear(self->index);
@@ -137,7 +190,7 @@ char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
 }
 
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
-	char *seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+	char *seq = pyfastx_sequence_get_subseq(self);
 	return Py_BuildValue("s", seq);
 }
 
@@ -185,7 +238,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			i += self->seq_len;
 		}
 
-		char *sub_seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+		char *sub_seq = pyfastx_sequence_get_subseq(self);
 		return int_to_str(*(sub_seq+i));
 	
 	} else if (PySlice_Check(item)) {
@@ -266,7 +319,7 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 		reverse_complement_seq(subseq);
 	}
 
-	seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+	seq = pyfastx_sequence_get_subseq(self);
 
 	result = strstr(seq, subseq);
 	if(result == NULL){
@@ -297,7 +350,7 @@ PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
 	} else {
 		char *seq;
 		uint32_t i;
-		seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+		seq = pyfastx_sequence_get_subseq(self);
 		for (i = 0; i < self->seq_len; i++) {
 			switch (seq[i]) {
 				case 65: case 97: ++a; break;
@@ -325,7 +378,7 @@ PyObject *pyfastx_sequence_gc_skew(pyfastx_Sequence *self, void* closure) {
 	} else {
 		char *seq;
 		uint32_t i;
-		seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+		seq = pyfastx_sequence_get_subseq(self);
 		for (i = 0; i < self->seq_len; i++) {
 			switch (seq[i]) {
 				case 71: case 103: ++g; break;
@@ -357,7 +410,7 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	} else {
 		char *seq;
 		int seq_comp[26] = {0};
-		seq = pyfastx_index_get_sub_seq(self->index, self->id, self->offset, self->byte_len, self->start, self->end, self->parent_len, self->normal);
+		seq = pyfastx_sequence_get_subseq(self);
 		for (c = 0; c < self->seq_len; c++) {
 			++seq_comp[seq[c]-65];
 		}

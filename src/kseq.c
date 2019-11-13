@@ -26,18 +26,6 @@
 /* Last Modified: 05MAR2012 */
 #include "kseq.h"
 
-#define KS_SEP_SPACE 0 // isspace(): \t, \n, \v, \f, \r
-#define KS_SEP_TAB   1 // isspace() && !' '
-#define KS_SEP_LINE  2 // line separator: "\n" (Unix) or "\r\n" (Windows)
-#define KS_SEP_MAX   2
-
-#define BUF_SIZE     16384
-
-#define ks_err(ks) ((ks)->end == -1)
-#define ks_eof(ks) ((ks)->is_eof && (ks)->begin >= (ks)->end)
-#define ks_rewind(ks) ((ks)->is_eof = (ks)->begin = (ks)->end = 0)
-
-
 kstream_t *ks_init(gzFile f)						
 {																
 	kstream_t *ks = (kstream_t*)calloc(1, sizeof(kstream_t));	

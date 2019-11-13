@@ -9,7 +9,7 @@ create a index
 @param uppercase, uppercase sequence
 @param uppercase
 */
-pyfastx_Index* pyfastx_init_index(char* file_name, uint16_t uppercase, PyObject* key_func){
+pyfastx_Index* pyfastx_init_index(char* file_name, int uppercase, int memory_index, PyObject* key_func){
 	pyfastx_Index* index;
 
 	index = (pyfastx_Index *)malloc(sizeof(pyfastx_Index));
@@ -25,10 +25,14 @@ pyfastx_Index* pyfastx_init_index(char* file_name, uint16_t uppercase, PyObject*
 	index->gzfd = gzopen(file_name, "rb");
 	index->kseqs = kseq_init(index->gzfd);
 
-	//create index file
-	index->index_file = (char *)malloc(strlen(file_name) + 5);
-	strcpy(index->index_file, file_name);
-	strcat(index->index_file, ".fxi");
+	//create index file or memory index
+	if (memory_index) {
+		index->index_file = ":memory:";
+	} else {
+		index->index_file = (char *)malloc(strlen(file_name) + 5);
+		strcpy(index->index_file, file_name);
+		strcat(index->index_file, ".fxi");
+	}
 
 	index->fd = fopen(file_name, "rb");
 
@@ -172,7 +176,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 		return;
 	}
 
-	sql = "PRAGMA synchronous=OFF;PRAGMA journal_mode = OFF;BEGIN TRANSACTION;";
+	sql = "PRAGMA synchronous=OFF;BEGIN TRANSACTION;";
 
 	if(sqlite3_exec(self->index_db, sql, NULL, NULL, NULL) != SQLITE_OK){
 		PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(self->index_db));
@@ -257,16 +261,6 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 		//calculate seq len
 		seq_len += real_len;
-
-		/*for (i = 0; i < real_len; i++) {
-			switch (line.s[i]) {
-				case 65: case 97: ++a; break;
-				case 84: case 116: ++t; break;
-				case 71: case 103: ++g; break;
-				case 67: case 99: ++c; break;
-				default: ++n; break;
-			}
-		}*/
 	}
 
 	//end of sequence and check whether normal fasta
@@ -468,68 +462,6 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	self->cache_chrom = chrom;
 	self->cache_start = 1;
 	self->cache_end = seq_len;
-
-	return self->cache_seq;
-}
-
-/*
-@name str, sequence identifier in fasta file
-@offset int, subsequence byte start in fasta file
-@bytes int, byte length of subsequence with space
-@start int, sliced start position in sequence
-@end int, sliced end position in sequence
-@plen int, length of subsequence parent seq
-@normal int, 1 -> normal fasta with the same length, 0 not normal
-@return str
-*/
-char *pyfastx_index_get_sub_seq(pyfastx_Index *self, uint32_t chrom, int64_t offset, int64_t bytes, uint32_t start, uint32_t end, uint32_t plen, uint16_t normal){
-	uint32_t seq_len;
-	
-	seq_len = end - start + 1;
-
-	if (!normal || (plen == end && start == 1)) {
-		pyfastx_index_get_full_seq(self, chrom);
-	}
-	
-	if ((chrom == self->cache_chrom) && (start==self->cache_start) && (end==self->cache_end)){
-		return self->cache_seq;
-	}
-
-	if ((chrom == self->cache_chrom) && (start>=self->cache_start) && (end<=self->cache_end)){
-		char *buff = (char *)malloc(seq_len + 1);
-		memcpy(buff, self->cache_seq + (start - self->cache_start), seq_len);
-		buff[seq_len] = '\0';
-		return buff;
-	}
-	
-	self->cache_seq = (char *)malloc(bytes + 1);
-
-	Py_BEGIN_ALLOW_THREADS
-
-	if(self->gzip_format){
-		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
-		zran_read(self->gzip_index, self->cache_seq, bytes);
-	} else {
-		fseek(self->fd, offset, SEEK_SET);
-		if (fread(self->cache_seq, bytes, 1, self->fd) != 1) {
-			PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
-			return NULL;
-		}
-	}
-
-	self->cache_seq[bytes] = '\0';
-
-	if (self->uppercase) {
-		remove_space_uppercase(self->cache_seq);
-	} else {
-		remove_space(self->cache_seq);
-	}
-
-	Py_END_ALLOW_THREADS
-
-	self->cache_chrom = chrom;
-	self->cache_start = start;
-	self->cache_end = end;
 
 	return self->cache_seq;
 }
