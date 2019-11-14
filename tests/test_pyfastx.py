@@ -31,7 +31,7 @@ class FastaTest(unittest.TestCase):
 		self.fastq = pyfastx.Fastq(gzip_fastq)
 
 		#reload index
-		#self.fastq = pyfastx.Fastq(gzip_fastq)
+		self.fastq = pyfastx.Fastq(gzip_fastq)
 		
 		self.count = len(self.fastx)
 
@@ -60,7 +60,6 @@ class FastaTest(unittest.TestCase):
 					self.reads[c][2] = line.strip()
 
 	def tearDown(self):
-		'''
 		if os.path.exists('{}.fxi'.format(gzip_fasta)):
 			os.remove('{}.fxi'.format(gzip_fasta))
 
@@ -72,8 +71,6 @@ class FastaTest(unittest.TestCase):
 
 		if os.path.exists('{}.fxi'.format(flat_fastq)):
 			os.remove('{}.fxi'.format(flat_fastq))
-		'''
-		pass
 
 	def get_random_index(self):
 		return random.randint(0, self.count-1)
@@ -344,6 +341,7 @@ class FastaTest(unittest.TestCase):
 
 		# test gc content
 		result = round(self.fastq.gc_content, 2)
+		
 		expect = round((self.bases['G']+self.bases['C'])/(sum(self.bases.values()))*100, 2)
 		self.assertEqual(expect, result)
 
@@ -361,7 +359,9 @@ class FastaTest(unittest.TestCase):
 		result = self.fastq[idx]
 		expect = self.reads[idx]
 
-		read0 = pyfastx.Fastq(flat_fastq)[idx]
+		fq = pyfastx.Fastq(flat_fastq)
+
+		read0 = fq[idx]
 
 		# test length
 		self.assertEqual(len(result), len(expect[1]))
@@ -378,7 +378,7 @@ class FastaTest(unittest.TestCase):
 
 		# test quality
 		self.assertEqual(result.qual, expect[2])
-		self.assertEqual(read0.seq, expect[2])
+		self.assertEqual(read0.qual, expect[2])
 
 		# test quality integer
 		self.assertEqual(result.quali, [ord(b)-33 for b in expect[2]])

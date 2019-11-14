@@ -314,7 +314,7 @@ void pyfastx_build_index(pyfastx_Index *self){
 }
 
 void pyfastx_index_free(pyfastx_Index *self){
-	if (self->gzip_format) {
+	if (self->gzip_format && self->gzip_index != NULL) {
 		zran_free(self->gzip_index);
 	}
 
@@ -326,9 +326,9 @@ void pyfastx_index_free(pyfastx_Index *self){
 		free(self->cache_seq);
 	}
 
-	kseq_destroy(self->kseqs);
 	gzclose(self->gzfd);
 	fclose(self->fd);
+	kseq_destroy(self->kseqs);
 }
 
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
@@ -352,6 +352,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	seq->line_len = sqlite3_column_int(stmt, 5);
 	seq->end_len = sqlite3_column_int(stmt, 6);
 	seq->normal = sqlite3_column_int(stmt, 7);
+	seq->ks = NULL;
 	sqlite3_finalize(stmt);
 
 	//position

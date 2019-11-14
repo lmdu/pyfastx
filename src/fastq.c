@@ -72,10 +72,6 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 		++line_num;
 		++l;
 
-		printf("line.s len: %d\n", line.l);
-		printf("line len: %d\n", l);
-		printf("line num: %d\n", line_num);
-
 		j = line_num % 4;
 
 		switch(j) {
@@ -406,10 +402,9 @@ void calc_fastq_composition(pyfastx_Fastq *self) {
 	kstring_t line = {0, 0, 0};
 	uint64_t a = 0, c = 0, g = 0, t = 0, n = 0;
 	uint64_t line_num = 0;
-	int i, j, l;
+	int i, j;
 
 	const char *sql = "SELECT * FROM base LIMIT 1";
-
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		return;
@@ -423,9 +418,8 @@ void calc_fastq_composition(pyfastx_Fastq *self) {
 	gzrewind(self->gzfd);
 	ks_rewind(self->ks);
 
-	while ((l=ks_getuntil(self->ks, '\n', &line, 0)) >= 0) {
+	while (ks_getuntil(self->ks, '\n', &line, 0) >= 0) {
 		++line_num;
-		++l;
 
 		j = line_num % 4;
 
@@ -436,11 +430,16 @@ void calc_fastq_composition(pyfastx_Fastq *self) {
 					case 67: ++c; break;
 					case 71: ++g; break;
 					case 84: ++t; break;
+					case 13: break;
 					default: ++n;
 				}
 			}
 		} else if (j == 0) {
 			for (i = 0; i < line.l; i++) {
+				if (line.s[i] == 13) {
+					continue;
+				}
+
 				if (line.s[i] < minqs) {
 					minqs = line.s[i];
 				}
@@ -560,7 +559,7 @@ PyObject* pyfastx_fastq_gc_content(pyfastx_Fastq *self, void* closure) {
 
 	calc_fastq_composition(self);
 
-	const char *sql = "SELECT a, c, g, t FROM base LIMIT 1";
+	const char *sql = "SELECT * FROM base LIMIT 1";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	
 	if (sqlite3_step(stmt) != SQLITE_ROW) {
