@@ -26,10 +26,10 @@ int pyfastx_read_length(pyfastx_Read *self) {
 PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
     if (self->seq == NULL) {
         self->seq = (char *)malloc(self->read_len + 1);
+
         if (self->gzip_format) {
             zran_seek(self->gzip_index, self->seq_offset, SEEK_SET, NULL);
             zran_read(self->gzip_index, self->seq, self->read_len);
-            
         } else {
             gzseek(self->gzfd, self->seq_offset, SEEK_SET);
             gzread(self->gzfd, self->seq, self->read_len);

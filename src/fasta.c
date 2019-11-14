@@ -7,9 +7,6 @@
 composition (ATGCN count) and GC content
 */
 void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
-	//ACGTN nucleotide counts
-	//int64_t a, c, g, t, n;
-
 	sqlite3_stmt *stmt;
 	
 	//sequence count
@@ -22,24 +19,6 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	sqlite3_prepare_v2(self->index->index_db, "SELECT SUM(slen) FROM seq LIMIT 1;", -1, &stmt, NULL);
 	sqlite3_step(stmt);
 	self->seq_length = sqlite3_column_int64(stmt, 0);
-	//sqlite3_reset(stmt);
-
-	//calculate base counts
-	/*sqlite3_prepare_v2(self->index->index_db, "SELECT SUM(a),SUM(c),SUM(g),SUM(t),SUM(n) FROM seq LIMIT 1;", -1, &stmt, NULL);
-	sqlite3_step(stmt);
-	a = sqlite3_column_int64(stmt, 0);
-	c = sqlite3_column_int64(stmt, 1);
-	g = sqlite3_column_int64(stmt, 2);
-	t = sqlite3_column_int64(stmt, 3);
-	n = sqlite3_column_int64(stmt, 4);
-	self->composition = Py_BuildValue("{s:K,s:K,s:K,s:K,s:K}", "A", a, "C", c, "G", g, "T", t, "N", n);
-	
-	//calc GC content
-	self->gc_content = (float)(g+c)/(a+c+g+t)*100;
-
-	//calc GC skew
-	self->gc_skew = (float)(g-c)/(g+c);*/
-
 	sqlite3_finalize(stmt);
 }
 
@@ -121,7 +100,7 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 }
 
 PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
-	if (self->index->index_db != NULL) {
+	if (self->index->index_db == NULL) {
 		pyfastx_build_index(self->index);
 		pyfastx_calc_fasta_attrs(self);
 	}

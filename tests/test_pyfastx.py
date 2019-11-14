@@ -15,6 +15,7 @@ import statistics
 gzip_fasta = 'tests/data/test.fa.gz'
 flat_fasta = 'tests/data/test.fa'
 gzip_fastq = 'tests/data/test.fq.gz'
+flat_fastq = 'tests/data/test.fq'
 
 class FastaTest(unittest.TestCase):
 	def setUp(self):
@@ -30,7 +31,7 @@ class FastaTest(unittest.TestCase):
 		self.fastq = pyfastx.Fastq(gzip_fastq)
 
 		#reload index
-		self.fastq = pyfastx.Fastq(gzip_fastq)
+		#self.fastq = pyfastx.Fastq(gzip_fastq)
 		
 		self.count = len(self.fastx)
 
@@ -59,14 +60,20 @@ class FastaTest(unittest.TestCase):
 					self.reads[c][2] = line.strip()
 
 	def tearDown(self):
-		if os.path.exists('tests/data/test.fa.gz.fxi'):
-			os.remove('tests/data/test.fa.gz.fxi')
+		'''
+		if os.path.exists('{}.fxi'.format(gzip_fasta)):
+			os.remove('{}.fxi'.format(gzip_fasta))
 
-		if os.path.exists('tests/data/test.fa.fai'):
-			os.remove('tests/data/test.fa.fai')
+		if os.path.exists('{}.fai'.format(flat_fasta)):
+			os.remove('{}.fai'.format(flat_fasta))
 
-		if os.path.exists('tests/data/test.fq.gz.fxi'):
-			os.remove('tests/data/test.fq.gz.fxi')
+		if os.path.exists('{}.fxi'.format(gzip_fastq)):
+			os.remove('{}.fxi'.format(gzip_fastq))
+
+		if os.path.exists('{}.fxi'.format(flat_fastq)):
+			os.remove('{}.fxi'.format(flat_fastq))
+		'''
+		pass
 
 	def get_random_index(self):
 		return random.randint(0, self.count-1)
@@ -354,18 +361,14 @@ class FastaTest(unittest.TestCase):
 		result = self.fastq[idx]
 		expect = self.reads[idx]
 
-		print(1)
-		read0 = pyfastx.Fastq(gzip_fastq.strip('.gz'))[idx]
+		read0 = pyfastx.Fastq(flat_fastq)[idx]
 
-		print(2)
 		# test length
 		self.assertEqual(len(result), len(expect[1]))
 
-		print(3)
 		# test name
 		self.assertEqual(result.name, expect[0])
 
-		print(4)
 		# test str
 		self.assertEqual(str(result), expect[1])
 

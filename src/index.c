@@ -187,7 +187,8 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 
 	Py_BEGIN_ALLOW_THREADS
-
+	
+	gzrewind(self->gzfd);
 	ks = ks_init(self->gzfd);
 
 	while (ks_getuntil(ks, '\n', &line, 0) >= 0) {
@@ -294,12 +295,12 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 //load index from index file
 void pyfastx_load_index(pyfastx_Index *self){
-	if(sqlite3_open(self->index_file, &self->index_db) != SQLITE_OK){
+	if (sqlite3_open(self->index_file, &self->index_db) != SQLITE_OK) {
 		PyErr_SetString(PyExc_ConnectionError, sqlite3_errmsg(self->index_db));
 		return;
 	}
 
-	if(self->gzip_format){
+	if (self->gzip_format) {
 		pyfastx_load_gzip_index(self->gzip_index, self->index_db, self->index_file);
 	}
 }
@@ -332,7 +333,7 @@ void pyfastx_index_free(pyfastx_Index *self){
 
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	//int32_t a, c, g, t, n;
-	char* name;
+	int nbtyes;
 
 	pyfastx_Sequence *seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);
 	if(!seq){
@@ -340,10 +341,10 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	}
 
 	seq->id = sqlite3_column_int(stmt, 0);
-	//name = (char *)sqlite3_column_text(stmt, 1);
-	//seq->name = (char *)malloc(strlen(name) + 1);
-	//strcpy(seq->name, name);
-	seq->name = (char *)sqlite3_column_text(stmt, 1);
+	nbtyes = sqlite3_column_bytes(stmt, 1);
+	seq->name = (char *)malloc(nbtyes + 1);
+	memcpy(seq->name, (char *)sqlite3_column_text(stmt, 1), nbtyes);
+	seq->name[nbtyes] = '\0';
 	seq->offset = (int64_t)sqlite3_column_int64(stmt, 2);
 	seq->byte_len = sqlite3_column_int(stmt, 3);
 	seq->seq_len = sqlite3_column_int(stmt, 4);

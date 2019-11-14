@@ -167,14 +167,18 @@ PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
 
 PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	sqlite3_stmt *stmt;
+	int nbytes;
 
-	const char *sql = "SELECT descr FROM seq WHERE chrom=? LIMIT 1";
+	const char *sql = "SELECT descr FROM seq WHERE ID=? LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_text(stmt, 1, self->name, -1, NULL);
+	sqlite3_bind_int(stmt, 1, self->id);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		char *detail = (char*)sqlite3_column_text(stmt, 0);
-		return Py_BuildValue("s", detail);
+		nbytes = sqlite3_column_bytes(stmt, 0);
+		char *descr = (char *)malloc(nbytes + 1);
+		memcpy(descr, (char *)sqlite3_column_text(stmt, 0), nbytes);
+		descr[nbytes] = '\0';
+		return Py_BuildValue("s", descr);
 	}
 
 	Py_RETURN_NONE;
@@ -272,13 +276,10 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			return NULL;
 		}
 		
-		//seq->name = self->name;
 		seq->start = slice_start + self->start;
 		seq->end = slice_stop + self->start - 1;
-		//seq->name = (char *)malloc(strlen(self->name) + 25);
 		seq->id = self->id;
 		seq->name = self->name;
-		//sprintf(seq->name, "%s:%d-%d", self->name, seq->start, seq->end);
 		seq->seq_len = slice_stop - slice_start;
 		seq->parent_len = self->parent_len;
 		seq->line_len = self->line_len;

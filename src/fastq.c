@@ -65,9 +65,16 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 	
 	Py_BEGIN_ALLOW_THREADS
 
+	gzrewind(self->gzfd);
+	ks_rewind(self->ks);
+
 	while ((l=ks_getuntil(self->ks, '\n', &line, 0)) >= 0) {
 		++line_num;
 		++l;
+
+		printf("line.s len: %d\n", line.l);
+		printf("line len: %d\n", l);
+		printf("line num: %d\n", line_num);
 
 		j = line_num % 4;
 
@@ -76,9 +83,11 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 				name = (char *)malloc(line.l);
 				memcpy(name, line.s+1, line.l);
 
-				space = strchr(name, ' ');
-				
-				if (space != NULL) {
+				if ((space = strchr(name, ' ')) != NULL) {
+					*space = '\0';
+				}
+
+				if ((space = strchr(name, '\r')) != NULL) {
 					*space = '\0';
 				}
 
@@ -86,7 +95,12 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 
 			case 2:
 				soff = pos;
-				rlen = line.l;
+				
+				if (line.s[line.l-1] == '\r') {
+					rlen = line.l - 1;
+				} else {
+					rlen = line.l;
+				}
 				size += rlen;
 				break;
 
@@ -105,7 +119,7 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 		}
 		pos += l;
 	}
-	sqlite3_finalize(stmt);
+	
 	sqlite3_exec(self->index_db, "CREATE INDEX readidx ON read (name);", NULL, NULL, NULL);
 	sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
 
@@ -140,9 +154,13 @@ void pyfastx_fastq_load_index(pyfastx_Fastq *self) {
 	//calculate attributes
 	const char* sql = "SELECT * FROM meta LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
-	sqlite3_step(stmt);
-	self->read_counts = sqlite3_column_int64(stmt, 0);
-	self->seq_length = sqlite3_column_int64(stmt, 1);
+	if (sqlite3_step(stmt) == SQLITE_ROW) {
+		self->read_counts = sqlite3_column_int64(stmt, 0);
+		self->seq_length = sqlite3_column_int64(stmt, 1);
+	} else {
+		PyErr_SetString(PyExc_RuntimeError, "Can not get read counts and length");
+		return;
+	}
 	sqlite3_reset(stmt);
 
 	sql = "SELECT phred FROM qual LIMIT 1;";
@@ -244,7 +262,7 @@ int pyfastx_fastq_length(pyfastx_Fastq *self) {
 
 PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 	//int a, c, g, t, n;
-	char *name;
+	int nbytes;
 
 	pyfastx_Read *read = PyObject_New(pyfastx_Read, &pyfastx_ReadType);
 
@@ -253,10 +271,10 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 	}
 
 	read->id = sqlite3_column_int64(stmt, 0);
-	name = (char *)sqlite3_column_text(stmt, 1);
-	read->name = (char *)malloc(strlen(name) + 1);
-	strcpy(read->name, name);
-	//read->name = (char *)sqlite3_column_text(stmt, 1);
+	nbytes = sqlite3_column_bytes(stmt, 1);
+	read->name = (char *)malloc(nbytes + 1);
+	memcpy(read->name, (char *)sqlite3_column_text(stmt, 1), nbytes);
+	read->name[nbytes] = '\0';
 	read->read_len = sqlite3_column_int(stmt, 2);
 	read->seq_offset = sqlite3_column_int64(stmt, 3);
 	read->qual_offset = sqlite3_column_int64(stmt, 4);
@@ -401,8 +419,9 @@ void calc_fastq_composition(pyfastx_Fastq *self) {
 	int minqs = 104, maxqs = 33, phred = 0;
 	
 	Py_BEGIN_ALLOW_THREADS
-	ks_rewind(self->ks);
+
 	gzrewind(self->gzfd);
+	ks_rewind(self->ks);
 
 	while ((l=ks_getuntil(self->ks, '\n', &line, 0)) >= 0) {
 		++line_num;
