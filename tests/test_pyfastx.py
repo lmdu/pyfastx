@@ -32,6 +32,9 @@ class FastaTest(unittest.TestCase):
 
 		#reload index
 		self.fastq = pyfastx.Fastq(gzip_fastq)
+
+		#flat fastq
+		self.flatq = pyfastx.Fastq(flat_fastq)
 		
 		self.count = len(self.fastx)
 
@@ -361,9 +364,7 @@ class FastaTest(unittest.TestCase):
 		result = self.fastq[idx]
 		expect = self.reads[idx]
 
-		fq = pyfastx.Fastq(flat_fastq)
-
-		read0 = fq[idx]
+		read0 = self.flatq[idx]
 
 		# test length
 		self.assertEqual(len(result), len(expect[1]))

@@ -38,9 +38,7 @@ script:
       python -m pip install -U twine;
       python -m twine upload --skip-existing wheelhouse/*;
     fi
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
-      python setup.py test;
-    fi
+  - python setup.py test;
 
 after_success:
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then

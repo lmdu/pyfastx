@@ -295,19 +295,19 @@ int pyfastx_fasta_contains(pyfastx_Fasta *self, PyObject *key){
 }
 
 PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args){
-	uint32_t l;
+	int l;
 	sqlite3_stmt *stmt;
 
-	if (!PyArg_ParseTuple(args, "I", &l)) {
+	if (!PyArg_ParseTuple(args, "i", &l)) {
 		return NULL;
 	}
 
-	const char *sql = "SELECT COUNT(*) FROM seq WHERE slen>=?";
+	const char *sql = "SELECT COUNT(*) FROM seq WHERE slen>=?;";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, l);
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		uint32_t c = sqlite3_column_int(stmt, 0);
-		return Py_BuildValue("I", c);
+		int c = sqlite3_column_int(stmt, 0);
+		return Py_BuildValue("i", c);
 	}
 
 	Py_RETURN_NONE;
