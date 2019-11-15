@@ -245,14 +245,14 @@ void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
 		sqlite3_close(self->index_db);
 	}
 
+	if (self->gzip_format) {
+		zran_free(self->gzip_index);
+	}
+
 	ks_destroy(self->ks);
 	kseq_destroy(self->kseq);
 	fclose(self->fd);
 	gzclose(self->gzfd);
-
-	if (self->gzip_format) {
-		zran_free(self->gzip_index);
-	}
 
 	Py_TYPE(self)->tp_free(self);
 }

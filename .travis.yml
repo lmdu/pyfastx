@@ -5,7 +5,7 @@ env:
     #- CIBW_SKIP=""
     #- CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel sqlite-devel"
     - CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel"
-    - CIBW_BEFORE_BUILD_MACOS="brew install zlib; brew upgrade sqlite3"
+    - CIBW_BEFORE_BUILD_MACOS="brew install zlib"
     - PIP=pip3
     - TWINE_REPOSITORY=pypi
     - TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
@@ -46,9 +46,14 @@ script:
       make;
       make install;
       cd ..;
-      mv -v /usr/bin/sqlite3 /usr/bin/sqlite3.7;
+      wget wget http://zlib.net/zlib-1.2.11.tar.gz;
+      tar xzf zlib-1.2.11.tar.gz;
+      cd zlib-1.2.11;
+      ./configure;
+      make;
+      make install;
+      cd ..;
       export LD_LIBRARY_PATH="/usr/local/lib";
-      sqlite3 --version;
       python setup.py test;
     fi
 

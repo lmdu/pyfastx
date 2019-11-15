@@ -326,9 +326,9 @@ void pyfastx_index_free(pyfastx_Index *self){
 		free(self->cache_seq);
 	}
 
-	gzclose(self->gzfd);
-	fclose(self->fd);
 	kseq_destroy(self->kseqs);
+	fclose(self->fd);
+	gzclose(self->gzfd);
 }
 
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
