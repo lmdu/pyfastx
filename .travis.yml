@@ -3,8 +3,8 @@ language: python
 env:
   global:
     #- CIBW_SKIP=""
-    - CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel sqlite-devel"
-    - CIBW_BEFORE_BUILD_MACOS="brew install zlib sqlite3"
+    #- CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel sqlite-devel"
+    - CIBW_BEFORE_BUILD_MACOS="brew upgrade zlib sqlite3"
     - PIP=pip3
     - TWINE_REPOSITORY=pypi
     - TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
@@ -38,7 +38,10 @@ script:
       python -m pip install -U twine;
       python -m twine upload --skip-existing wheelhouse/*;
     fi
-  - python setup.py test;
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
+      cp wheelhouse/pyfastx-*-cp36-cp36m-manylinux1_x86_64.whl .
+      python setup.py test;
+    fi
 
 after_success:
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then

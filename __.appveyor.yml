@@ -64,7 +64,6 @@ install:
 build_script:
   - python setup.py build -c mingw32
   - pip wheel -v -w wheelhouse .
-  - python setup.py test
   - IF "%APPVEYOR_REPO_TAG%" == "true" (twine upload --skip-existing wheelhouse/*.whl)
 
 artifacts:
