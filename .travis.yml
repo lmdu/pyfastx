@@ -46,7 +46,7 @@ script:
       make;
       make install;
       cd ..;
-      wget wget http://zlib.net/zlib-1.2.11.tar.gz;
+      wget http://zlib.net/zlib-1.2.11.tar.gz;
       tar xzf zlib-1.2.11.tar.gz;
       cd zlib-1.2.11;
       ./configure;
