@@ -4,7 +4,7 @@ env:
   global:
     #- CIBW_SKIP=""
     #- CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel sqlite-devel"
-    - CIBW_BEFORE_BUILD_LINUX="sqlite3 --version"
+    - CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel"
     - CIBW_BEFORE_BUILD_MACOS="brew upgrade zlib sqlite3"
     - PIP=pip3
     - TWINE_REPOSITORY=pypi

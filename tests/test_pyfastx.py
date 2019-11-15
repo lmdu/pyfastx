@@ -129,8 +129,11 @@ class FastaTest(unittest.TestCase):
 			if l < shortest[1]:
 				shortest = (seq.name, l)
 
-		self.assertEqual(longest, self.fastx.longest)
-		self.assertEqual(shortest, self.fastx.shortest)
+		long_seq = self.fastx.longest
+		short_seq = self.fastx.shortest
+
+		self.assertEqual(longest, (long_seq.name, len(long_seq)))
+		self.assertEqual(shortest, (short_seq.name, len(short_seq)))
 
 		#test contains
 		idx = self.get_random_index()
@@ -403,3 +406,6 @@ class FastaTest(unittest.TestCase):
 			self.assertEqual(read.qual, self.reads[i][2])
 
 		del result
+
+if __name__ == '__main__':
+	unittest.main()

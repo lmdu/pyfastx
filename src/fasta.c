@@ -348,15 +348,14 @@ PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 
 PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	const char *name;
-	uint32_t len;
-	const char *sql = "SELECT chrom,MAX(slen) FROM seq LIMIT 1";
+	uint32_t chrom;
+
+	const char *sql = "SELECT ID,MAX(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		name = (const char *)sqlite3_column_text(stmt, 0);
-		len = sqlite3_column_int(stmt, 1);
-		return Py_BuildValue("sI", name, len);
+		chrom = sqlite3_column_int(stmt, 0);
+		return pyfastx_index_get_seq_by_id(self->index, chrom);
 	}
 
 	Py_RETURN_NONE;
@@ -364,13 +363,14 @@ PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
 
 PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure){
 	sqlite3_stmt *stmt;
-	const char *sql = "SELECT chrom,MIN(slen) FROM seq LIMIT 1";
+	uint32_t chrom;
+	
+	const char *sql = "SELECT ID,MIN(slen) FROM seq LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		const char *name = (const char *)sqlite3_column_text(stmt, 0);
-		uint32_t len = sqlite3_column_int(stmt, 1);
-		return Py_BuildValue("sI", name, len);
+		chrom = sqlite3_column_int(stmt, 0);
+		return pyfastx_index_get_seq_by_id(self->index, chrom);
 	}
 
 	Py_RETURN_NONE;

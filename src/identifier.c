@@ -45,8 +45,10 @@ PyObject *pyfastx_identifier_next(pyfastx_Identifier *self){
 		sqlite3_reset(self->stmt);
 		return NULL;
 	}
-	char *name;
-	name = (char *)sqlite3_column_text(self->stmt, 0);
+	int nbytes = sqlite3_column_bytes(self->stmt, 0);
+	char *name = (char *)malloc(nbytes + 1);
+	memcpy(name, (char *)sqlite3_column_text(self->stmt, 0), nbytes);
+	name[nbytes] = '\0';
 	return Py_BuildValue("s", name);
 }
 
@@ -72,10 +74,11 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 	sqlite3_prepare_v2(self->index_db, "SELECT chrom FROM seq WHERE ID=? LIMIT 1;", -1, &self->stmt, NULL);
 	sqlite3_bind_int(self->stmt, 1, i+1);
 	sqlite3_step(self->stmt);
-
-	char *name = (char *)sqlite3_column_text(self->stmt, 0);
-
-	sqlite3_reset(self->stmt);
+	int nbytes = sqlite3_column_bytes(self->stmt, 0);
+	char *name = (char *)malloc(nbytes + 1);
+	memcpy(name, (char *)sqlite3_column_text(self->stmt, 0), nbytes);
+	name[nbytes] = '\0';
+	sqlite3_finalize(self->stmt);
 
 	return Py_BuildValue("s", name);
 }
