@@ -42,6 +42,7 @@ typedef struct {
 extern PyTypeObject pyfastx_FastaType;
 
 void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self);
+void pyfastx_fasta_calc_composition(pyfastx_Fasta *self);
 void pyfastx_fasta_dealloc(pyfastx_Fasta *self);
 int pyfastx_fasta_length(pyfastx_Fasta *self);
 

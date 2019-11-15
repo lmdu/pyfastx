@@ -27,7 +27,7 @@ pyfastx.version
 pyfastx.Fasta
 -------------
 
-.. py:class:: pyfastx.Fasta(file_name, uppercase=True, build_index=True, key_func=None)
+.. py:class:: pyfastx.Fasta(file_name, uppercase=True, build_index=True, composition=False, memory_index=False, key_func=None)
 
 	Read and parse fasta files. Fasta can be used as dict or list, you can use index or sequence name to get a sequence object, e.g. ``fasta[0]``, ``fasta['seq1']``
 
@@ -36,6 +36,10 @@ pyfastx.Fasta
 	:param bool uppercase: always output uppercase sequence, default: ``True``
 
 	:param bool build_index: build index for random access to FASTA sequence, default: ``True``
+
+	:param bool composition: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
+
+	:param bool memory_index: if memory_index is True, the fasta index will be kept in memory and do not generate a index file, default: ``False``
 
 	:param function key_func: new in 0.5.1, key function is generally a lambda expression to split header and obtain a shortened identifer, default: None
 
@@ -232,13 +236,15 @@ pyfastx.Fastq
 
 New in ``pyfastx`` 0.4.0
 
-.. py:class:: pyfastx.Fastq(file_name, build_index=True, phred=33)
+.. py:class:: pyfastx.Fastq(file_name, phred=0, build_index=True, composition=False)
 
 	Read and parse fastq file
 
 	:param str file_name: input fastq file path
 
 	:param bool build_index: build index for random access to FASTQ reads, default: ``True``
+
+	:param bool composition: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
 
 	:param int phred: phred was used to convert quality ascii to quality int value, usually is 33 or 64, default ``33``
 

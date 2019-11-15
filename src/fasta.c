@@ -35,13 +35,16 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//just keep index into memory, do not generate index file
 	int memory_index = 0;
 
+	//calculate the composition of sequence
+	int composition = 0;
+
 	//key function for seperating name
 	PyObject *key_func = Py_None;
 
 	//paramters for fasta object construction
-	static char* keywords[] = {"file_name", "uppercase", "build_index", "memory_index" "key_func", NULL};
+	static char* keywords[] = {"file_name", "uppercase", "build_index", "composition", "memory_index" "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiO", keywords, &file_name, &uppercase, &build_index, &memory_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiiO", keywords, &file_name, &uppercase, &composition, &build_index, &memory_index, &key_func)){
 		return NULL;
 	}
 
@@ -75,6 +78,10 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	if (build_index) {
 		pyfastx_build_index(obj->index);
 		pyfastx_calc_fasta_attrs(obj);
+
+		if (composition) {
+			pyfastx_fasta_calc_composition(obj);
+		}
 	}
 	
 	return (PyObject *)obj;
@@ -443,7 +450,7 @@ void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
 	uint16_t j;
 
 	Py_BEGIN_ALLOW_THREADS
-
+	gzrewind(self->index->gzfd);
 	ks = ks_init(self->index->gzfd);
 
 	while (ks_getuntil(ks, '\n', &line, 0) >= 0) {

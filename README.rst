@@ -472,7 +472,7 @@ Get FASTQ information
 
     >>> # Guess fastq quality encoding system
     >>> # New in pyfastx 0.4.1
-    >>> fq.guess
+    >>> fq.encoding_type
     ['Sanger Phred+33', 'Illumina 1.8+ Phred+33']
 
 Read

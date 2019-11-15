@@ -39,7 +39,7 @@ class FastaTest(unittest.TestCase):
 		self.bases = {'A': 0, 'T': 0, 'G': 0, 'C':0, 'N':0}
 		i = 0
 		c = -1
-		with gzip.open(gzip_fastq, 'rt') as fh:
+		with open(flat_fastq) as fh:
 			for line in fh:
 				i += 1
 				
@@ -286,8 +286,10 @@ class FastaTest(unittest.TestCase):
 		fxi_seq = self.fastx[idx]
 
 		# test read seq line by line
-		for expect, result in zip(fai_seq, fxi_seq):
-			self.assertEqual(str(expect), result)
+		expect = [str(line) for line in fai_seq]
+		result = [line for line in fxi_seq]
+
+		self.assertEqual(expect, result)
 
 		# test seq long name
 		self.assertEqual(fai_seq.long_name.strip(), fxi_seq.description)
