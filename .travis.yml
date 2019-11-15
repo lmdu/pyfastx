@@ -40,7 +40,6 @@ script:
       python -m twine upload --skip-existing wheelhouse/*;
     fi
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
-      cp wheelhouse/pyfastx-*-cp36-cp36m-manylinux1_x86_64.whl .
       python setup.py test;
     fi
 
