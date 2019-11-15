@@ -46,7 +46,9 @@ script:
       make;
       make install;
       cd ..;
+      mv -v /usr/bin/sqlite3 /usr/bin/sqlite3.7;
       export LD_LIBRARY_PATH="/usr/local/lib";
+      sqlite3 --version;
       python setup.py test;
     fi
 
