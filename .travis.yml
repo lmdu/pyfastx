@@ -5,7 +5,7 @@ env:
     #- CIBW_SKIP=""
     #- CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel sqlite-devel"
     - CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel"
-    - CIBW_BEFORE_BUILD_MACOS="brew upgrade zlib sqlite3"
+    - CIBW_BEFORE_BUILD_MACOS="brew install zlib; brew upgrade sqlite3"
     - PIP=pip3
     - TWINE_REPOSITORY=pypi
     - TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
@@ -33,13 +33,20 @@ install:
   - python3 setup.py sdist --dist-dir wheelhouse
 
 script:
-  - sqlite3 --version
   - ls wheelhouse
   - if [ "$TRAVIS_TAG" != "" ]; then
       python -m pip install -U twine;
       python -m twine upload --skip-existing wheelhouse/*;
     fi
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
+      wget https://www.sqlite.org/2019/sqlite-autoconf-3300100.tar.gz;
+      tar xzf sqlite-autoconf-3300100.tar.gz;
+      cd sqlite-autoconf-3300100;
+      ./configure;
+      make;
+      make install;
+      cd ..;
+      export LD_LIBRARY_PATH="/usr/local/lib";
       python setup.py test;
     fi
 
