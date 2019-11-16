@@ -186,7 +186,7 @@ class FastaTest(unittest.TestCase):
 		expect = list(self.faidx.keys())
 		result = list(self.fastx.keys())
 
-		self.assertEqual(expect, result)
+		self.assertEqual(sorted(expect), sorted(result))
 
 		#id counts
 		ids = self.fastx.keys()

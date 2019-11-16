@@ -16,7 +16,6 @@ void pyfastx_identifier_dealloc(pyfastx_Identifier *self){
 PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self){
 	char *key;
 	char *order;
-	char *sql;
 
 	if (self->sort == 2) {
 		key = "chrom";
@@ -32,16 +31,16 @@ PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self){
 		order = "DESC";
 	}
 
-	sql = (char *)malloc(50 * sizeof(char));
+	char sql[50];
 	sprintf(sql, "SELECT chrom FROM seq ORDER BY %s %s;", key, order);
-
 	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
+
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
 
 PyObject *pyfastx_identifier_next(pyfastx_Identifier *self){
-	if(sqlite3_step(self->stmt) != SQLITE_ROW){
+	if (sqlite3_step(self->stmt) != SQLITE_ROW){
 		sqlite3_reset(self->stmt);
 		return NULL;
 	}
@@ -90,7 +89,8 @@ int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 
 	char *name = PyUnicode_AsUTF8(key);
 
-	sqlite3_prepare_v2(self->index_db, "SELECT * FROM seq WHERE chrom=? LIMIT 1;", -1, &self->stmt, NULL);
+	const char *sql = "SELECT * FROM seq WHERE chrom=? LIMIT 1;";
+	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
 	sqlite3_bind_text(self->stmt, 1, name, -1, NULL);
 	if(sqlite3_step(self->stmt) != SQLITE_ROW){
 		sqlite3_reset(self->stmt);

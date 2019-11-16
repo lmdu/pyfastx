@@ -159,13 +159,27 @@ New in ``pyfastx`` 0.3.0
 
 .. code:: python
 
-	>>> # get longest sequence (name, length)
-	>>> fa.longest
-	('JZ822609.1', 821)
+    >>> # get longest sequence
+    >>> s = fa.longest
+    >>> s
+    <Sequence> JZ822609.1 with length of 821
 
-	>>> # get shortest sequence (name, length)
-	>>> fa.shortest
-	('JZ822617.1', 118)
+    >>> s.name
+    'JZ822609.1'
+
+    >>> len(s)
+    821
+
+    >>> # get shortest sequence
+    >>> s = fa.shortest
+    >>> s
+    <Sequence> JZ822617.1 with length of 118
+
+    >>> s.name
+    'JZ822617.1'
+
+    >>> len(s)
+    118
 
 Calculate N50 and L50
 ---------------------

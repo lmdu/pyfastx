@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Version 0.5.9 (2019-11-17)
+--------------------------
+
+- Added get longest and shortest sequence object
+- Added composition argument to speedup getting GC content
+- Added memory index to keep index in memory rather than local file
+- Fixed command line error
+- Changed sqlite to higher version
+- Removed journal_mode OFF
+- Speedup index building
+
 Version 0.5.8 (2019-11-10)
 --------------------------
 

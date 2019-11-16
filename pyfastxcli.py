@@ -81,8 +81,8 @@ def fastx_info(args):
 			print("{} counts: {}".format(b, comp[b]))
 		print("Mean length: {:.2f}".format(fa.mean))
 		print("Median length: {:.2f}".format(fa.median))
-		print("Max length: {}".format(fa.longest[1]))
-		print("Min length: {}".format(fa.shortest[1]))
+		print("Max length: {}".format(len(fa.longest)))
+		print("Min length: {}".format(len(fa.shortest)))
 		print("N50, L50: {}, {}".format(*fa.nl()))
 		print("length >= 1000: {}".format(fa.count(1000)))
 
@@ -94,7 +94,7 @@ def fastx_info(args):
 		print("GC content: {:.2f}%".format(fq.gc_content))
 		for b in comp:
 			print("{} counts: {}".format(b, comp[b]))
-		print("Quality encoding maybe: {}".format(", ".join(fq.guess)))
+		print("Quality encoding system maybe: {}".format(", ".join(fq.encoding_type)))
 
 def fasta_split(args):
 	fa = pyfastx.Fasta(args.fastx)
@@ -104,10 +104,10 @@ def fasta_split(args):
 	else:
 		parts_num = args.file_num
 
-	name, suffix1 = os.path.splitext(os.path.basename(args.fastx))
+	name, suffix = os.path.splitext(os.path.basename(args.fastx))
 
-	if fa.is_gzip:
-		name, suffix2 = os.path.splitext(name)
+	if suffix.endswith('.gz') and fa.is_gzip:
+		name, _ = os.path.splitext(name)
 
 	digit = len(str(parts_num))
 	lens = [0] * parts_num
@@ -119,9 +119,9 @@ def fasta_split(args):
 
 	for i in range(1, parts_num+1):
 		if args.out_gzip:
-			subfile = "{}.{}{}{}".format(name, str(i).zfill(digit), suffix2, suffix1)
+			subfile = "{}.{}.fa.gz".format(name, str(i).zfill(digit))
 		else:
-			subfile = "{}.{}{}".format(name, str(i).zfill(digit), suffix2)
+			subfile = "{}.{}.fa".format(name, str(i).zfill(digit))
 
 		if args.out_dir != '.':
 			subfile = os.path.join(args.out_dir, subfile)
@@ -158,10 +158,10 @@ def fastq_split(args):
 		seqs_num = args.seq_count
 		parts_num = math.ceil(len(fq)/seqs_num)
 
-	name, suffix1 = os.path.splitext(os.path.basename(args.fastx))
+	name, suffix = os.path.splitext(os.path.basename(args.fastx))
 
-	if fq.is_gzip:
-		name, suffix2 = os.path.splitext(name)
+	if suffix.endswith('.gz') and fq.is_gzip:
+		name, _ = os.path.splitext(name)
 
 	digit = len(str(parts_num))
 
@@ -174,9 +174,9 @@ def fastq_split(args):
 			file_num += 1
 
 			if args.out_gzip:
-				subfile = "{}.{}{}{}".format(name, str(file_num).zfill(digit), suffix2, suffix1)
+				subfile = "{}.{}.fq.gz".format(name, str(file_num).zfill(digit))
 			else:
-				subfile = "{}.{}{}".format(name, str(file_num).zfill(digit), suffix2)
+				subfile = "{}.{}.fq".format(name, str(file_num).zfill(digit))
 
 			if args.out_dir != '.':
 				subfile = os.path.join(args.out_dir, subfile)
@@ -207,9 +207,10 @@ def fastx_split(args):
 def fastx_fq2fa(args):
 	fq = pyfastx.Fastq(args.fastq)
 
-	name, suffix1 = os.path.splitext(os.path.basename(args.fastq))
-	if fq.is_gzip:
-		name, _ = os.path.splitext(name)
+	name, suffix = os.path.splitext(os.path.basename(args.fastq))
+
+	if name.endswith('.fa'):
+		name = name.rstrip('.fa')
 
 	if args.out_gzip:
 		fafile = "{}.fa.gz".format(name)

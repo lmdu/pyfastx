@@ -7,8 +7,6 @@
 	#define PyExc_ConnectionError PyExc_RuntimeError
 	#define PyExc_FileExistsError PyExc_RuntimeError
 
-	#define PyUnicode_AsUTF8 PyString_AsString
-
 	#define PyVarObject_HEAD_INIT(type, size) \
 		PyObject_HEAD_INIT(type) size,
 	#define PyUnicode_AsUTF8 PyString_AsString
