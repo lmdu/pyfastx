@@ -9,7 +9,7 @@ env:
     - PIP=pip3
     - TWINE_REPOSITORY=pypi
     - TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
-    - CPPFLAGS=--coverage
+    #- CPPFLAGS=--coverage
 
 matrix:
   include:
@@ -56,6 +56,7 @@ script:
       python -m twine upload --skip-existing wheelhouse/*;
     fi
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
+      export CPPFLAGS=--coverage;
       python setup.py test;
     fi
 
