@@ -26,6 +26,8 @@ class FastaTest(unittest.TestCase):
 		#reload index
 		self.fastx = pyfastx.Fasta(gzip_fasta)
 
+		self.fasta = pyfastx.Fasta(flat_fasta)
+
 		self.faidx = pyfaidx.Fasta(flat_fasta, sequence_always_upper=True)
 		
 		self.fastq = pyfastx.Fastq(gzip_fastq)
@@ -221,6 +223,9 @@ class FastaTest(unittest.TestCase):
 		self.assertEqual(expect.name, result.name)
 		self.assertEqual(expect.seq, result.seq)
 
+		#test subseq
+		self.assertEqual(expect[0:10].seq, result[0:10].seq)
+
 		#test negative index
 		idx = (self.get_random_index() + 1) * -1
 		expect = self.faidx[idx][:]
@@ -228,7 +233,6 @@ class FastaTest(unittest.TestCase):
 
 		self.assertEqual(expect.name, result.name)
 		self.assertEqual(expect.seq, result.seq)
-
 
 	def test_seq_by_key(self):
 		idx = self.get_random_index()
@@ -253,9 +257,14 @@ class FastaTest(unittest.TestCase):
 		idx = self.get_random_index()
 		expect = self.faidx[idx]
 		result = self.fastx[idx]
+		flatseq = self.fasta[idx]
 
+		#test gzip subseq
 		self.assertEqual(expect[5:10].seq, result[5:10].seq)
-		#self.assertEqual(expect[20:].seq, result[20:].seq)
+		
+		#test flat subseq
+		self.assertEqual(expect[5:10].seq, flatseq[5:10].seq)
+
 		expect = expect[20:].seq
 		result = result[20:].seq
 		if len(expect) > len(result):
@@ -265,6 +274,9 @@ class FastaTest(unittest.TestCase):
 
 		#test sequence index
 		self.assertEqual(str(expect)[0], result[0])
+		self.assertEqual(str(expect)[-1], result[-1])
+
+		del flatseq
 
 	def test_seq_content(self):
 		idx = self.get_random_index()
@@ -290,12 +302,15 @@ class FastaTest(unittest.TestCase):
 		idx = self.get_random_index()
 		fai_seq = self.faidx[idx]
 		fxi_seq = self.fastx[idx]
+		fas_seq = self.fasta[idx]
 
 		# test read seq line by line
+		flatsq = [line for line in fas_seq]
 		expect = [str(line) for line in fai_seq]
 		result = [line for line in fxi_seq]
 
 		self.assertEqual(expect, result)
+		self.assertEqual(expect, flatsq)
 
 		# test seq long name
 		self.assertEqual(fai_seq.long_name.strip(), fxi_seq.description)
@@ -367,6 +382,9 @@ class FastaTest(unittest.TestCase):
 		result = self.fastq[idx]
 		expect = self.reads[idx]
 
+		del result
+		result = self.fastq[idx]
+
 		read0 = self.flatq[idx]
 
 		# test length
@@ -404,8 +422,6 @@ class FastaTest(unittest.TestCase):
 			self.assertEqual(read.name, self.reads[i][0])
 			self.assertEqual(read.seq, self.reads[i][1])
 			self.assertEqual(read.qual, self.reads[i][2])
-
-		del result
 
 if __name__ == '__main__':
 	unittest.main()

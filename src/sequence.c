@@ -136,7 +136,9 @@ PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
 		if(ks_getuntil(self->ks, '\n', &seq, 0) >= 0){
 			if(seq.s[0] != '>'){
 				if(self->index->uppercase){
-					upper_string(seq.s);
+					remove_space_uppercase(seq.s);
+				} else {
+					remove_space(seq.s);
 				}
 				return Py_BuildValue("s", seq.s);
 			}
