@@ -71,6 +71,9 @@ class FastaTest(unittest.TestCase):
 		if os.path.exists('{}.fai'.format(flat_fasta)):
 			os.remove('{}.fai'.format(flat_fasta))
 
+		if os.path.exists('{}.fxi'.format(flat_fasta)):
+			os.remove('{}.fxi'.format(flat_fasta))
+
 		if os.path.exists('{}.fxi'.format(gzip_fastq)):
 			os.remove('{}.fxi'.format(gzip_fastq))
 
