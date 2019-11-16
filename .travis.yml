@@ -31,14 +31,14 @@ before_install:
       cd sqlite-autoconf-3300100;
       ./configure;
       make;
-      make install;
+      sudo make install;
       cd ..;
       wget http://zlib.net/zlib-1.2.11.tar.gz;
       tar xzf zlib-1.2.11.tar.gz;
       cd zlib-1.2.11;
       ./configure;
       make;
-      make install;
+      sudo make install;
       cd ..;
       export LD_LIBRARY_PATH="/usr/local/lib";
     fi
