@@ -26,22 +26,22 @@ before_install:
   - $PIP install cpp-coveralls
   - $PIP install pyfaidx
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
-    wget https://www.sqlite.org/2019/sqlite-autoconf-3300100.tar.gz;
-    tar xzf sqlite-autoconf-3300100.tar.gz;
-    cd sqlite-autoconf-3300100;
-    ./configure;
-    make;
-    make install;
-    cd ..;
-    wget http://zlib.net/zlib-1.2.11.tar.gz;
-    tar xzf zlib-1.2.11.tar.gz;
-    cd zlib-1.2.11;
-    ./configure;
-    make;
-    make install;
-    cd ..;
-    export LD_LIBRARY_PATH="/usr/local/lib";
-  fi
+      wget https://www.sqlite.org/2019/sqlite-autoconf-3300100.tar.gz;
+      tar xzf sqlite-autoconf-3300100.tar.gz;
+      cd sqlite-autoconf-3300100;
+      ./configure;
+      make;
+      make install;
+      cd ..;
+      wget http://zlib.net/zlib-1.2.11.tar.gz;
+      tar xzf zlib-1.2.11.tar.gz;
+      cd zlib-1.2.11;
+      ./configure;
+      make;
+      make install;
+      cd ..;
+      export LD_LIBRARY_PATH="/usr/local/lib";
+    fi
 
 install:
   - $PIP install -U setuptools
