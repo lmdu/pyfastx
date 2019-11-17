@@ -57,6 +57,8 @@ script:
       python -m twine upload --skip-existing wheelhouse/*;
     fi
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
+      rm -rf build;
+      rm pyfastx.cpython*;
       export CPPFLAGS=--coverage;
       python setup.py test;
     fi
@@ -73,7 +75,7 @@ addons:
       name: "lmdu/pyfastx"
       description: "a tool for random access to fasta/q"
     notification_email: adullb@qq.com
-    build_command_prepend: "export CPPFLAGS=''"
+    build_command_prepend: "rm -rf build"
     build_command: "python3 setup.py build_ext"
     branch_pattern: master
 

@@ -215,20 +215,20 @@ PyObject *sub_seq(PyObject *self, PyObject *args){
 @para file_name str, input file path string
 @return bool, 1 is gzip formmat file, 0 is not gzip
 */
-uint16_t is_gzip_format(char* file_name){
-	uint16_t ret;
+int is_gzip_format(char* file_name){
+	int ret;
 	FILE* fd;
 	unsigned char magic[4] = {0};
 
 	fd = fopen(file_name, "rb");
-	ret = fread(magic, 1, sizeof(magic), fd);
+	ret = fread(magic, sizeof(magic), 1, fd);
 	fclose(fd);
 
-	if(ret != sizeof(magic)){
+	if (ret != 1){
 		return 0;
 	}
 	
-	if(magic[0] != 0x1f || magic[1] != 0x8b || magic[2] != 0x08){
+	if (magic[0] != 0x1f || magic[1] != 0x8b || magic[2] != 0x08){
 		return 0;
 	}
 	

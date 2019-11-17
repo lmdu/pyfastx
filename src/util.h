@@ -13,7 +13,7 @@ void remove_space_uppercase(char *str);
 void reverse_seq(char *seq);
 void reverse_complement_seq(char *seq);
 
-uint16_t is_gzip_format(char *file_name);
+int is_gzip_format(char *file_name);
 //void truncate_seq(char *seq, uint32_t start, uint32_t end);
 void complement_seq(char *seq);
 void reverse_seq(char *seq);

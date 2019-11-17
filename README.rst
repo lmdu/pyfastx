@@ -21,33 +21,37 @@ pyfastx
    :target: https://coveralls.io/github/lmdu/pyfastx?branch=master
    :alt: Coveralls
 
+.. image:: https://scan.coverity.com/projects/19696/badge.svg
+   :target: https://scan.coverity.com/projects/lmdu-pyfastx
+   :alt: Coverity
+
 .. image:: https://img.shields.io/pypi/v/pyfastx.svg
    :target: https://pypi.org/project/pyfastx
-   :alt: PyPI Version
-
-.. image:: https://img.shields.io/pypi/pyversions/pyfastx.svg
-   :target: https://pypi.org/project/pyfastx
-   :alt: Python Version
+   :alt: PyPI
 
 .. image:: https://img.shields.io/pypi/wheel/pyfastx.svg
    :target: https://pypi.org/project/pyfastx
    :alt: Wheel
 
-.. image:: https://api.codacy.com/project/badge/Grade/80790fa30f444d9d9ece43689d512dae
-   :target: https://www.codacy.com/manual/lmdu/pyfastx?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lmdu/pyfastx&amp;utm_campaign=Badge_Grade
-   :alt: Codacy
-
 .. image:: https://img.shields.io/pypi/implementation/pyfastx
    :target: https://pypi.org/project/pyfastx
    :alt: PyPI - Implementation
 
+.. image:: https://img.shields.io/pypi/pyversions/pyfastx.svg
+   :target: https://pypi.org/project/pyfastx
+   :alt: Pyver
+
+.. image:: https://api.codacy.com/project/badge/Grade/80790fa30f444d9d9ece43689d512dae
+   :target: https://www.codacy.com/manual/lmdu/pyfastx?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lmdu/pyfastx&amp;utm_campaign=Badge_Grade
+   :alt: Codacy
+
 .. image:: https://img.shields.io/pypi/dm/pyfastx
    :target: https://pypi.org/project/pyfastx
-   :alt: PyPI - Downloads
+   :alt: Downloads
 
 .. image:: https://img.shields.io/pypi/l/pyfastx
    :target: https://pypi.org/project/pyfastx
-   :alt: PyPI - License
+   :alt: License
 
 *a robust python module for fast random access to sequences from plain and gzipped FASTA/Q file*
 
