@@ -89,7 +89,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 void pyfastx_fasta_dealloc(pyfastx_Fasta *self){
 	pyfastx_index_free(self->index);
-	Py_TYPE(self)->tp_free(self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){

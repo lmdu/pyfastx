@@ -81,13 +81,13 @@ pyfastx.Fasta
 
 	.. py:attribute:: longest
 
-		get (name, length) of longest sequence in FASTA file
+		get longest sequence in FASTA file, return a Sequence object
 
 		New in ``pyfastx`` 0.3.0
 
 	.. py:attribute:: shortest
 
-		get (name, length) of shortest sequence in FASTA file
+		get shortest sequence in FASTA file, return a Sequence object
 
 		New in ``pyfastx`` 0.3.0
 

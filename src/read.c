@@ -6,17 +6,20 @@ PyObject *pyfastx_read_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return (PyObject *)obj;
 }
 
+/*
 void pyfastx_read_dealloc(pyfastx_Read *self) {
-    if (self->seq != NULL) {
+    if (self->seq) {
         free(self->seq);
     }
 
-    if (self->qual != NULL) {
+    if (self->qual) {
         free(self->qual);
     }
 
-    Py_TYPE(self)->tp_free(self);
-}
+    printf("%s\n", "read dealloc yes");
+
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}*/
 
 
 int pyfastx_read_length(pyfastx_Read *self) {
@@ -121,7 +124,7 @@ PyTypeObject pyfastx_ReadType = {
     "Read",                        /* tp_name */
     sizeof(pyfastx_Read),          /* tp_basicsize */
     0,                              /* tp_itemsize */
-    (destructor)pyfastx_read_dealloc,   /* tp_dealloc */
+    0,   /* tp_dealloc */
     0,                              /* tp_print */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */

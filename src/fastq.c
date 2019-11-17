@@ -241,7 +241,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 }
 
 void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
-	if (self->index_db != NULL) {
+	if (self->index_db) {
 		sqlite3_close(self->index_db);
 	}
 
@@ -254,7 +254,7 @@ void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
 	fclose(self->fd);
 	gzclose(self->gzfd);
 
-	Py_TYPE(self)->tp_free(self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 int pyfastx_fastq_length(pyfastx_Fastq *self) {

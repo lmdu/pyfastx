@@ -5,13 +5,14 @@ PyObject *pyfastx_identifier_new(PyTypeObject *type, PyObject *args, PyObject *k
 	return (PyObject *)obj;
 }
 
+/*
 void pyfastx_identifier_dealloc(pyfastx_Identifier *self){
 	if (self->stmt != NULL) {
 		sqlite3_finalize(self->stmt);
 	}
 
 	Py_TYPE(self)->tp_free(self);
-}
+}*/
 
 PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self){
 	char *key;
@@ -155,7 +156,7 @@ PyTypeObject pyfastx_IdentifierType = {
     "Identifier",                     /* tp_name */
     sizeof(pyfastx_Identifier),       /* tp_basicsize */
     0,                              /* tp_itemsize */
-    (destructor)pyfastx_identifier_dealloc,                              /* tp_dealloc */
+    0,                              /* tp_dealloc */
     0,                              /* tp_print */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */

@@ -60,13 +60,13 @@ PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwa
 	return (PyObject *)obj;
 }
 
-void pyfastx_sequence_dealloc(pyfastx_Sequence* self) {
+/*void pyfastx_sequence_dealloc(pyfastx_Sequence* self) {
 	if (self->ks != NULL) {
 		ks_destroy(self->ks);
 	}
 
 	Py_TYPE(self)->tp_free(self);
-}
+}*/
 
 PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
 	if (self->start != 1 || self->end != self->parent_len) {
@@ -490,7 +490,7 @@ PyTypeObject pyfastx_SequenceType = {
     "Sequence",                     /* tp_name */
     sizeof(pyfastx_Sequence),       /* tp_basicsize */
     0,                              /* tp_itemsize */
-    (destructor)pyfastx_sequence_dealloc,                              /* tp_dealloc */
+    0,                              /* tp_dealloc */
     0,                              /* tp_print */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
