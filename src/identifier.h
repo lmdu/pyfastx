@@ -21,10 +21,13 @@ typedef struct {
 	//uint16_t format;
 
 	//sort by 1: id, 2: name, 3: length
-	uint16_t sort;
+	char *sort;
 
 	//oder 0: asc, 1: desc
-	uint16_t order;
+	char *order;
+
+	//filter string
+	char *filter;
 
 } pyfastx_Identifier;
 
