@@ -27,7 +27,8 @@ typedef struct {
 	char *order;
 
 	//filter string
-	char *filter;
+	char *slen_filter;
+	char *like_filter;
 
 } pyfastx_Identifier;
 
