@@ -242,8 +242,8 @@ PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self, PyObject *args, PyObject *kwar
 	//ids->order = 0;
 	ids->sort = "id";
 	ids->order = "ASC";
-	ids->slen_filter = NULL;
-	ids->like_filter = NULL;
+	ids->filter = NULL;
+	ids->temp_filter = NULL;
 
 	Py_INCREF(ids);
 	return (PyObject *)ids;

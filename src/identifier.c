@@ -7,7 +7,7 @@ PyObject *pyfastx_identifier_new(PyTypeObject *type, PyObject *args, PyObject *k
 }
 
 //@para ftype: 1, slen fileter, 2, like filter
-PyObject *make_new_identifier(pyfastx_Identifier *self, char *filter, int ftype) {
+/*PyObject *make_new_identifier(pyfastx_Identifier *self, char *filter, int ftype) {
 	pyfastx_Identifier *obj = PyObject_New(pyfastx_Identifier, &pyfastx_IdentifierType);
 	
 	if (!obj) {
@@ -55,7 +55,7 @@ PyObject *make_new_identifier(pyfastx_Identifier *self, char *filter, int ftype)
 
 	Py_INCREF(obj);
 	return (PyObject *)obj;
-}
+}*/
 
 /*
 void pyfastx_identifier_dealloc(pyfastx_Identifier *self){
@@ -70,8 +70,16 @@ PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self){
 	//char *key;
 	//char *order;
 
-	char sql[50];
-	sprintf(sql, "SELECT chrom FROM seq ORDER BY %s %s;", self->sort, self->order);
+	char sql[300];
+
+	if (self->filter) {
+		sprintf(sql, "%s %s ORDER BY %s %s", "SELECT chrom FROM seq WHERE",
+			self->filter, self->sort, self->order);
+	} else {
+		sprintf(sql, "%s ORDER BY %s %s", "SELECT chrom FROM seq",
+		self->sort, self->order);
+	}
+
 	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
 
 	Py_INCREF(self);
@@ -110,30 +118,30 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 	}
 
 	char sql[300];
-	strcpy(sql, "SELECT chrom FROM seq");
 
-	if (self->like_filter || self->slen_filter) {
-		strcat(sql, " WHERE ");
-
-		if (self->slen_filter) {
-			strcat(sql, self->slen_filter);
-		}
-
-		if (self->like_filter) {
-			strcat(sql, self->like_filter);
-		}
+	if (self->filter) {
+		sprintf(sql, "%s %s ORDER BY %s %s LIMIT 1 OFFSET %ld",
+			"SELECT chrom FROM seq WHERE", self->filter,
+			self->sort, self->order, i);
+	} else {
+		sprintf(sql, "%s ORDER BY %s %s LIMIT 1 OFFSET %ld", 
+			"SELECT chrom FROM seq", self->sort, self->order, i);
 	}
 
+	printf("%s\n", sql);
+	
 	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
-	sqlite3_bind_int(self->stmt, 1, i);
-	sqlite3_step(self->stmt);
-	int nbytes = sqlite3_column_bytes(self->stmt, 0);
-	char *name = (char *)malloc(nbytes + 1);
-	memcpy(name, (char *)sqlite3_column_text(self->stmt, 0), nbytes);
-	name[nbytes] = '\0';
-	sqlite3_finalize(self->stmt);
 
-	return Py_BuildValue("s", name);
+	if (sqlite3_step(self->stmt) == SQLITE_ROW) {
+		int nbytes = sqlite3_column_bytes(self->stmt, 0);
+		char *name = (char *)malloc(nbytes + 1);
+		memcpy(name, (char *)sqlite3_column_text(self->stmt, 0), nbytes);
+		name[nbytes] = '\0';
+		sqlite3_finalize(self->stmt);
+		return Py_BuildValue("s", name);
+	} else {
+		return NULL;
+	}
 }
 
 int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
@@ -188,18 +196,20 @@ PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyOb
 	return (PyObject *)self;
 }
 
-PyObject *pyfastx_idnetifier_richcompare(PyObject *self, PyObject *other, int op) {
+PyObject *pyfastx_idnetifier_richcompare(pyfastx_Identifier *self, PyObject *other, int op) {
 	if (!integer_check(other)) {
 		PyErr_SetString(PyExc_ValueError, "the compared item must be an integer");
 		return NULL;
 	}
 
-	char filter[200];
-	char where[100];
+	char when[100];
 	char *sign;
-	int64_t l;
+	int64_t slen;
+	int flen;
 
-	l = integer_to_long(other);
+	memset(when, '\0', sizeof(when));
+
+	slen = integer_to_long(other);
 	
 	switch (op) {
 		case Py_LT: sign = "<"; break;
@@ -212,13 +222,17 @@ PyObject *pyfastx_idnetifier_richcompare(PyObject *self, PyObject *other, int op
 			return Py_NotImplemented;
 	}
 
-	if (filter[0]) {
-		sprintf(where, " AND slen %s %ld ", sign, l);
+	if (self->temp_filter == NULL) {
+		flen = sprintf(when, "slen %s %ld", sign, slen);
+		self->temp_filter = (char *)malloc(flen + 1);
+		strcpy(self->temp_filter, when);
 	} else {
-		sprintf(where, " slen %s %ld ", sign, l);
+		flen = sprintf(when, " AND slen %s %ld", sign, slen);
+		self->temp_filter = (char *)realloc(self->temp_filter, strlen(self->temp_filter) + flen + 1);
+		strcat(self->temp_filter, when);
 	}
 
-	return make_new_identifier(self, filter, 1);
+	return Py_BuildValue("s", self->temp_filter);
 }
 
 PyObject *pyfastx_identifier_like(PyObject *self, PyObject *tag) {
@@ -227,15 +241,57 @@ PyObject *pyfastx_identifier_like(PyObject *self, PyObject *tag) {
 		return NULL;
 	}
 	char *name = PyUnicode_AsUTF8(tag);
-	char fileter[200];
+	return PyUnicode_FromFormat("chrom LIKE '%%%s%%'", name);
+}
 
-	sprintf(fileter, " chrom LIKE '%%%s%%' ", name);
+PyObject *pyfastx_identifier_filter(pyfastx_Identifier *self, PyObject *args) {
+	PyObject *res = PyUnicode_Join(Py_BuildValue("s", " AND "), args);
+	self->filter = PyUnicode_AsUTF8(res);
+	
+	if (self->temp_filter) {
+		free(self->temp_filter);
+	}
 
-	return make_new_identifier(self, fileter, 2);
+	char sql[200];
+	sprintf(sql, "%s %s", "SELECT COUNT(*) FROM seq WHERE", self->filter);
+	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
+
+	if (sqlite3_step(self->stmt) == SQLITE_ROW) {
+		self->seq_counts = sqlite3_column_int(self->stmt, 0);
+		sqlite3_finalize(self->stmt);
+	} else {
+		self->seq_counts = 0;
+	}
+
+	return (PyObject *)self;
+}
+
+PyObject *pyfastx_identifier_reset(pyfastx_Identifier *self) {
+	self->sort = NULL;
+	self->order = NULL;
+	self->filter = NULL;
+
+	if (self->temp_filter) {
+		free(self->temp_filter);
+	}
+
+	sqlite3_prepare_v2(self->index_db, "SELECT COUNT(*) FROM seq", -1, &self->stmt, NULL);
+
+	if (sqlite3_step(self->stmt) == SQLITE_ROW) {
+		self->seq_counts = sqlite3_column_int(self->stmt, 0);
+		sqlite3_finalize(self->stmt);
+	} else {
+		PyErr_SetString(PyExc_RuntimeError, "get sequence counts error");
+		return NULL;
+	}
+
+	return (PyObject *)self;
 }
 
 static PyMethodDef pyfastx_identifier_methods[] = {
 	{"sort", (PyCFunction)pyfastx_identifier_sort, METH_VARARGS|METH_KEYWORDS},
+	{"filter", (PyCFunction)pyfastx_identifier_filter, METH_VARARGS},
+	{"reset", (PyCFunction)pyfastx_identifier_reset, METH_NOARGS},
 	{NULL, NULL, 0, NULL}
 };
 
