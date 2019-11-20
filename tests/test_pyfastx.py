@@ -182,7 +182,7 @@ class FastaTest(unittest.TestCase):
 		result = self.fastx.count(200)
 		self.assertEqual(expect, result)
 
-	def test_keys(self):
+	def test_keys_sort(self):
 		expect = list(self.faidx.keys())
 		result = list(self.fastx.keys())
 
@@ -200,7 +200,7 @@ class FastaTest(unittest.TestCase):
 		idx = self.get_random_index()
 		self.assertTrue(self.faidx[idx].name in ids)
 
-		#sor by id
+		#sort by id
 		expect = [seq.name for seq in self.faidx]
 		expect.reverse()
 		result = [name for name in self.fastx.keys().sort('id', reverse=True)]
@@ -216,6 +216,29 @@ class FastaTest(unittest.TestCase):
 		expect = [it[0] for it in sorted(lens, key=lambda x: x[1])]
 		result = [name for name in self.fastx.keys().sort('length')]
 		self.assertEqual(expect, result)
+
+	def test_keys_filter(self):
+		ids = self.fastx.keys()
+
+		#test greater than
+		expect = list(ids.filter(ids>700))
+		result = [seq.name for seq in self.faidx if len(seq) > 700]
+		self.assertEqual(expect, result)
+
+		#test two compare
+		expect = list(ids.filter(600<=ids<=700))
+		result = [seq.name for seq in self.faidx if len(seq) >= 600 and len(seq) <= 700]
+		self.assertEqual(expect, result)
+
+		#test like compare
+		expect = list(ids.filter(ids % 'JZ8226'))
+		result = [seq.name for seq in self.faidx if seq.name.startswith('JZ8226')]
+		self.assertEqual(expect, result)
+
+		#test all compare
+		expect = list(ids.filter(ids % 'JZ8226', ids>=300).sort('name', reverse=True))
+		result = [seq.name for seq in self.faidx if seq.name.startswith('JZ8226') and len(seq) >= 300]
+		self.assertEqual(sorted(result, reverse=True), expect)
 
 	def test_seq_by_index(self):
 		#test get seq by index

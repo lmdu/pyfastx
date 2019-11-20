@@ -1,10 +1,10 @@
 #include "read.h"
 #include "structmember.h"
 
-PyObject *pyfastx_read_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
+/*PyObject *pyfastx_read_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
     pyfastx_Read *obj = (pyfastx_Read *)type->tp_alloc(type, 0);
     return (PyObject *)obj;
-}
+}*/
 
 /*
 void pyfastx_read_dealloc(pyfastx_Read *self) {
@@ -157,5 +157,5 @@ PyTypeObject pyfastx_ReadType = {
     0,                              /* tp_dictoffset */
     0,                              /* tp_init */
     PyType_GenericAlloc,            /* tp_alloc */
-    pyfastx_read_new,              /* tp_new */
+    0,              /* tp_new */
 };

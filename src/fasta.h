@@ -51,8 +51,8 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self);
 PyObject *pyfastx_fasta_next(pyfastx_Fasta *self);
 PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self);
-PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
-PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
+PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self);
+PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self);
 PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item);
 PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs);
 PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args);

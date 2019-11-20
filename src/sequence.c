@@ -55,10 +55,10 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 }
 
 
-PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
+/*PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 	pyfastx_Sequence *obj = (pyfastx_Sequence *)type->tp_alloc(type, 0);
 	return (PyObject *)obj;
-}
+}*/
 
 /*void pyfastx_sequence_dealloc(pyfastx_Sequence* self) {
 	if (self->ks != NULL) {
@@ -458,7 +458,7 @@ static PySequenceMethods pyfastx_sequence_as_sequence = {
 };
 
 static PyMethodDef pyfastx_sequence_methods[] = {
-	{"search", (PyCFunction)pyfastx_sequence_search, METH_VARARGS|METH_KEYWORDS},
+	{"search", (PyCFunction)pyfastx_sequence_search, METH_VARARGS|METH_KEYWORDS, NULL},
 	{NULL, NULL, 0, NULL}
 };
 
@@ -523,5 +523,5 @@ PyTypeObject pyfastx_SequenceType = {
     0,                              /* tp_dictoffset */
     0,                              /* tp_init */
     PyType_GenericAlloc,            /* tp_alloc */
-    pyfastx_sequence_new,           /* tp_new */
+    0,           /* tp_new */
 };

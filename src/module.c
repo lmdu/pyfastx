@@ -7,7 +7,7 @@
 #include "identifier.h"
 #include "version.h"
 
-PyObject *pyfastx_version(PyObject *self, PyObject *args){
+PyObject *pyfastx_version(PyObject *self){
 	return Py_BuildValue("s", PYFASTX_VERSION);
 }
 

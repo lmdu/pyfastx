@@ -106,7 +106,7 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 	return pyfastx_get_next_seq(self->index);
 }
 
-PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
+PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self){
 	if (self->index->index_db == NULL) {
 		pyfastx_build_index(self->index);
 		pyfastx_calc_fasta_attrs(self);
@@ -115,7 +115,7 @@ PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self, PyObject *args, PyObjec
 	Py_RETURN_TRUE;
 }
 
-PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
+PyObject *pyfastx_fasta_rebuild_index(pyfastx_Fasta *self){
 	if (self->index->index_db != NULL) {
 		sqlite3_close(self->index->index_db);
 	}
@@ -228,7 +228,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	//return make_large_sequence(sub_seq);
 }
 
-PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
+PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self){
 	pyfastx_Identifier *ids = PyObject_New(pyfastx_Identifier, &pyfastx_IdentifierType);
 	
 	if (!ids) {
@@ -638,13 +638,12 @@ static PyMemberDef pyfastx_fasta_members[] = {
 };
 
 static PyMethodDef pyfastx_fasta_methods[] = {
-	{"build_index", (PyCFunction)pyfastx_fasta_build_index, METH_VARARGS},
-	{"rebuild_index", (PyCFunction)pyfastx_fasta_rebuild_index, METH_VARARGS},
-	{"fetch", (PyCFunction)pyfastx_fasta_fetch, METH_VARARGS|METH_KEYWORDS},
-	{"count", (PyCFunction)pyfastx_fasta_count, METH_VARARGS},
-	{"keys", (PyCFunction)pyfastx_fasta_keys, METH_VARARGS},
-	{"nl", (PyCFunction)pyfastx_fasta_nl, METH_VARARGS},
-	//{"test", (PyCFunction)test, METH_VARARGS},
+	{"build_index", (PyCFunction)pyfastx_fasta_build_index, METH_NOARGS, NULL},
+	{"rebuild_index", (PyCFunction)pyfastx_fasta_rebuild_index, METH_NOARGS, NULL},
+	{"fetch", (PyCFunction)pyfastx_fasta_fetch, METH_VARARGS|METH_KEYWORDS, NULL},
+	{"count", (PyCFunction)pyfastx_fasta_count, METH_VARARGS, NULL},
+	{"keys", (PyCFunction)pyfastx_fasta_keys, METH_NOARGS, NULL},
+	{"nl", (PyCFunction)pyfastx_fasta_nl, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL}
 };
 

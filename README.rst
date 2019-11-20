@@ -611,6 +611,53 @@ New in ``pyfastx`` 0.5.0
     >>> for name in ids.sort(key='id', reverse=True)
     >>>     print(name)
 
+Filter identifiers
+------------------
+
+Filter identifiers by sequence length and name
+
+New in ``pyfastx`` 0.5.10
+
+.. code:: python
+
+    >>> # get identifiers with length > 600
+    >>> ids.filter(ids > 600)
+    <Identifier> contains 48 identifiers
+
+    >>> # get identifiers with length >= 500 and <= 700
+    >>> ids.filter(ids>=500, ids<=700)
+    <Identifier> contains 48 identifiers
+
+    >>> # get identifiers with length > 500 and < 600
+    >>> ids.filter(500<ids<600)
+    <Identifier> contains 22 identifiers
+
+    >>> # get identifiers contain JZ8226
+    >>> ids.filter(ids % 'JZ8226')
+    <Identifier> contains 90 identifiers
+
+    >>> # get identifiers contain JZ8226 with length > 550
+    >>> ids.filter(ids % 'JZ8226', ids>550)
+    <Identifier> contains 17 identifiers
+
+    >>> # clear sort order and filters
+    >>> ids.reset()
+    <Identifier> contains 211 identifiers
+
+    >>> # list a filtered result
+    >>> ids.filter(ids % 'JZ8226', ids>730)
+    >>> list(ids)
+    ['JZ822609.1', 'JZ822650.1', 'JZ822664.1', 'JZ822699.1']
+
+    >>> # list a filtered result with sort order
+    >>> ids.filter(ids % 'JZ8226', ids>730).sort('length', reverse=True)
+    >>> list(ids)
+    ['JZ822609.1', 'JZ822699.1', 'JZ822664.1', 'JZ822650.1']
+
+    >>> ids.filter(ids % 'JZ8226', ids>730).sort('name', reverse=True)
+    >>> list(ids)
+    ['JZ822699.1', 'JZ822664.1', 'JZ822650.1', 'JZ822609.1']
+
 Command line interface
 ======================
 

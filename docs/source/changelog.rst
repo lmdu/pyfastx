@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.5.10 (2019-11-20)
+---------------------------
+
+- Added identifier filter function
+- Remove tp_new for Read, Sequence and Identifier
+- Fixed module method error
+
 Version 0.5.9 (2019-11-17)
 --------------------------
 
