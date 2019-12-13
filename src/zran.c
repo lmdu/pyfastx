@@ -60,7 +60,7 @@ static double round(double val)
  *
  * #define ZRAN_VERBOSE
  */
-//#define ZRAN_VERBOSE
+#define ZRAN_VERBOSE
 
 
 #ifdef ZRAN_VERBOSE
@@ -2281,6 +2281,10 @@ int64_t zran_read(zran_index_t *index,
         cmp_offset      += bytes_consumed;
         uncmp_offset    += bytes_output;
         total_discarded += bytes_output;
+
+        printf("uncompressed offset: %d\n", uncmp_offset);
+        printf("index uncompressed offset: %d\n", index->uncmp_seek_offset);
+        break;
     }
 
     /*

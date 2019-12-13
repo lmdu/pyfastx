@@ -44,7 +44,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//paramters for fasta object construction
 	static char* keywords[] = {"file_name", "uppercase", "build_index", "composition", "memory_index" "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiiO", keywords, &file_name, &uppercase, &composition, &build_index, &memory_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiiO", keywords, &file_name, &uppercase, &build_index, &composition, &memory_index, &key_func)){
 		return NULL;
 	}
 

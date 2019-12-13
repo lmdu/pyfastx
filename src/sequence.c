@@ -3,10 +3,9 @@
 #include "util.h"
 
 char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
-	uint32_t seq_len;
+	//uint32_t seq_len;
 	
-	seq_len = self->end - self->start + 1;
-
+	//seq_len = self->end - self->start + 1;
 	if (!self->normal || (self->parent_len == self->end && self->start == 1)) {
 		pyfastx_index_get_full_seq(self->index, self->id);
 	}
@@ -16,9 +15,9 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	}
 
 	if ((self->id == self->index->cache_chrom) && (self->start>=self->index->cache_start) && (self->end<=self->index->cache_end)){
-		char *buff = (char *)malloc(seq_len + 1);
-		memcpy(buff, self->index->cache_seq + (self->start - self->index->cache_start), seq_len);
-		buff[seq_len] = '\0';
+		char *buff = (char *)malloc(self->seq_len + 1);
+		memcpy(buff, self->index->cache_seq + (self->start - self->index->cache_start), self->seq_len);
+		buff[self->seq_len] = '\0';
 		return buff;
 	}
 	
@@ -26,7 +25,7 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 
 	Py_BEGIN_ALLOW_THREADS
 
-	if(self->index->gzip_format){
+	if (self->index->gzip_format) {
 		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
 		zran_read(self->index->gzip_index, self->index->cache_seq, self->byte_len);
 	} else {
@@ -354,15 +353,19 @@ PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
 	sqlite3_bind_int(stmt, 1, self->id);
 	sqlite3_step(stmt);
 
+	printf("%s\n", "start gc");
+
 	if (self->start == 1 && self->end == self->seq_len && sqlite3_step(stmt) == SQLITE_ROW) {
 		a = sqlite3_column_int(stmt, 0);
 		c = sqlite3_column_int(stmt, 1);
 		g = sqlite3_column_int(stmt, 2);
 		t = sqlite3_column_int(stmt, 3);
 	} else {
+		printf("%s\n", "yes or no");
 		char *seq;
 		uint32_t i;
 		seq = pyfastx_sequence_get_subseq(self);
+		printf("seq len: %d\n", self->seq_len);
 		for (i = 0; i < self->seq_len; i++) {
 			switch (seq[i]) {
 				case 65: case 97: ++a; break;

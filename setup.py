@@ -13,6 +13,11 @@ comp_args = []
 if os.name == 'nt' and '64' in platform.architecture()[0]:
     link_args.append('-DMS_WIN64')
     comp_args.append('-DMS_WIN64')
+    #comp_args.append('-D_FILE_OFFSET_BITS=64')
+    #comp_args.append('-D_LARGEFILE64_SOURCE=1')
+    #comp_args.append('-Wno-unused-function')
+    #comp_args.append('-pedantic')
+    #comp_args.append('-DNO_C99')
 
 
 extension = Extension('pyfastx',

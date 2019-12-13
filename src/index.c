@@ -405,7 +405,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	int64_t offset;
 	uint32_t bytes;
 	//char *buff;
-	
+
 	//select sql statement, chrom indicates seq or chromomsome id
 	const char* sql = "SELECT boff,blen,slen FROM seq WHERE ID=? LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
@@ -439,8 +439,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	}
 
 	self->cache_seq[bytes] = '\0';
-		
-	
+
 	if (self->uppercase) {
 		remove_space_uppercase(self->cache_seq);
 	} else {
