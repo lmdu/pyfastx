@@ -3,7 +3,7 @@
 import os
 import glob
 import platform
-#import unittest
+#import unittest##
 #from distutils.core import setup, Extension
 from setuptools import setup, Extension
 
@@ -11,19 +11,18 @@ link_args = ['-lz', '-lsqlite3']
 comp_args = []
 
 if os.name == 'nt' and '64' in platform.architecture()[0]:
-    link_args.append('-DMS_WIN64')
+    #link_args.append('-DMS_WIN64')
     comp_args.append('-DMS_WIN64')
     #comp_args.append('-D_FILE_OFFSET_BITS=64')
-    #comp_args.append('-D_LARGEFILE64_SOURCE=1')
-    #comp_args.append('-Wno-unused-function')
     #comp_args.append('-pedantic')
-    #comp_args.append('-DNO_C99')
+    #comp_args.append('-Wno-unused-function')
 
 
 extension = Extension('pyfastx',
     sources = glob.glob('src/*.c'),
     extra_compile_args = comp_args,
-    extra_link_args = link_args
+    extra_link_args = link_args,
+    define_macros = [("_FILE_OFFSET_BITS", 64)]
 )
 
 description = (

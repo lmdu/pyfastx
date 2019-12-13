@@ -51,9 +51,7 @@ static PyObject* pyfastx_module_init(void){
 	module = PyModule_Create(&module_pyfastx);
 
 #else
-	module = Py_InitModule3("pyfastx", module_methods,
-		"A python C extension for parsing fasta and fastq file"
-	);
+	module = Py_InitModule("pyfastx", module_methods);
 #endif
 
 	if (module == NULL){
@@ -95,11 +93,11 @@ static PyObject* pyfastx_module_init(void){
 }
 
 #if PY_MAJOR_VERSION >= 3
-PyMODINIT_FUNC PyInit_pyfastx(void) {
+PyMODINIT_FUNC PyInit_pyfastx() {
 	return pyfastx_module_init();
 }
 #else
-PyMODINIT_FUNC initpyfastx(void) {
+PyMODINIT_FUNC initpyfastx() {
 	pyfastx_module_init();
 }
 #endif

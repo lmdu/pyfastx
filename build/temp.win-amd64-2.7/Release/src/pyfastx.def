@@ -1,3 +1,0 @@
-LIBRARY pyfastx.pyd
-EXPORTS
-initpyfastx

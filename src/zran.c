@@ -60,7 +60,7 @@ static double round(double val)
  *
  * #define ZRAN_VERBOSE
  */
-#define ZRAN_VERBOSE
+//#define ZRAN_VERBOSE
 
 
 #ifdef ZRAN_VERBOSE
@@ -2104,7 +2104,8 @@ eof:
 }
 
 /* Return the current seek position in the uncompressed data stream. */
-long zran_tell(zran_index_t *index) {
+//long zran_tell(zran_index_t *index) {
+uint64_t zran_tell(zran_index_t *index) {
 
     return index->uncmp_seek_offset;
 }
