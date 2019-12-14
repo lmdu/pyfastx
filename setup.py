@@ -1,28 +1,45 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import sys
 import glob
 import platform
 #import unittest##
 #from distutils.core import setup, Extension
 from setuptools import setup, Extension
 
-link_args = ['-lz', '-lsqlite3']
+#link_args = ['-lz', '-lsqlite3']
 comp_args = []
+include_dirs = []
+libs = []
+lib_dirs
 
-if os.name == 'nt' and '64' in platform.architecture()[0]:
+#if os.name == 'nt' and '64' in platform.architecture()[0]:
     #link_args.append('-DMS_WIN64')
-    comp_args.append('-DMS_WIN64')
+    #comp_args.append('-DMS_WIN64')
     #comp_args.append('-D_FILE_OFFSET_BITS=64')
     #comp_args.append('-pedantic')
     #comp_args.append('-Wno-unused-function')
 
+if os.name == 'nt':
+	zlib_home = os.environ.get('ZLIB_HOME')
+	include_dirs.append(os.path.join(zlib_home, 'include'))
+	libs.append('zlib')
+	libs.append('sqlite3')
+	lib_dirs.append(os.path.join(zlib_home, 'lib'))
+
+	if sys.version_info[0] == 2:
+		include_dirs.append('compat')
+		comp_args.append('-DNO_C99')
 
 extension = Extension('pyfastx',
     sources = glob.glob('src/*.c'),
     extra_compile_args = comp_args,
-    extra_link_args = link_args,
-    define_macros = [("_FILE_OFFSET_BITS", 64)]
+    #extra_link_args = link_args,
+    include_dirs = include_dirs,
+    libraries = libs,
+    library_dirs = library_dirs
+    #define_macros = [("_FILE_OFFSET_BITS", 64)]
 )
 
 description = (
