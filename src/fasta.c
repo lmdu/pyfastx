@@ -41,6 +41,8 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//key function for seperating name
 	PyObject *key_func = Py_None;
 
+	pyfastx_Fasta *obj;
+
 	//paramters for fasta object construction
 	static char* keywords[] = {"file_name", "uppercase", "build_index", "composition", "memory_index" "key_func", NULL};
 	
@@ -60,7 +62,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 
 	//create Fasta class
-	pyfastx_Fasta *obj = (pyfastx_Fasta *)type->tp_alloc(type, 0);
+	obj = (pyfastx_Fasta *)type->tp_alloc(type, 0);
 	if (!obj){
 		return NULL;
 	}
