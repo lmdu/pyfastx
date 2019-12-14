@@ -30,7 +30,7 @@ if os.name == 'nt':
 
 	if sys.version_info[0] == 2:
 		include_dirs.append('compat')
-		comp_args.append('-DNO_C99')
+		#comp_args.append('-DNO_C99')
 
 extension = Extension('pyfastx',
     sources = glob.glob('src/*.c'),
