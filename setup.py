@@ -38,7 +38,7 @@ extension = Extension('pyfastx',
     #extra_link_args = link_args,
     include_dirs = include_dirs,
     libraries = libs,
-    library_dirs = library_dirs
+    library_dirs = lib_dirs
     #define_macros = [("_FILE_OFFSET_BITS", 64)]
 )
 
