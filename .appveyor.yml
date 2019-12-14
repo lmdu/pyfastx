@@ -9,10 +9,10 @@ environment:
     #  MINICONDA: C:\Miniconda
     #  PYTHON_ARCH: 32
 
-    #- PYTHON_VERSION: 2.7
-    #  PYTHON: C:\Miniconda-x64
-    #  MINICONDA: C:\Miniconda-x64
-    #  PYTHON_ARCH: 64
+    - PYTHON_VERSION: 2.7
+      PYTHON: C:\Miniconda-x64
+      MINICONDA: C:\Miniconda-x64
+      PYTHON_ARCH: 64
 
     #- PYTHON_VERSION: 3.5
     #  PYTHON: C:\Miniconda
@@ -29,10 +29,10 @@ environment:
     #  MINICONDA: C:\Miniconda
     #  PYTHON_ARCH: 32
 
-    - PYTHON_VERSION: 3.6
-      PYTHON: C:\Miniconda-x64
-      MINICONDA: C:\Miniconda-x64
-      PYTHON_ARCH: 64
+    #- PYTHON_VERSION: 3.6
+    #  PYTHON: C:\Miniconda-x64
+    #  MINICONDA: C:\Miniconda-x64
+    #  PYTHON_ARCH: 64
 
     #- PYTHON_VERSION: 3.7
     #  PYTHON: C:\Miniconda
