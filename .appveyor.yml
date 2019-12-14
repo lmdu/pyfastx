@@ -4,55 +4,55 @@ environment:
     TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
 
   matrix:
-    - PYTHON_VERSION: 2.7
-      PYTHON: C:\Miniconda
-      MINICONDA: C:\Miniconda
-      PYTHON_ARCH: 32
+    #- PYTHON_VERSION: 2.7
+    #  PYTHON: C:\Miniconda
+    #  MINICONDA: C:\Miniconda
+    #  PYTHON_ARCH: 32
 
     - PYTHON_VERSION: 2.7
       PYTHON: C:\Miniconda-x64
       MINICONDA: C:\Miniconda-x64
       PYTHON_ARCH: 64
 
-    - PYTHON_VERSION: 3.5
-      PYTHON: C:\Miniconda
-      MINICONDA: C:\Miniconda
-      PYTHON_ARCH: 32
+    #- PYTHON_VERSION: 3.5
+    #  PYTHON: C:\Miniconda
+    #  MINICONDA: C:\Miniconda
+    #  PYTHON_ARCH: 32
 
-    - PYTHON_VERSION: 3.5
-      PYTHON: C:\Miniconda-x64
-      MINICONDA: C:\Miniconda-x64
-      PYTHON_ARCH: 64
+    #- PYTHON_VERSION: 3.5
+    #  PYTHON: C:\Miniconda-x64
+    #  MINICONDA: C:\Miniconda-x64
+    #  PYTHON_ARCH: 64
 
-    - PYTHON_VERSION: 3.6
-      PYTHON: C:\Miniconda
-      MINICONDA: C:\Miniconda
-      PYTHON_ARCH: 32
+    #- PYTHON_VERSION: 3.6
+    #  PYTHON: C:\Miniconda
+    #  MINICONDA: C:\Miniconda
+    #  PYTHON_ARCH: 32
 
-    - PYTHON_VERSION: 3.6
-      PYTHON: C:\Miniconda-x64
-      MINICONDA: C:\Miniconda-x64
-      PYTHON_ARCH: 64
+    #- PYTHON_VERSION: 3.6
+    #  PYTHON: C:\Miniconda-x64
+    #  MINICONDA: C:\Miniconda-x64
+    #  PYTHON_ARCH: 64
 
-    - PYTHON_VERSION: 3.7
-      PYTHON: C:\Miniconda
-      MINICONDA: C:\Miniconda
-      PYTHON_ARCH: 32
+    #- PYTHON_VERSION: 3.7
+    #  PYTHON: C:\Miniconda
+    #  MINICONDA: C:\Miniconda
+    #  PYTHON_ARCH: 32
 
-    - PYTHON_VERSION: 3.7
-      PYTHON: C:\Miniconda-x64
-      MINICONDA: C:\Miniconda-x64
-      PYTHON_ARCH: 64
+    #- PYTHON_VERSION: 3.7
+    #  PYTHON: C:\Miniconda-x64
+    #  MINICONDA: C:\Miniconda-x64
+    #  PYTHON_ARCH: 64
 
-    - PYTHON_VERSION: 3.8
-      PYTHON: C:\Miniconda
-      MINICONDA: C:\Miniconda
-      PYTHON_ARCH: 32
+    #- PYTHON_VERSION: 3.8
+    #  PYTHON: C:\Miniconda
+    #  MINICONDA: C:\Miniconda
+    #  PYTHON_ARCH: 32
 
-    - PYTHON_VERSION: 3.8
-      PYTHON: C:\Miniconda-x64
-      MINICONDA: C:\Miniconda-x64
-      PYTHON_ARCH: 64
+    #- PYTHON_VERSION: 3.8
+    #  PYTHON: C:\Miniconda-x64
+    #  MINICONDA: C:\Miniconda-x64
+    #  PYTHON_ARCH: 64
 
 install:
   #- if [%PYTHON_VERSION%] GTR [3.4] gendef %PYTHON%\vcruntime140.dll
@@ -62,7 +62,8 @@ install:
   - conda update --yes -q conda
   - conda create --yes -n test_env python=%PYTHON_VERSION%
   - activate test_env
-  - conda install --yes setuptools wheel twine zlib sqlite3
+  - conda install --yes setuptools wheel twine zlib
+  - conda install -c anaconda sqlite
   #- python -m pip install -U pip setuptools wheel twine
   - SET ZLIB_HOME=%CONDA_PREFIX%\Library
 
