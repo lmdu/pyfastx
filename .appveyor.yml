@@ -62,8 +62,8 @@ install:
   - conda update --yes -q conda
   - conda create --yes -n test_env python=%PYTHON_VERSION%
   - activate test_env
-  - conda install --yes setuptools wheel twine zlib
-  - conda install -c anaconda sqlite
+  - conda install --yes setuptools wheel twine zlib sqlite
+  #- conda install -c anaconda sqlite
   #- python -m pip install -U pip setuptools wheel twine
   - SET ZLIB_HOME=%CONDA_PREFIX%\Library
 
