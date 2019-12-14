@@ -12,7 +12,7 @@ from setuptools import setup, Extension
 comp_args = []
 include_dirs = []
 libs = []
-lib_dirs
+lib_dirs = []
 
 #if os.name == 'nt' and '64' in platform.architecture()[0]:
     #link_args.append('-DMS_WIN64')
