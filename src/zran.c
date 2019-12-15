@@ -60,7 +60,7 @@ static double round(double val)
  *
  * #define ZRAN_VERBOSE
  */
-//#define ZRAN_VERBOSE
+#define ZRAN_VERBOSE
 
 
 #ifdef ZRAN_VERBOSE
