@@ -549,8 +549,11 @@ PyObject* pyfastx_fastq_guess_encoding_type(pyfastx_Fastq* self, void* closure) 
 PyObject* pyfastx_fastq_phred(pyfastx_Fastq *self, void* closure) {
 	if (self->phred == 0) {
 		sqlite3_stmt *stmt;
+		const char *sql;
+		
 		pyfastx_fastq_calc_composition(self);
-		const char *sql = "SELECT phred FROM qual LIMIT 1;";
+
+		sql = "SELECT phred FROM qual LIMIT 1;";
 		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 		if (sqlite3_step(stmt) != SQLITE_ROW) {
 			return NULL;
