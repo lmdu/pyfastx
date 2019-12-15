@@ -152,12 +152,15 @@ uint32_t pyfastx_sequence_length(pyfastx_Sequence* self){
 }
 
 uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
+	char *seq;
+	char *subseq;
+
 	if (!PyString_CheckExact(key)) {
 		return 0;
 	}
 
-	char *seq = pyfastx_sequence_get_subseq(self);
-	char *subseq = PyUnicode_AsUTF8(key);
+	seq = pyfastx_sequence_get_subseq(self);
+	subseq = PyUnicode_AsUTF8(key);
 	
 	if(strstr(seq, subseq) != NULL){
 		return 1;
@@ -353,19 +356,16 @@ PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
 	sqlite3_bind_int(stmt, 1, self->id);
 	sqlite3_step(stmt);
 
-	printf("%s\n", "start gc");
-
 	if (self->start == 1 && self->end == self->seq_len && sqlite3_step(stmt) == SQLITE_ROW) {
 		a = sqlite3_column_int(stmt, 0);
 		c = sqlite3_column_int(stmt, 1);
 		g = sqlite3_column_int(stmt, 2);
 		t = sqlite3_column_int(stmt, 3);
 	} else {
-		printf("%s\n", "yes or no");
 		char *seq;
 		uint32_t i;
 		seq = pyfastx_sequence_get_subseq(self);
-		printf("seq len: %d\n", self->seq_len);
+
 		for (i = 0; i < self->seq_len; i++) {
 			switch (seq[i]) {
 				case 65: case 97: ++a; break;
@@ -410,10 +410,12 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	int16_t i;
 	int64_t c;
 	const char *sql = "SELECT * FROM comp WHERE ID=?";
+	PyObject *d;
+
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, self->id);
 
-	PyObject *d = PyDict_New();
+	d = PyDict_New();
 	
 	if (self->start == 1 && self->end == self->seq_len && sqlite3_step(stmt) == SQLITE_ROW) {
 		for (i = 1; i < 27; i++) {

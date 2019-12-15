@@ -9,8 +9,11 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 	char* name = NULL;
 	char* space;
 	int l, j, rlen = 0;
+	const char *sql;
+	kstring_t line = {0, 0, 0};
+	uint64_t line_num = 0;
 
-	const char *sql = " \
+	sql = " \
 		CREATE TABLE read ( \
 			ID INTEGER PRIMARY KEY, --read id \n \
 			name TEXT, --read name \n \
@@ -59,9 +62,6 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 
 	sql = "INSERT INTO read VALUES (?,?,?,?,?);";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
-
-	kstring_t line = {0, 0, 0};
-	uint64_t line_num = 0;
 	
 	Py_BEGIN_ALLOW_THREADS
 
@@ -140,15 +140,15 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 
 void pyfastx_fastq_load_index(pyfastx_Fastq *self) {
 	sqlite3_stmt* stmt;
-	//uint64_t a, c, g, t, n;
-
+	const char* sql;
+	
 	if(sqlite3_open(self->index_file, &self->index_db) != SQLITE_OK){
 		PyErr_SetString(PyExc_ConnectionError, sqlite3_errmsg(self->index_db));
 		return;
 	}
 
 	//calculate attributes
-	const char* sql = "SELECT * FROM meta LIMIT 1;";
+	sql = "SELECT * FROM meta LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		self->read_counts = sqlite3_column_int64(stmt, 0);
@@ -180,6 +180,8 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	static char* keywords[] = {"file_name", "phred", "build_index", "composition", NULL};
 
+	pyfastx_Fastq *obj;
+
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iii", keywords, &file_name, &phred, &build_index, &composition)) {
 		return NULL;
 	}
@@ -190,7 +192,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		return NULL;
 	}
 
-	pyfastx_Fastq *obj = (pyfastx_Fastq *)type->tp_alloc(type, 0);
+	obj = (pyfastx_Fastq *)type->tp_alloc(type, 0);
 	if (!obj) {
 		return NULL;
 	}
@@ -354,13 +356,16 @@ PyObject* pyfastx_fastq_repr(pyfastx_Fastq *self) {
 }
 
 int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
+	sqlite3_stmt *stmt;
+	char *name;
+	const char *sql;
+
 	if (!PyString_CheckExact(key)) {
 		return 0;
 	}
 
-	sqlite3_stmt *stmt;
-	char *name = PyUnicode_AsUTF8(key);
-	const char *sql = "SELECT * FROM read WHERE name=? LIMIT 1;";
+	name = PyUnicode_AsUTF8(key);
+	sql = "SELECT * FROM read WHERE name=? LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, name, -1, NULL);
 
@@ -409,14 +414,14 @@ void pyfastx_fastq_calc_composition(pyfastx_Fastq *self) {
 	uint64_t line_num = 0;
 	int i, j;
 
+	//min and max quality score
+	int minqs = 104, maxqs = 33, phred = 0;
+
 	const char *sql = "SELECT * FROM base LIMIT 1";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		return;
 	}
-
-	//min and max quality score
-	int minqs = 104, maxqs = 33, phred = 0;
 	
 	Py_BEGIN_ALLOW_THREADS
 
@@ -491,10 +496,13 @@ void pyfastx_fastq_calc_composition(pyfastx_Fastq *self) {
 PyObject* pyfastx_fastq_guess_encoding_type(pyfastx_Fastq* self, void* closure) {
 	sqlite3_stmt *stmt;
 	int maxqs, minqs;
+	const char *sql;
+	PyObject* platforms;
+	PyObject* platform;
 
 	pyfastx_fastq_calc_composition(self);
 
-	const char *sql = "SELECT * FROM qual LIMIT 1;";
+	sql = "SELECT * FROM qual LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	if (sqlite3_step(stmt) != SQLITE_ROW) {
 		return NULL;
@@ -503,8 +511,7 @@ PyObject* pyfastx_fastq_guess_encoding_type(pyfastx_Fastq* self, void* closure) 
 	minqs = sqlite3_column_int(stmt, 0);
 	maxqs = sqlite3_column_int(stmt, 1);
 
-	PyObject* platforms = PyList_New(0);
-	PyObject* platform;
+	platforms = PyList_New(0);
 
 	//check fastq platform
 	if (minqs < 33 || maxqs > 104) {
@@ -555,16 +562,17 @@ PyObject* pyfastx_fastq_phred(pyfastx_Fastq *self, void* closure) {
 }
 
 PyObject* pyfastx_fastq_gc_content(pyfastx_Fastq *self, void* closure) {
+	sqlite3_stmt *stmt;
+	int64_t a, c, g, t;
+	const char *sql;
+
 	if (self->gc_content > 0) {
 		return Py_BuildValue("f", self->gc_content);
 	}
 
-	sqlite3_stmt *stmt;
-	int64_t a, c, g, t;
-
 	pyfastx_fastq_calc_composition(self);
 
-	const char *sql = "SELECT * FROM base LIMIT 1";
+	sql = "SELECT * FROM base LIMIT 1";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	
 	if (sqlite3_step(stmt) != SQLITE_ROW) {
@@ -585,10 +593,11 @@ PyObject* pyfastx_fastq_gc_content(pyfastx_Fastq *self, void* closure) {
 PyObject* pyfastx_fastq_composition(pyfastx_Fastq *self, void* closure) {
 	sqlite3_stmt *stmt;
 	int64_t a, c, g, t, n;
+	const char *sql;
 
 	pyfastx_fastq_calc_composition(self);
 	
-	const char *sql = "SELECT * FROM base LIMIT 1";
+	sql = "SELECT * FROM base LIMIT 1";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	
 	if (sqlite3_step(stmt) != SQLITE_ROW) {

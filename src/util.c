@@ -88,10 +88,10 @@ void reverse_complement_seq(char *seq) {
 void reverse_seq(char *seq) {
 	char *p1 = seq;
 	char *p2 = seq + strlen(seq) - 1;
+	int c;
 
 	while (p1 < p2) {
-
-		int c = *p1;
+		c = *p1;
 		*p1++ = *p2;
 		*p2-- = c;
 	}
@@ -279,24 +279,28 @@ int64_t zran_readline(zran_index_t *index, char *linebuf, uint32_t bufsize) {
 
 void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* index_file) {
 	sqlite3_stmt *stmt;
+	char *temp_index;
+	FILE* fd;
+	uint32_t fsize;
+	char *buff;
 
 	zran_build_index(gzip_index, 0, 0);
 
 	//create temp gzip index file
-	char *temp_index = (char *)malloc(strlen(index_file) + 5);
+	temp_index = (char *)malloc(strlen(index_file) + 5);
 	strcpy(temp_index, index_file);
 	strcat(temp_index, ".tmp");
 	
-	FILE* fd = fopen(temp_index, "wb+");
+	fd = fopen(temp_index, "wb+");
 	
 	if(zran_export_index(gzip_index, fd) != ZRAN_EXPORT_OK){
 		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
 	}
 	
-	uint32_t fsize = ftell(fd);
+	fsize = ftell(fd);
 	rewind(fd);
 
-	char *buff = (char *)malloc(fsize + 1);
+	buff = (char *)malloc(fsize + 1);
 
 	if (fread(buff, fsize, 1, fd) != 1) {
 		free(buff);

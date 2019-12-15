@@ -68,11 +68,13 @@ PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
 }
 
 PyObject* pyfastx_read_quali(pyfastx_Read *self, void* closure) {
+    int phred;
+
     if (self->qual == NULL) {
         pyfastx_read_qual(self, NULL);
     }
 
-    int phred = self->phred ? self->phred : 33;
+    phred = self->phred ? self->phred : 33;
 
     if (self->qual != NULL) {
         PyObject *quals = PyList_New(0);

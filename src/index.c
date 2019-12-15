@@ -119,13 +119,15 @@ void pyfastx_create_index(pyfastx_Index *self){
 	//chromosome name
 	char* chrom = NULL;
 
+	const char *sql;
+
 	if (sqlite3_open(self->index_file, &self->index_db) != SQLITE_OK) {
 		PyErr_SetString(PyExc_ConnectionError, sqlite3_errmsg(self->index_db));
 		return;
 	}
 
 	//create index database
-	const char *sql = " \
+	sql = " \
 		CREATE TABLE seq ( \
 			ID INTEGER PRIMARY KEY, --seq identifier\n \
 			chrom TEXT, --seq name\n \

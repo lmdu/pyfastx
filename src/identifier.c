@@ -17,6 +17,7 @@ void pyfastx_identifier_dealloc(pyfastx_Identifier *self){
 
 PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self) {
 	PyObject *tmp;
+	char *sql;
 
 	if (self->filter) {
 		tmp = PyUnicode_FromFormat("SELECT chrom FROM seq WHERE %s ORDER BY %s %s",
@@ -26,7 +27,7 @@ PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self) {
 			self->sort, self->order);
 	}
 
-	char *sql = PyUnicode_AsUTF8(tmp);
+	sql = PyUnicode_AsUTF8(tmp);
 
 	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
 
@@ -35,12 +36,16 @@ PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self) {
 }
 
 PyObject *pyfastx_identifier_next(pyfastx_Identifier *self){
+	int nbytes;
+	char *name;
+
 	if (sqlite3_step(self->stmt) != SQLITE_ROW){
 		sqlite3_reset(self->stmt);
 		return NULL;
 	}
-	int nbytes = sqlite3_column_bytes(self->stmt, 0);
-	char *name = (char *)malloc(nbytes + 1);
+
+	nbytes = sqlite3_column_bytes(self->stmt, 0);
+	name = (char *)malloc(nbytes + 1);
 	memcpy(name, (char *)sqlite3_column_text(self->stmt, 0), nbytes);
 	name[nbytes] = '\0';
 	return Py_BuildValue("s", name);
@@ -55,6 +60,9 @@ PyObject *pyfastx_identifier_repr(pyfastx_Identifier *self){
 }
 
 PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
+	PyObject *tmp;
+	char *sql;
+	
 	if(i < 0){
 		i = i + self->seq_counts;
 	}
@@ -64,8 +72,6 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 		return NULL;
 	}
 
-	PyObject *tmp;
-
 	if (self->filter) {
 		tmp = PyUnicode_FromFormat("%s %s ORDER BY %s %s LIMIT 1 OFFSET %ld",
 			"SELECT chrom FROM seq WHERE", self->filter, self->sort, self->order, i);
@@ -74,7 +80,7 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 			"SELECT chrom FROM seq", self->sort, self->order, i);
 	}
 
-	char *sql = PyUnicode_AsUTF8(tmp);
+	sql = PyUnicode_AsUTF8(tmp);
 	
 	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
 
@@ -92,13 +98,16 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 }
 
 int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
+	char *name;
+	const char *sql;
+
 	if(!PyString_CheckExact(key)){
 		return 0;
 	}
 
-	char *name = PyUnicode_AsUTF8(key);
+	name = PyUnicode_AsUTF8(key);
 
-	const char *sql = "SELECT * FROM seq WHERE chrom=? LIMIT 1;";
+	sql = "SELECT * FROM seq WHERE chrom=? LIMIT 1;";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
 	sqlite3_bind_text(self->stmt, 1, name, -1, NULL);
 	if(sqlite3_step(self->stmt) != SQLITE_ROW){
@@ -145,15 +154,15 @@ PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyOb
 }
 
 PyObject *pyfastx_idnetifier_richcompare(pyfastx_Identifier *self, PyObject *other, int op) {
-	if (!integer_check(other)) {
-		PyErr_SetString(PyExc_ValueError, "the compared item must be an integer");
-		return NULL;
-	}
-
 	char when[100];
 	char *sign;
 	int64_t slen;
 	int flen;
+
+	if (!integer_check(other)) {
+		PyErr_SetString(PyExc_ValueError, "the compared item must be an integer");
+		return NULL;
+	}
 
 	memset(when, '\0', sizeof(when));
 
@@ -185,16 +194,23 @@ PyObject *pyfastx_idnetifier_richcompare(pyfastx_Identifier *self, PyObject *oth
 }
 
 PyObject *pyfastx_identifier_like(pyfastx_Identifier *self, PyObject *tag) {
+	char *name;
+
 	if (!PyString_CheckExact(tag)) {
 		PyErr_SetString(PyExc_ValueError, "the tag after % must be a string");
 		return NULL;
 	}
-	char *name = PyUnicode_AsUTF8(tag);
+	
+	name = PyUnicode_AsUTF8(tag);
 	
 	return PyUnicode_FromFormat("chrom LIKE '%%%s%%'", name);
 }
 
 PyObject *pyfastx_identifier_filter(pyfastx_Identifier *self, PyObject *args) {
+	PyObject *res;
+	PyObject *tmp;
+	char *sql;
+
 	Py_ssize_t c = PyTuple_Size(args);
 
 	if (c == 0) {
@@ -202,7 +218,7 @@ PyObject *pyfastx_identifier_filter(pyfastx_Identifier *self, PyObject *args) {
 		return NULL;
 	}
 
-	PyObject *res = PyUnicode_Join(Py_BuildValue("s", " AND "), args);
+	res = PyUnicode_Join(Py_BuildValue("s", " AND "), args);
 	self->filter = PyUnicode_AsUTF8(res);
 	
 	if (self->temp_filter) {
@@ -210,8 +226,8 @@ PyObject *pyfastx_identifier_filter(pyfastx_Identifier *self, PyObject *args) {
 		self->temp_filter = NULL;
 	}
 
-	PyObject *tmp = PyUnicode_FromFormat("SELECT COUNT(*) FROM seq WHERE %s", self->filter);
-	char *sql = PyUnicode_AsUTF8(tmp);
+	tmp = PyUnicode_FromFormat("SELECT COUNT(*) FROM seq WHERE %s", self->filter);
+	sql = PyUnicode_AsUTF8(tmp);
 
 	sqlite3_prepare_v2(self->index_db, sql, -1, &self->stmt, NULL);
 
