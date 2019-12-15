@@ -180,14 +180,14 @@ PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
 PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	sqlite3_stmt *stmt;
 	int nbytes;
-
+	char *descr;
 	const char *sql = "SELECT descr FROM seq WHERE ID=? LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, self->id);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		nbytes = sqlite3_column_bytes(stmt, 0);
-		char *descr = (char *)malloc(nbytes + 1);
+		descr = (char *)malloc(nbytes + 1);
 		memcpy(descr, (char *)sqlite3_column_text(stmt, 0), nbytes);
 		descr[nbytes] = '\0';
 		return Py_BuildValue("s", descr);
@@ -244,6 +244,8 @@ PyObject *pyfastx_sequence_str(pyfastx_Sequence* self){
 PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 	if (PyIndex_Check(item)) {
 		Py_ssize_t i;
+		char *sub_seq;
+
 		i = PyNumber_AsSsize_t(item, PyExc_IndexError);
 		
 		if (i == -1 && PyErr_Occurred()){
@@ -254,11 +256,13 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			i += self->seq_len;
 		}
 
-		char *sub_seq = pyfastx_sequence_get_subseq(self);
+		sub_seq = pyfastx_sequence_get_subseq(self);
 		return int_to_str(*(sub_seq+i));
 	
 	} else if (PySlice_Check(item)) {
 		Py_ssize_t slice_start, slice_stop, slice_step, slice_len;
+
+		pyfastx_Sequence *seq;
 
 		/*if(PySlice_Unpack(item, &slice_start, &slice_stop, &slice_step) < 0) {
 			return NULL;
@@ -283,7 +287,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		}
 
 		//create a new sequence
-		pyfastx_Sequence *seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);
+		seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);
 		if(!seq){
 			return NULL;
 		}
