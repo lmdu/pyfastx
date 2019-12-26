@@ -1,0 +1,77 @@
+environment:
+  global:
+    TWINE_REPOSITORY: pypi
+    TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
+
+  matrix:
+    #- PYTHON_VERSION: 2.7
+    #  PYTHON: C:\Miniconda
+    #  MINICONDA: C:\Miniconda
+    #  PYTHON_ARCH: 32
+
+    - PYTHON_VERSION: 2.7
+      PYTHON: C:\Miniconda-x64
+      MINICONDA: C:\Miniconda-x64
+      PYTHON_ARCH: 64
+
+    #- PYTHON_VERSION: 3.5
+    #  PYTHON: C:\Miniconda
+    #  MINICONDA: C:\Miniconda
+    #  PYTHON_ARCH: 32
+
+    #- PYTHON_VERSION: 3.5
+    #  PYTHON: C:\Miniconda-x64
+    #  MINICONDA: C:\Miniconda-x64
+    #  PYTHON_ARCH: 64
+
+    #- PYTHON_VERSION: 3.6
+    #  PYTHON: C:\Miniconda
+    #  MINICONDA: C:\Miniconda
+    #  PYTHON_ARCH: 32
+
+    #- PYTHON_VERSION: 3.6
+    #  PYTHON: C:\Miniconda-x64
+    #  MINICONDA: C:\Miniconda-x64
+    #  PYTHON_ARCH: 64
+
+    #- PYTHON_VERSION: 3.7
+    #  PYTHON: C:\Miniconda
+    #  MINICONDA: C:\Miniconda
+    #  PYTHON_ARCH: 32
+
+    #- PYTHON_VERSION: 3.7
+    #  PYTHON: C:\Miniconda-x64
+    #  MINICONDA: C:\Miniconda-x64
+    #  PYTHON_ARCH: 64
+
+    #- PYTHON_VERSION: 3.8
+    #  PYTHON: C:\Miniconda
+    #  MINICONDA: C:\Miniconda
+    #  PYTHON_ARCH: 32
+
+    #- PYTHON_VERSION: 3.8
+    #  PYTHON: C:\Miniconda-x64
+    #  MINICONDA: C:\Miniconda-x64
+    #  PYTHON_ARCH: 64
+
+install:
+  #- if [%PYTHON_VERSION%] GTR [3.4] gendef %PYTHON%\vcruntime140.dll
+  #- if [%PYTHON_VERSION%] GTR [3.4] dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
+  #- if [%PYTHON_VERSION%] GTR [3.4] python ci\fix_compiler_error.py %PYTHON%
+  - SET PATH=%MINICONDA%;%MINICONDA%\Scripts;%PATH%
+  - conda update --yes -q conda
+  - conda create --yes -n test_env python=%PYTHON_VERSION%
+  - activate test_env
+  - conda install --yes setuptools wheel twine zlib sqlite
+  #- conda install -c anaconda sqlite
+  #- python -m pip install -U pip setuptools wheel twine
+  - SET ZLIB_HOME=%CONDA_PREFIX%\Library
+
+build_script:
+  - python setup.py build
+  - pip wheel -v -w wheelhouse .
+  - IF "%APPVEYOR_REPO_TAG%" == "true" (twine upload --skip-existing wheelhouse/*.whl)
+
+artifacts:
+  - path: "wheelhouse\\*.whl"
+    name: Wheels
