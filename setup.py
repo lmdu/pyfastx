@@ -28,7 +28,7 @@ if os.name == 'nt':
 	zlib_home = os.environ.get('ZLIB_HOME')
 	include_dirs.append(os.path.join(zlib_home, 'include'))
 	libs.append('zlib')
-	libs.append('sqlite')
+	libs.append('sqlite3')
 	lib_dirs.append(os.path.join(zlib_home, 'lib'))
 
 	if sys.version_info[0] == 2:
