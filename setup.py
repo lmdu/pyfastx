@@ -23,7 +23,7 @@ lib_dirs = []
     #comp_args.append('-pedantic')
     #comp_args.append('-Wno-unused-function')
 
-'''
+
 if os.name == 'nt':
 	zlib_home = os.environ.get('ZLIB_HOME')
 	include_dirs.append(os.path.join(zlib_home, 'include'))
@@ -34,14 +34,14 @@ if os.name == 'nt':
 	if sys.version_info[0] == 2:
 		include_dirs.append('compat')
 		comp_args.append('-DNO_C99')
-'''
+
 extension = Extension('pyfastx',
     sources = glob.glob('src/*.c'),
     extra_compile_args = comp_args,
     extra_link_args = link_args,
-    #include_dirs = include_dirs,
-    #libraries = libs,
-    #library_dirs = lib_dirs
+    include_dirs = include_dirs,
+    libraries = libs,
+    library_dirs = lib_dirs
     #define_macros = [("_FILE_OFFSET_BITS", 64)]
 )
 
