@@ -6,7 +6,6 @@
 #include "zlib.h"
 #include "zran.h"
 #include "kseq.h"
-#include "pycompat.h"
 
 typedef struct {
 	PyObject_HEAD

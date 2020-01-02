@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 0.6.0 (2020-01-02)
+--------------------------
+
+- Removed support for python2.7 and python3.4
+- Removed python2 compat
+- Fixed FASTA object parameter error
+- Fixed identifier sprintf warning
+- Disable export gzip index when building memory index
+
 Version 0.5.10 (2019-11-20)
 ---------------------------
 

@@ -101,7 +101,7 @@ int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 	char *name;
 	const char *sql;
 
-	if(!PyString_CheckExact(key)){
+	if(!PyUnicode_CheckExact(key)){
 		return 0;
 	}
 
@@ -156,17 +156,17 @@ PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyOb
 PyObject *pyfastx_idnetifier_richcompare(pyfastx_Identifier *self, PyObject *other, int op) {
 	char when[100];
 	char *sign;
-	int64_t slen;
+	uint32_t slen;
 	int flen;
 
-	if (!integer_check(other)) {
+	if (!PyLong_Check(other)) {
 		PyErr_SetString(PyExc_ValueError, "the compared item must be an integer");
 		return NULL;
 	}
 
 	memset(when, '\0', sizeof(when));
 
-	slen = integer_to_long(other);
+	slen = PyLong_AsLong(other);
 	
 	switch (op) {
 		case Py_LT: sign = "<"; break;
@@ -181,11 +181,11 @@ PyObject *pyfastx_idnetifier_richcompare(pyfastx_Identifier *self, PyObject *oth
 	}
 
 	if (self->temp_filter == NULL) {
-		flen = sprintf(when, "slen %s %ld", sign, slen);
+		flen = sprintf(when, "slen %s %d", sign, slen);
 		self->temp_filter = (char *)malloc(flen + 1);
 		strcpy(self->temp_filter, when);
 	} else {
-		flen = sprintf(when, " AND slen %s %ld", sign, slen);
+		flen = sprintf(when, " AND slen %s %d", sign, slen);
 		self->temp_filter = (char *)realloc(self->temp_filter, strlen(self->temp_filter) + flen + 1);
 		strcat(self->temp_filter, when);
 	}
@@ -196,7 +196,7 @@ PyObject *pyfastx_idnetifier_richcompare(pyfastx_Identifier *self, PyObject *oth
 PyObject *pyfastx_identifier_like(pyfastx_Identifier *self, PyObject *tag) {
 	char *name;
 
-	if (!PyString_CheckExact(tag)) {
+	if (!PyUnicode_CheckExact(tag)) {
 		PyErr_SetString(PyExc_ValueError, "the tag after % must be a string");
 		return NULL;
 	}

@@ -155,7 +155,7 @@ uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 	char *seq;
 	char *subseq;
 
-	if (!PyString_CheckExact(key)) {
+	if (!PyUnicode_CheckExact(key)) {
 		return 0;
 	}
 
@@ -257,7 +257,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		}
 
 		sub_seq = pyfastx_sequence_get_subseq(self);
-		return int_to_str(*(sub_seq+i));
+		return Py_BuildValue("C", *(sub_seq+i));
 	
 	} else if (PySlice_Check(item)) {
 		Py_ssize_t slice_start, slice_stop, slice_step, slice_len;
@@ -270,7 +270,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 
 		slice_len = PySlice_AdjustIndices(self->seq_len, &slice_start, &slice_stop, slice_step);*/
 
-		if (pyfastxSlice_GetIndicesEx(item, self->seq_len, &slice_start, &slice_stop, &slice_step, &slice_len) < 0) {
+		if (PySlice_GetIndicesEx(item, self->seq_len, &slice_start, &slice_stop, &slice_step, &slice_len) < 0) {
 			return NULL;
 		}
 
@@ -425,7 +425,7 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 		for (i = 1; i < 27; i++) {
 			c = sqlite3_column_int64(stmt, i);
 			if (c > 0) {
-				PyDict_SetItem(d, int_to_str(i+64), Py_BuildValue("i", c));
+				PyDict_SetItem(d, Py_BuildValue("C", i+64), Py_BuildValue("i", c));
 			}
 		}
 	} else {
@@ -439,7 +439,7 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 		for (i = 0; i < 26; i++) {
 			c = seq_comp[i];
 			if (c > 0) {
-				PyDict_SetItem(d, int_to_str(i+65), Py_BuildValue("i", c));
+				PyDict_SetItem(d, Py_BuildValue("C", i+65), Py_BuildValue("i", c));
 			}
 		}
 	}

@@ -340,7 +340,7 @@ PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
 
 		return pyfastx_fastq_get_read_by_id(self, i+1);
 		
-	} else if (PyString_CheckExact(item)) {
+	} else if (PyUnicode_Check(item)) {
 		char *key = PyUnicode_AsUTF8(item);
 
 		return pyfastx_fastq_get_read_by_name(self, key);
@@ -360,7 +360,7 @@ int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
 	char *name;
 	const char *sql;
 
-	if (!PyString_CheckExact(key)) {
+	if (!PyUnicode_Check(key)) {
 		return 0;
 	}
 

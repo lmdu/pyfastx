@@ -350,7 +350,7 @@ void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* 
 		return;
 	}
 	fclose(fh);
-	//remove(temp_index);
+	remove(temp_index);
 }
 
 //return large string and release memory
@@ -361,7 +361,7 @@ void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* 
 }*/
 
 //integer check and coversion
-int integer_check(PyObject* num) {
+/*int integer_check(PyObject* num) {
 	if (PyInt_Check(num) || PyLong_Check(num)) {
 		return 1;
 	}
@@ -378,4 +378,4 @@ int64_t integer_to_long(PyObject* num) {
 
 	PyErr_SetString(PyExc_ValueError, "the object is not an integer");
 	return 0;
-}
+}*/

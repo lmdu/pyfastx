@@ -44,9 +44,9 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	pyfastx_Fasta *obj;
 
 	//paramters for fasta object construction
-	static char* keywords[] = {"file_name", "uppercase", "build_index", "composition", "memory_index" "key_func", NULL};
+	static char* keywords[] = {"file_name", "uppercase", "build_index", "composition", "memory_index", "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiiO", keywords, &file_name, &uppercase, &build_index, &composition, &memory_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiiiO", keywords, &file_name, &uppercase, &build_index, &composition, &memory_index, &key_func)){
 		return NULL;
 	}
 
@@ -178,15 +178,15 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 
 	seq = pyfastx_index_get_full_seq(self->index, chrom);
 
-	if (integer_check(item)) {
+	if (PyLong_Check(item)) {
 		if (size != 2) {
 			PyErr_SetString(PyExc_ValueError, "list or tuple should include only start and end");
 			return NULL;
 		}
 
-		start = integer_to_long(item);
+		start = PyLong_AsLong(item);
 		item = PyTuple_GetItem(intervals, 1);
-		end = integer_to_long(item);
+		end = PyLong_AsLong(item);
 
 		if (start > end) {
 			PyErr_SetString(PyExc_ValueError, "start position should less than end position");
@@ -210,8 +210,8 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 				item = PyList_AsTuple(item);
 			}
 
-			start = integer_to_long(PyTuple_GetItem(item, 0));
-			end = integer_to_long(PyTuple_GetItem(item, 1));
+			start = PyLong_AsLong(PyTuple_GetItem(item, 0));
+			end = PyLong_AsLong(PyTuple_GetItem(item, 1));
 			seq_len = end - start + 1;
 
 			if (start > end) {
@@ -271,7 +271,7 @@ PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
 
 		return pyfastx_index_get_seq_by_id(self->index, i+1);
 		
-	} else if (PyString_CheckExact(item)) {
+	} else if (PyUnicode_CheckExact(item)) {
 		char *key = PyUnicode_AsUTF8(item);
 
 		return pyfastx_index_get_seq_by_name(self->index, key);
@@ -290,7 +290,7 @@ int pyfastx_fasta_contains(pyfastx_Fasta *self, PyObject *key){
 	sqlite3_stmt *stmt;
 	char *name;
 
-	if (!PyString_CheckExact(key)) {
+	if (!PyUnicode_CheckExact(key)) {
 		return 0;
 	}
 	
@@ -587,7 +587,7 @@ PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
 	for (i = 1; i < 27; i++) {
 		c = sqlite3_column_int64(stmt, i);
 		if (c > 0) {
-			PyDict_SetItem(d, int_to_str(i+64), Py_BuildValue("l", c));
+			PyDict_SetItem(d, Py_BuildValue("C", i+64), Py_BuildValue("l", c));
 		}
 	}
 

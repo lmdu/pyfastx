@@ -5,11 +5,11 @@ You can install pyfastx via the Python Package Index (PyPI) (**recommended**) or
 
 Make sure you have installed both `pip <https://pip.pypa.io/en/stable/installing/>`_ and Python before starting.
 
-Currently, ``pyfastx`` supports Python 2.7, 3.4, 3.5, 3.6, 3.7 and can work on Windows, Linux, MacOS.
+Currently, ``pyfastx`` supports Python 3.5, 3.6, 3.7 and can work on Windows, Linux, MacOS.
 
 .. warning::
 	
-	Python 2.7 will not be maintained past 2020. Python 3.4 has now reached its end-of-life and has been retired
+	Python 2.7 has been retired. Python 3.4 has now reached its end-of-life and has been retired
 
 
 Install from PyPI

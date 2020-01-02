@@ -289,7 +289,11 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 	//create gzip random access index
 	if (self->gzip_format) {
-		pyfastx_build_gzip_index(self->gzip_index, self->index_db, self->index_file);
+		if (strcmp(self->index_file, ":memory:") == 0) {
+			zran_build_index(self->gzip_index, 0, 0);
+		} else {
+			pyfastx_build_gzip_index(self->gzip_index, self->index_db, self->index_file);
+		}
 	}
 
 	Py_END_ALLOW_THREADS

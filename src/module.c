@@ -97,7 +97,7 @@ PyMODINIT_FUNC PyInit_pyfastx() {
 	return pyfastx_module_init();
 }
 #else
-PyMODINIT_FUNC initpyfastx() {
+PyMODINIT_FUNC initpyfastx(void) {
 	pyfastx_module_init();
 }
 #endif

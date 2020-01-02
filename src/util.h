@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include "sqlite3.h"
 #include "zran.h"
-#include "pycompat.h"
 
 uint16_t file_exists(char *file_name);
 void remove_space(char *str);
@@ -21,8 +20,8 @@ uint32_t sum_array(uint32_t arr[], int num);
 //char *int_to_str(int c);
 int is_subset(char *seq1, char *seq2);
 //PyObject* make_large_sequence(char *seq);
-int integer_check(PyObject* num);
-int64_t integer_to_long(PyObject* num);
+//int integer_check(PyObject* num);
+//int64_t integer_to_long(PyObject* num);
 
 //PyObject* clean_seq(PyObject *self, PyObject *args);
 //PyObject* sub_seq(PyObject *self, PyObject *args);

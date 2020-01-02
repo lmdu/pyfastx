@@ -7,7 +7,6 @@
 #include "zran.h"
 #include "index.h"
 #include "sqlite3.h"
-#include "pycompat.h"
 
 //make sequence iterator
 typedef struct {

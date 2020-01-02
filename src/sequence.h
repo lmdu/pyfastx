@@ -3,7 +3,6 @@
 #include "Python.h"
 #include "stdint.h"
 #include "index.h"
-#include "pycompat.h"
 
 //make sequence class
 typedef struct {
