@@ -326,7 +326,7 @@ PyObject *pyfastx_fasta_count(pyfastx_Fasta *self, PyObject *args){
 
 PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 	sqlite3_stmt *stmt;
-	uint16_t p = 50;
+	int p = 50;
 	float half_size;
 	uint64_t temp_size = 0;
 	uint32_t i = 0;
