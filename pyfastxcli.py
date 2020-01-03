@@ -1,12 +1,9 @@
-#!/usr/bin/env python
-# coding: utf-8
-from __future__ import division
-
 import os
 import re
+import sys
 import gzip
 import math
-#import glob
+import random
 import pyfastx
 import argparse
 
@@ -61,14 +58,6 @@ def print_table(table):
 		print(format_row.format(row))
 
 def fastx_info(args):
-	#infiles = []
-	#for pattern in args.fastx:
-	#	if is_glob(pattern):
-	#		infiles.extend(glob.glob(pattern))
-
-	#	else:
-	#		infiles.append(pattern)
-
 	fastx_type = fastx_format_check(args.fastx)
 
 	if fastx_type == 'fasta':
@@ -104,10 +93,10 @@ def fasta_split(args):
 	else:
 		parts_num = args.file_num
 
-	name, suffix = os.path.splitext(os.path.basename(args.fastx))
+	name, suffix1 = os.path.splitext(os.path.basename(args.fastx))
 
-	if suffix.endswith('.gz') and fa.is_gzip:
-		name, _ = os.path.splitext(name)
+	if fa.is_gzip:
+		name, suffix2 = os.path.splitext(name)
 
 	digit = len(str(parts_num))
 	lens = [0] * parts_num
@@ -118,15 +107,15 @@ def fasta_split(args):
 	fhs = []
 
 	for i in range(1, parts_num+1):
-		if args.out_gzip:
-			subfile = "{}.{}.fa.gz".format(name, str(i).zfill(digit))
+		if fa.is_gzip:
+			subfile = "{}.{}{}{}".format(name, str(i).zfill(digit), suffix2, suffix1)
 		else:
-			subfile = "{}.{}.fa".format(name, str(i).zfill(digit))
+			subfile = "{}.{}{}".format(name, str(i).zfill(digit), suffix1)
 
-		if args.out_dir != '.':
-			subfile = os.path.join(args.out_dir, subfile)
+		if args.outdir is not None:
+			subfile = os.path.join(args.outdir, subfile)
 
-		if args.out_gzip:
+		if fa.is_gzip:
 			fh = gzip.open(subfile, 'wt')
 		else:
 			fh = open(subfile, 'w')
@@ -158,10 +147,10 @@ def fastq_split(args):
 		seqs_num = args.seq_count
 		parts_num = math.ceil(len(fq)/seqs_num)
 
-	name, suffix = os.path.splitext(os.path.basename(args.fastx))
+	name, suffix1 = os.path.splitext(os.path.basename(args.fastx))
 
-	if suffix.endswith('.gz') and fq.is_gzip:
-		name, _ = os.path.splitext(name)
+	if fq.is_gzip:
+		name, suffix2 = os.path.splitext(name)
 
 	digit = len(str(parts_num))
 
@@ -173,15 +162,15 @@ def fastq_split(args):
 		if seq_write == 0:
 			file_num += 1
 
-			if args.out_gzip:
-				subfile = "{}.{}.fq.gz".format(name, str(file_num).zfill(digit))
+			if fq.is_gzip:
+				subfile = "{}.{}{}{}".format(name, str(file_num).zfill(digit), suffix2, suffix1)
 			else:
-				subfile = "{}.{}.fq".format(name, str(file_num).zfill(digit))
+				subfile = "{}.{}{}".format(name, str(file_num).zfill(digit), suffix1)
 
-			if args.out_dir != '.':
-				subfile = os.path.join(args.out_dir, subfile)
+			if args.outdir is not None:
+				subfile = os.path.join(args.outdir, subfile)
 
-			if args.out_gzip:
+			if fq.is_gzip:
 				fh = gzip.open(subfile, 'wt')
 			else:
 				fh = open(subfile, 'w')
@@ -205,37 +194,132 @@ def fastx_split(args):
 		fastq_split(args)
 
 def fastx_fq2fa(args):
-	fq = pyfastx.Fastq(args.fastq)
+	fq = pyfastx.Fastq(args.fastx)
 
-	name, suffix = os.path.splitext(os.path.basename(args.fastq))
-
-	if name.endswith('.fa'):
-		name = name.rstrip('.fa')
-
-	if args.out_gzip:
-		fafile = "{}.fa.gz".format(name)
+	if args.outfile:
+		fh = open(args.outfile, 'w')
 	else:
-		fafile = "{}.fa".format(name)
-
-	if args.out_dir != '.':
-		fafile = os.path.join(args.out_dir, fafile)
-
-	if args.out_gzip:
-		fh = gzip.open(fafile, 'wt')
-	else:
-		fh = open(fafile, 'w')
+		fh = sys.stdout
 
 	for read in fq:
 		fh.write(">{}\n{}\n".format(read.name, read.seq))
 
-	fh.close()
+	if args.outfile:
+		fh.close()
+	else:
+		fh.flush()
+
+def fastx_subseq(args):
+	fa = pyfastx.Fasta(args.fastx)
+
+	if args.chr is not None:
+		if args.chr not in fa:
+			raise RuntimeError("no sequence named {} in fasta file".format(args.chr))
+
+		subseq = fa[args.chr]
+
+	else:
+		if args.id <= 0:
+			raise RuntimeError("sequence id must be a integer between 1 and {}".format(len(fa)))
+
+		subseq = fa[args.id]
+
+	if args.region:
+		start, end = args.region.split(':')
+		if start:
+			start = int(start) - 1
+		else:
+			start = 0
+
+		if end:
+			end = int(end)
+		else:
+			end = len(s)
+
+		sys.stdout.write("{}\n".format(subseq[start:end].seq))
+	else:
+		sys.stdout.write("{}\n".format(subseq.seq))
+	
+	sys.stdout.flush()
+
+def fasta_sample(args):
+	fa = pyfastx.Fasta(args.fastx)
+
+	if args.num is not None and args.num > 0:
+		seq_num = args.num
+		if seq_num > len(fa):
+			seq_num = len(fa)
+
+	elif args.prop is not None and 0 < args.prop <= 1:
+		seq_num = round(len(fa)*args.prop)
+		if seq_num == 0:
+			raise RuntimeError("the proportion is too small")
+
+	else:
+		raise RuntimeError("specify a right number for seq number or proportion")
+
+	selected = random.sample(range(1, len(fa)+1), k=seq_num)
+
+	if args.outfile is None:
+		fw = sys.stdout
+	else:
+		fw = open(args.outfile, 'w')
+
+	for idx in selected:
+		s = fa[idx]
+		fw.write(">{}\n{}\n".format(s.name, s.seq))
+
+	if args.outfile is None:
+		fw.flush()
+	else:
+		fw.close()
+
+def fastq_sample(args):
+	fq = pyfastx.Fastq(args.fastx)
+
+	if args.num is not None and args.num > 0:
+		seq_num = args.num
+		if seq_num > len(fq):
+			seq_num = len(fq)
+
+	elif args.num is not None and 0 < args.prop <= 1:
+		seq_num = round(len(fq)*args.prop)
+		if seq_num == 0:
+			raise RuntimeError("the proportion is too small")
+
+	else:
+		raise RuntimeError("specify a right number for seq number or proportion")
+
+	selected = random.sample(range(1, len(fq)+1), k=seq_num)
+
+	if args.outfile is None:
+		fw = sys.stdout
+	else:
+		fw = open(args.outfile, 'w')
+
+	for idx in selected:
+		r = fq[idx]
+		fw.write("@{}\n{}\n+\n{}\n".format(r.name, r.seq, r.qual))
+
+	if args.outfile is None:
+		fw.flush()
+	else:
+		fw.close()
+
+def fastx_sample(args):
+	fastx_type = fastx_format_check(args.fastx)
+
+	if fastx_type == 'fasta':
+		fasta_sample(args)
+
+	elif fastx_type == 'fastq':
+		fastq_sample(args)
 
 def main():
 	parser = argparse.ArgumentParser(
 		prog = 'pyfastx',
 		usage = "pyfastx COMMAND [OPTIONS]",
 		description = "A command line tool for FASTA/Q file manipulation",
-		#epilog = "Contact:\nLianming Du (dulianming@cdu.edu.cn)",
 		formatter_class = argparse.RawDescriptionHelpFormatter
 	)
 
@@ -252,84 +336,116 @@ def main():
 
 	#statistics command
 	parser_info = subparsers.add_parser('info',
-		help = "Get detailed statistics information of FASTA/Q file"
+		help = "show detailed statistics information of FASTA/Q file"
 	)
-
 	parser_info.set_defaults(func=fastx_info)
-
 	parser_info.add_argument('fastx',
-		help = "input fasta or fastq file, gzip compressed support"
+		help = "fasta or fastq file, gzip support"
 	)
 
 	#split command
 	parser_split = subparsers.add_parser('split',
-		help = "Split fasta file into multiple files"
+		help = "split fasta file into multiple files"
 	)
 	parser_split.set_defaults(func=fastx_split)
-
-	group = parser_split.add_mutually_exclusive_group(required=True)
-
-	group.add_argument('-n', '--file_num',
+	split_group = parser_split.add_mutually_exclusive_group(
+		required=True
+	)
+	split_group.add_argument('-n',
 		dest = 'file_num',
 		type = int,
-		default = 0,
-		help = "split a fasta or fastq file into N new files with even size"
+		metavar = 'int',
+		help = "split a fa/q file into N new files with even size"
 	)
-
-	group.add_argument('-c', '--seq_count',
+	split_group.add_argument('-c',
 		dest = 'seq_count',
 		type = int,
-		default = 0,
-		help = "split a fasta or fastq file into multiple files with the same sequence counts"
+		metavar = 'int',
+		help = "split a fa/q file into multiple files with the same sequence counts"
 	)
-
-	parser_split.add_argument('-o', '--out_dir',
-		dest = 'out_dir',
+	parser_split.add_argument('-o', '--outdir',
+		dest = 'outdir',
 		help = "output directory, default is current folder",
-		default = '.'
+		metavar = 'str'
 	)
-
-	parser_split.add_argument('-g', '--gzip_compress',
-		dest = 'out_gzip',
-		action = 'store_true',
-		default = False,
-		help = 'use gzip to compress output files',
-	)
-
 	parser_split.add_argument('fastx',
-		help = 'input fasta or fastq file, gzip compressed support'
+		help = 'fasta or fastq file, gzip support'
 	)
 
 	#convert fastq to fasta command
 	parser_fq2fa = subparsers.add_parser('fq2fa',
 		help = "Convert fastq file to fasta file"
 	)
-
 	parser_fq2fa.set_defaults(func=fastx_fq2fa)
-
-	parser_fq2fa.add_argument('-o', '--out_dir',
-		dest = 'out_dir',
-		help = "output directory, default is current folder",
-		default = '.'
+	parser_fq2fa.add_argument('-o', '--outfile',
+		dest = 'outfile',
+		metavar = 'str',
+		help = "output file, default: output to stdout"
 	)
 
-	parser_fq2fa.add_argument('-g', '--gzip_compress',
-		dest = 'out_gzip',
-		action = 'store_true',
-		default = False,
-		help = 'use gzip to compress output files',
+	parser_fq2fa.add_argument('fastx',
+		help = "input fastq file, gzip support"
 	)
 
-	parser_fq2fa.add_argument('fastq',
-		help = "input fastq file, gzip compressed support"
+	#get subseq from fasta
+	parser_subseq = subparsers.add_parser('subseq',
+		help = "Get subseqence from fasta file by id or name with region"
+	)
+	parser_subseq.set_defaults(func=fastx_subseq)
+
+	subseq_group = parser_subseq.add_mutually_exclusive_group(
+		required = True
+	)
+
+	subseq_group.add_argument('--id',
+		help = "sequence id number in fasta file",
+		type = int,
+		metavar = 'int'
+	)
+	subseq_group.add_argument('--chr',
+		help = "sequence name",
+		metavar = 'str'
+	)
+	parser_subseq.add_argument('-r', '--region',
+		help = "one-based slice region, e.g. 10:20",
+		metavar = 'str'
+	)
+	parser_subseq.add_argument('fastx',
+		help = "input fasta file, gzip support"
+	)
+
+	parser_sample = subparsers.add_parser('sample',
+		help = "randomly sample sequences from fasta or fastq file"
+	)
+	parser_sample.set_defaults(func=fastx_sample)
+	sample_group = parser_sample.add_mutually_exclusive_group(
+		required = True
+	)
+	sample_group.add_argument('-n',
+		dest = 'num',
+		help = "number of sequences to be sampled",
+		type = int,
+		metavar = 'int'
+	)
+	sample_group.add_argument('-p',
+		dest = 'prop',
+		help = "proportion of sequences to be sampled, 0~1",
+		type = float,
+		metavar = 'float'
+	)
+	parser_sample.add_argument('-o', '--outfile',
+		metavar = 'str',
+		help = "output file, default: output to stdout"
+	)
+	parser_sample.add_argument('fastx',
+		help = "fasta or fastq file, gzip support"
 	)
 
 	args = parser.parse_args()
 
-	try:
+	if hasattr(args, 'func'):
 		args.func(args)
-
-	except AttributeError:
+	else:
 		parser.print_help()
 
 if __name__ == '__main__':
