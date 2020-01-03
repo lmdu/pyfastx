@@ -258,7 +258,7 @@ def fasta_sample(args):
 	else:
 		raise RuntimeError("specify a right number for seq number or proportion")
 
-	selected = random.sample(range(1, len(fa)+1), k=seq_num)
+	selected = random.sample(range(len(fa)), k=seq_num)
 
 	if args.outfile is None:
 		fw = sys.stdout
@@ -290,7 +290,7 @@ def fastq_sample(args):
 	else:
 		raise RuntimeError("specify a right number for seq number or proportion")
 
-	selected = random.sample(range(1, len(fq)+1), k=seq_num)
+	selected = random.sample(range(len(fq)), k=seq_num)
 
 	if args.outfile is None:
 		fw = sys.stdout
