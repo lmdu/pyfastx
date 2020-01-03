@@ -57,11 +57,11 @@ script:
       python -m twine upload --skip-existing wheelhouse/*;
     fi
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
-      rm -rf build;
-      rm pyfastx.cpython*;
       export CPPFLAGS=--coverage;
-      python setup.py test;
     fi
+  - rm -rf build;
+  - rm pyfastx.cpython*;
+  - python setup.py test;
 
 after_success:
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
