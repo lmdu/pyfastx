@@ -665,10 +665,8 @@ New in ``pyfastx`` 0.5.0
 
 .. code:: bash
 
-.. code:: bash
-
     $ pyfastx -h
-    
+
     usage: pyfastx COMMAND [OPTIONS]
 
     A command line tool for FASTA/Q file manipulation
