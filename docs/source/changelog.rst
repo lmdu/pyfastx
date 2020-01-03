@@ -1,11 +1,15 @@
 Changelog
 =========
 
-Version 0.6.0 (2020-01-03)
+Version 0.6.1 (2020-01-03)
 --------------------------
 
 - Added sample sequences command line
 - Added get subsequence command line
+
+Version 0.6.0 (2020-01-02)
+--------------------------
+
 - Fixed FASTA object parameter error
 - Fixed identifier sprintf warning
 - Fixed fasta description end \r retained
