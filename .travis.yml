@@ -4,7 +4,7 @@ env:
   global:
     - CIBW_SKIP="cp27-*"
     #- CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel sqlite-devel"
-    - CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel"
+    - CIBW_BEFORE_BUILD_LINUX=" wget http://zlib.net/zlib-1.2.11.tar.gz;tar xzf zlib-1.2.11.tar.gz;cd zlib-1.2.11;./configure;make;sudo make install;"
     - CIBW_BEFORE_BUILD_MACOS="brew install zlib"
     - PIP=pip3
     - TWINE_REPOSITORY=pypi
