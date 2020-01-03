@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.6.2 (2020-01-04)
+--------------------------
+
+- Fixed sample sequence index error
+- Fixed ci deploy error
+
 Version 0.6.1 (2020-01-03)
 --------------------------
 
