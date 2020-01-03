@@ -1,13 +1,15 @@
 Changelog
 =========
 
-Version 0.6.0 (2020-01-02)
+Version 0.6.0 (2020-01-03)
 --------------------------
 
 - Removed support for python2.7 and python3.4
 - Removed python2 compat
 - Fixed FASTA object parameter error
 - Fixed identifier sprintf warning
+- Fixed fasta description end \r retained
+- Fixed error byte length when slice sequence 
 - Disable export gzip index when building memory index
 
 Version 0.5.10 (2019-11-20)

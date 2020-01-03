@@ -306,9 +306,20 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		seq->index = self->index;
 
 		if (self->normal) {
-			int32_t line_num = (slice_start + 1)/(self->line_len - self->end_len);
-			seq->offset = self->offset + slice_start + self->end_len*line_num;
-			seq->byte_len = seq->seq_len + seq->seq_len/self->line_len*self->end_len;
+			//number of the lines before slice start
+			int before_sline = slice_start/(self->line_len - self->end_len);
+
+			//number of the lines before slice stop
+			int before_eline = (slice_stop + 1)/(self->line_len - self->end_len);
+
+			//number of the lines crossed by sliced sequence
+			int cross_line = before_eline - before_sline;
+
+			//int32_t line_num = (slice_start + 1)/(self->line_len - self->end_len);
+			//seq->offset = self->offset + slice_start + self->end_len*line_num;
+			//seq->byte_len = seq->seq_len + seq->seq_len/self->line_len*self->end_len;
+			seq->offset = self->offset + slice_start + self->end_len*before_sline;
+			seq->byte_len = seq->seq_len + cross_line*self->end_len;
 		}
 
 		Py_INCREF(seq);

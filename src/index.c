@@ -225,7 +225,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			seq_normal = 1;
 
 			//get line end length \r\n or \n
-			if (line.s[line.l-1] == 10) {
+			if (line.s[line.l-1] == '\r') {
 				line_end = 2;
 			}
 

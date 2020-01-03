@@ -281,26 +281,28 @@ class FastaTest(unittest.TestCase):
 
 	def test_seq_slice(self):
 		idx = self.get_random_index()
-		expect = self.faidx[idx]
+		expect = str(self.faidx[idx])
 		result = self.fastx[idx]
 		flatseq = self.fasta[idx]
 
 		#test gzip subseq
-		self.assertEqual(expect[5:10].seq, result[5:10].seq)
+		self.assertEqual(expect[5:10], result[5:10].seq)
 		
 		#test flat subseq
-		self.assertEqual(expect[5:10].seq, flatseq[5:10].seq)
+		self.assertEqual(expect[5:10], flatseq[5:10].seq)
 
-		expect = expect[20:].seq
-		result = result[20:].seq
-		if len(expect) > len(result):
-			expect = expect[0:-1]
-		
-		self.assertEqual(expect, result)
+
+		self.assertEqual(expect[20:], result[20:].seq)
+
+		#test two level slice
+		self.assertEqual(expect[10:100][:20], result[10:100][:20].seq)
 
 		#test sequence index
-		self.assertEqual(str(expect)[0], result[0])
-		self.assertEqual(str(expect)[-1], result[-1])
+		pos = random.randint(0, len(expect) - 1)
+		self.assertEqual(expect[pos], result[pos])
+
+		pos = random.randint(1, len(expect)) * -1
+		self.assertEqual(expect[pos], result[pos])
 
 		del flatseq
 
