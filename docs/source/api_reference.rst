@@ -27,7 +27,7 @@ pyfastx.version
 pyfastx.Fasta
 -------------
 
-.. py:class:: pyfastx.Fasta(file_name, uppercase=True, build_index=True, composition=False, memory_index=False, key_func=None)
+.. py:class:: pyfastx.Fasta(file_name, uppercase=True, build_index=True, full_index=False, memory_index=False, key_func=None)
 
 	Read and parse fasta files. Fasta can be used as dict or list, you can use index or sequence name to get a sequence object, e.g. ``fasta[0]``, ``fasta['seq1']``
 
@@ -37,7 +37,7 @@ pyfastx.Fasta
 
 	:param bool build_index: build index for random access to FASTA sequence, default: ``True``
 
-	:param bool composition: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
+	:param bool full_index: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
 
 	:param bool memory_index: if memory_index is True, the fasta index will be kept in memory and do not generate a index file, default: ``False``
 
@@ -201,21 +201,27 @@ pyfastx.Sequence
 
 		nucleotide composition of sequence, a dict contains counts of A, T, G, C and N (unkown nucleotide base)
 
+	.. py:attribute:: raw
+
+		get the raw string (with header line and sequence lines) of sequence as it appeared in file
+
+		New in ``pyfastx`` 0.6.3
+
 	.. py:attribute:: seq
 
-		get the raw string of sequence in sense strand
+		get the string of sequence in sense strand
 
 	.. py:attribute:: reverse
 
-		get the raw string of reversed sequence
+		get the string of reversed sequence
 
 	.. py:attribute:: complement
 
-		get the raw string of complement sequence
+		get the string of complement sequence
 
 	.. py:attribute:: antisense
 
-		get the raw string of sequence in antisense strand, corresponding to reversed and complement sequence
+		get the string of sequence in antisense strand, corresponding to reversed and complement sequence
 
 	.. py:method:: search(subseq, strand='+')
 
@@ -298,6 +304,16 @@ New in ``pyfastx`` 0.4.0
 	.. py:attribute:: name
 
 		read name excluding '@'
+
+	.. py:attribute:: description
+
+		get the full header line of read
+
+	.. py:attribute:: raw
+
+		get the raw string (with header, sequence, comment and quality lines) of read as it appeared in file
+
+		New in ``pyfastx`` 0.6.3
 
 	.. py:attribute:: seq
 

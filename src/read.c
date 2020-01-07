@@ -27,7 +27,31 @@ int pyfastx_read_length(pyfastx_Read *self) {
 }
 
 PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
-    return NULL;
+    int64_t new_offset;
+    int64_t new_bytelen;
+    char *buff;
+
+    new_offset = self->seq_offset - self->desc_len - 1;
+    new_bytelen = self->qual_offset + self->read_len - new_offset + 1;
+
+    buff = (char *)malloc(new_bytelen + 2);
+
+    if (self->gzip_format) {
+        zran_seek(self->gzip_index, new_offset, SEEK_SET, NULL);
+        zran_read(self->gzip_index, buff, new_bytelen);
+    } else {
+        gzseek(self->gzfd, new_offset, SEEK_SET);
+        gzread(self->gzfd, buff, new_bytelen);
+    }
+
+    if (buff[new_bytelen-1] == '\r') {
+        buff[new_bytelen] = '\n';
+        buff[new_bytelen+1] = '\0';
+    } else {
+        buff[new_bytelen] = '\0';
+    }
+
+    return Py_BuildValue("s", buff);
 }
 
 PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
@@ -49,6 +73,30 @@ PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
     }
 
     Py_RETURN_NONE;
+}
+
+PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
+    int64_t new_offset;
+    char *buff;
+    
+    new_offset = self->seq_offset - self->desc_len - 1;
+    buff = (char *)malloc(self->desc_len + 1);
+
+    if (self->gzip_format) {
+        zran_seek(self->gzip_index, new_offset, SEEK_SET, NULL);
+        zran_read(self->gzip_index, buff, self->desc_len);
+    } else {
+        gzseek(self->gzfd, new_offset, SEEK_SET);
+        gzread(self->gzfd, buff, self->desc_len);
+    }
+
+    if (buff[self->desc_len-1] == '\r') {
+        buff[self->desc_len-1] = '\0';
+    } else {
+        buff[self->desc_len] = '\0';
+    }
+
+    return Py_BuildValue("s", buff);
 }
 
 PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
@@ -108,6 +156,7 @@ static PyGetSetDef pyfastx_read_getsets[] = {
     {"seq", (getter)pyfastx_read_seq, NULL, NULL, NULL},
     {"qual", (getter)pyfastx_read_qual, NULL, NULL, NULL},
     {"quali", (getter)pyfastx_read_quali, NULL, NULL, NULL},
+    {"description", (getter)pyfastx_read_description, NULL, NULL, NULL},
     {NULL}
 };
 

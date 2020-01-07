@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.6.3 (2020-01-x)
+--------------------------
+
+- Added .raw attribute to sequence object to get seq raw string
+- Added .raw attribute to read object to get read raw string
+- Added .description to read object to get full header line
+- Changed FASTA class parameter composition to full_index
+
 Version 0.6.2 (2020-01-04)
 --------------------------
 

@@ -36,7 +36,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	int memory_index = 0;
 
 	//calculate the composition of sequence
-	int composition = 0;
+	int full_index = 0;
 
 	//key function for seperating name
 	PyObject *key_func = Py_None;
@@ -44,9 +44,9 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	pyfastx_Fasta *obj;
 
 	//paramters for fasta object construction
-	static char* keywords[] = {"file_name", "uppercase", "build_index", "composition", "memory_index", "key_func", NULL};
+	static char* keywords[] = {"file_name", "uppercase", "build_index", "full_index", "memory_index", "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiiiO", keywords, &file_name, &uppercase, &build_index, &composition, &memory_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiiiO", keywords, &file_name, &uppercase, &build_index, &full_index, &memory_index, &key_func)){
 		return NULL;
 	}
 
@@ -81,7 +81,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		pyfastx_build_index(obj->index);
 		pyfastx_calc_fasta_attrs(obj);
 
-		if (composition) {
+		if (full_index) {
 			pyfastx_fasta_calc_composition(obj);
 		}
 	}

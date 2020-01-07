@@ -9,7 +9,7 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 	char* name = NULL;
 	char* space;
 	int l, j, rlen = 0;
-	int dlen;
+	int dlen = 0;
 	const char *sql;
 	kstring_t line = {0, 0, 0};
 	uint64_t line_num = 0;
@@ -62,7 +62,7 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 		return;
 	}
 
-	sql = "INSERT INTO read VALUES (?,?,?,?,?);";
+	sql = "INSERT INTO read VALUES (?,?,?,?,?,?);";
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	
 	Py_BEGIN_ALLOW_THREADS
@@ -283,8 +283,8 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 	read->name = (char *)malloc(nbytes + 1);
 	memcpy(read->name, (char *)sqlite3_column_text(stmt, 1), nbytes);
 	read->name[nbytes] = '\0';
-	read->read_len = sqlite3_column_int(stmt, 2);
-	read->desc_len = sqlite3_column_int(stmt, 3);
+	read->desc_len = sqlite3_column_int(stmt, 2);
+	read->read_len = sqlite3_column_int(stmt, 3);
 	read->seq_offset = sqlite3_column_int64(stmt, 4);
 	read->qual_offset = sqlite3_column_int64(stmt, 5);
 	read->gzfd = self->gzfd;
