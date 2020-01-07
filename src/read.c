@@ -26,6 +26,10 @@ int pyfastx_read_length(pyfastx_Read *self) {
     return self->read_len;
 }
 
+PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
+    return NULL;
+}
+
 PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
     if (self->seq == NULL) {
         self->seq = (char *)malloc(self->read_len + 1);
@@ -100,6 +104,7 @@ PyObject* pyfastx_read_str(pyfastx_Read *self) {
 }
 
 static PyGetSetDef pyfastx_read_getsets[] = {
+    {"raw", (getter)pyfastx_read_raw, NULL, NULL, NULL},
     {"seq", (getter)pyfastx_read_seq, NULL, NULL, NULL},
     {"qual", (getter)pyfastx_read_qual, NULL, NULL, NULL},
     {"quali", (getter)pyfastx_read_quali, NULL, NULL, NULL},

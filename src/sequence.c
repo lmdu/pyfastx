@@ -205,6 +205,49 @@ char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
 	return seq;
 }
 
+PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
+	sqlite3_stmt *stmt;
+	int nbytes;
+	int64_t new_offset;
+	int64_t new_bytelen;
+	char *buff;
+
+	const char *sql = "SELECT descr FROM seq WHERE ID=? LIMIT 1";
+	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+	sqlite3_bind_int(stmt, 1, self->id);
+
+	if (sqlite3_step(stmt) == SQLITE_ROW) {
+		nbytes = sqlite3_column_bytes(stmt, 0);
+	} else {
+		PyErr_SetString(PyExc_RuntimeError, "get sequence description error");
+		return NULL;
+	}
+
+	new_offset = self->offset - nbytes - self->end_len - 1;
+	new_bytelen = self->byte_len + nbytes + self->end_len + 1;
+
+	if (self->parent_len == self->end && self->start == 1) {
+		buff = (char *)malloc(new_bytelen + 1);
+
+		if (self->index->gzip_format) {
+			zran_seek(self->index->gzip_index, new_offset, SEEK_SET, NULL);
+			zran_read(self->index->gzip_index, buff, new_bytelen);
+		} else {
+			fseek(self->index->fd, new_offset, SEEK_SET);
+			if (fread(buff, new_bytelen, 1, self->index->fd) != 1) {
+				PyErr_SetString(PyExc_RuntimeError, "reading raw sequence error");
+				return NULL;
+			}
+		}
+
+		buff[new_bytelen] = '\0';
+		return Py_BuildValue("s", buff);
+	} else {
+		buff = pyfastx_sequence_get_subseq(self);
+		return PyUnicode_FromFormat(">%s:%ld-%ld\n%s\n", self->name, self->start, self->end, buff);
+	}
+}
+
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
 	char *seq = pyfastx_sequence_get_subseq(self);
 	return Py_BuildValue("s", seq);
@@ -484,6 +527,7 @@ static PyMethodDef pyfastx_sequence_methods[] = {
 
 static PyGetSetDef pyfastx_sequence_getsets[] = {
 	{"name", (getter)pyfastx_sequence_get_name, NULL, NULL, NULL},
+	{"raw", (getter)pyfastx_sequence_raw, NULL, NULL, NULL},
 	{"seq", (getter)pyfastx_sequence_seq, NULL, NULL, NULL},
 	{"reverse", (getter)pyfastx_sequence_reverse, NULL, NULL, NULL},
 	{"complement", (getter)pyfastx_sequence_complement, NULL, NULL, NULL},

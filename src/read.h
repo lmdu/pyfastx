@@ -16,6 +16,8 @@ typedef struct {
 
 	int read_len;
 
+	int desc_len;
+
 	//seq start offset
 	int64_t seq_offset;
 

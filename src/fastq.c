@@ -9,6 +9,7 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 	char* name = NULL;
 	char* space;
 	int l, j, rlen = 0;
+	int dlen;
 	const char *sql;
 	kstring_t line = {0, 0, 0};
 	uint64_t line_num = 0;
@@ -17,6 +18,7 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 		CREATE TABLE read ( \
 			ID INTEGER PRIMARY KEY, --read id \n \
 			name TEXT, --read name \n \
+			dlen INTEGER, --description length \n \
 			rlen INTEGER, --read length \n \
 			soff INTEGER, --read seq offset \n \
 			qoff INTEGER --read qual offset \n \
@@ -79,6 +81,8 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 				name = (char *)malloc(line.l);
 				memcpy(name, line.s+1, line.l);
 
+				dlen = line.l;
+
 				if ((space = strchr(name, ' ')) != NULL) {
 					*space = '\0';
 				}
@@ -106,9 +110,10 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 				//write to sqlite3
 				sqlite3_bind_null(stmt, 1);
 				sqlite3_bind_text(stmt, 2, name, -1, NULL);
-				sqlite3_bind_int(stmt, 3, rlen);
-				sqlite3_bind_int64(stmt, 4, soff);
-				sqlite3_bind_int64(stmt, 5, qoff);
+				sqlite3_bind_int(stmt, 3, dlen);
+				sqlite3_bind_int(stmt, 4, rlen);
+				sqlite3_bind_int64(stmt, 5, soff);
+				sqlite3_bind_int64(stmt, 6, qoff);
 				sqlite3_step(stmt);
 				sqlite3_reset(stmt);
 				break;
@@ -279,8 +284,9 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 	memcpy(read->name, (char *)sqlite3_column_text(stmt, 1), nbytes);
 	read->name[nbytes] = '\0';
 	read->read_len = sqlite3_column_int(stmt, 2);
-	read->seq_offset = sqlite3_column_int64(stmt, 3);
-	read->qual_offset = sqlite3_column_int64(stmt, 4);
+	read->desc_len = sqlite3_column_int(stmt, 3);
+	read->seq_offset = sqlite3_column_int64(stmt, 4);
+	read->qual_offset = sqlite3_column_int64(stmt, 5);
 	read->gzfd = self->gzfd;
 	read->gzip_index = self->gzip_index;
 	read->gzip_format = self->gzip_format;
