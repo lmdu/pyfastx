@@ -6,8 +6,22 @@
 #include "sequence.h"
 #include "identifier.h"
 #include "version.h"
+#include "sqlite3.h"
+#include "zlib.h"
 
-PyObject *pyfastx_version(PyObject *self){
+PyObject *pyfastx_version(PyObject *self, PyObject *args, PyObject *kwargs)	{
+	int debug = 0;
+
+	static char* keywords[] = {"debug", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i", keywords, &debug)) {
+		return NULL;
+	}
+
+	if (debug) {
+		return PyUnicode_FromFormat("pyfastx: %s; zlib: %s; sqlite: %s; zran: 0.8.10", PYFASTX_VERSION, ZLIB_VERSION, SQLITE_VERSION);
+	}
+
 	return Py_BuildValue("s", PYFASTX_VERSION);
 }
 
@@ -29,7 +43,7 @@ static PyMethodDef module_methods[] = {
 	//{"test", (PyCFunction)pyfastx_test, METH_VARARGS | METH_KEYWORDS, NULL},
 	//{"clean_seq", clean_seq, METH_VARARGS, NULL},
 	//{"sub_seq", sub_seq, METH_VARARGS, NULL},
-	{"version", (PyCFunction)pyfastx_version, METH_NOARGS, NULL},
+	{"version", (PyCFunction)pyfastx_version, METH_VARARGS | METH_KEYWORDS, NULL},
 	{"gzip_check", (PyCFunction)pyfastx_gzip_check, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL}
 };

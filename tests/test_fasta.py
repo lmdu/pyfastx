@@ -45,6 +45,8 @@ class FastaTest(unittest.TestCase):
 			version = fh.read().split()[2].strip('"')
 			self.assertEqual(version, pyfastx.version())
 
+		print(pyfastx.version(debug=True))
+
 	def test_fasta(self):
 		#fasta format
 		self.assertEqual(self.fastx.type, 'DNA')
