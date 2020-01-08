@@ -27,6 +27,7 @@ before_install:
   - $PIP install pyfaidx
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
       sqlite3 --version;
+    fi
       #wget https://www.sqlite.org/2019/sqlite-autoconf-3300100.tar.gz;
       #tar xzf sqlite-autoconf-3300100.tar.gz;
       #cd sqlite-autoconf-3300100;
@@ -42,7 +43,7 @@ before_install:
       #sudo make install;
       #cd ..;
       #export LD_LIBRARY_PATH="/usr/local/lib";
-    fi
+    #fi
   #- echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 install:
