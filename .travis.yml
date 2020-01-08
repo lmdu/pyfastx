@@ -17,7 +17,7 @@ matrix:
       services:
         - docker
     - os: osx
-      language: python
+      language: generic
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
@@ -26,8 +26,8 @@ before_install:
   - $PIP install cpp-coveralls
   - $PIP install pyfaidx
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
-      yum remove -y sqlite3;
-      yum remove -y zlib;
+      sudo yum remove -y sqlite3;
+      sudo yum remove -y zlib;
       wget https://www.sqlite.org/2019/sqlite-autoconf-3300100.tar.gz;
       tar xzf sqlite-autoconf-3300100.tar.gz;
       cd sqlite-autoconf-3300100;
