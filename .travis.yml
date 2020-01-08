@@ -42,7 +42,7 @@ before_install:
       cd ..;
       export LD_LIBRARY_PATH="/usr/local/lib";
     fi
-  - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+  #- echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 install:
   - $PIP install -U setuptools
@@ -77,4 +77,4 @@ addons:
     notification_email: adullb@qq.com
     build_command_prepend: "rm -rf build"
     build_command: "python3 setup.py build_ext"
-    branch_pattern: master
+    branch_pattern: coverity_scan
