@@ -4,7 +4,6 @@ import random
 import pyfastx
 import pyfaidx
 import unittest
-import statistics
 
 gzip_fastq = 'tests/data/test.fq.gz'
 flat_fastq = 'tests/data/test.fq'

@@ -4,7 +4,6 @@ import random
 import pyfastx
 import pyfaidx
 import unittest
-import statistics
 
 gzip_fasta = 'tests/data/test.fa.gz'
 flat_fasta = 'tests/data/test.fa'
@@ -123,12 +122,14 @@ class FastaTest(unittest.TestCase):
 		self.assertEqual(self.fastx.nl(50), (n50, l50))
 
 		#test mean length
-		expect = round(statistics.mean(lens), 3)
+		expect = round(sum(lens)/len(lens), 3)
 		result = round(self.fastx.mean, 3)
 		self.assertEqual(expect, result)
 
 		#test median length
-		expect = statistics.median(lens)
+		lens = sorted(lens)
+		expect = lens[105]
+
 		result = self.fastx.median
 		self.assertEqual(expect, result)
 
