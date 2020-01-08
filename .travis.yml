@@ -25,25 +25,6 @@ before_install:
     fi
   - $PIP install cpp-coveralls
   - $PIP install pyfaidx
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
-      sqlite3 --version;
-      wget https://www.sqlite.org/2019/sqlite-autoconf-3300100.tar.gz;
-      tar xzf sqlite-autoconf-3300100.tar.gz;
-      cd sqlite-autoconf-3300100;
-      ./configure;
-      make;
-      sudo make install;
-      cd ..;
-      wget http://zlib.net/zlib-1.2.11.tar.gz;
-      tar xzf zlib-1.2.11.tar.gz;
-      cd zlib-1.2.11;
-      ./configure;
-      make;
-      sudo make install;
-      cd ..;
-    fi
-      #export LD_LIBRARY_PATH="/usr/local/lib";
-    #fi
   #- echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 install:
