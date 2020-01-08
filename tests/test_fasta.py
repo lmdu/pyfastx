@@ -140,40 +140,46 @@ class FastaTest(unittest.TestCase):
 		result = self.fastx.count(200)
 		self.assertEqual(expect, result)
 
-	def test_keys_sort(self):
-		expect = list(self.faidx.keys())
-		result = list(self.fastx.keys())
+	def test_key_identifier(self):
+		fikeys = list(self.faidx.keys())
+		fxkeys = list(self.fastx.keys())
 
-		self.assertEqual(sorted(expect), sorted(result))
+		self.assertEqual(sorted(fikeys), sorted(fxkeys))
 
 		#id counts
-		ids = self.fastx.keys()
-		self.assertEqual(len(ids), len(expect))
+		self.assertEqual(len(fikeys), len(fxkeys))
 
+		idx = self.get_random_index()
 		#get id from identifier class
-		self.assertEqual(ids[0], expect[0])
-		self.assertEqual(ids[-1], expect[-1])
+		self.assertEqual(fikeys[idx], fxkeys[idx])
+
+		#negative index
+		self.assertEqual(fikeys[len(fikeys)-idx], fxkeys[len(fikeys)-idx])
 
 		#check contains
-		idx = self.get_random_index()
-		self.assertTrue(self.faidx[idx].name in ids)
+		self.assertTrue(self.faidx[idx].name in fxkeys)
 
+	def test_keys_sort(self):
 		#sort by id
+		keys = self.fastx.keys()
+
 		expect = [seq.name for seq in self.faidx]
 		expect.reverse()
-		result = [name for name in self.fastx.keys().sort('id', reverse=True)]
+		result = [name for name in keys.sort('id', reverse=True)]
 		self.assertEqual(expect, result)
 
 		#sort by name
 		expect = sorted([seq.name for seq in self.faidx])
-		result = [name for name in self.fastx.keys().sort('name')]
+		result = [name for name in keys.sort('name')]
 		self.assertEqual(expect, result)
 
 		#sort by length
 		lens = [(seq.name, len(seq)) for seq in self.faidx]
 		expect = [it[0] for it in sorted(lens, key=lambda x: x[1])]
-		result = [name for name in self.fastx.keys().sort('length')]
+		result = [name for name in keys.sort('length')]
 		self.assertEqual(expect, result)
+
+		keys.reset()
 
 	def test_keys_filter(self):
 		ids = self.fastx.keys()
@@ -197,6 +203,8 @@ class FastaTest(unittest.TestCase):
 		expect = list(ids.filter(ids % 'JZ8226', ids>=300).sort('name', reverse=True))
 		result = [seq.name for seq in self.faidx if seq.name.startswith('JZ8226') and len(seq) >= 300]
 		self.assertEqual(sorted(result, reverse=True), expect)
+
+		ids.reset()
 
 	def test_seq_by_index(self):
 		#test get seq by index

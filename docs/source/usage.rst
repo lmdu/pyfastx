@@ -23,7 +23,7 @@ You can also iterate sequence object from FASTA object like this:
 	>>> 	print(seq.description)
 
 .. note::
-	interation with ``build_index=True`` return sequence object which allows you to access attribution of sequence. New in pyfastx 0.6.3.
+	iteration with ``build_index=True`` return sequence object which allows you to access attribution of sequence. New in pyfastx 0.6.3.
 
 Read flat or gzipped FASTA file and build index, support for random access to FASTA.
 
@@ -387,7 +387,7 @@ You can also iterate read object from FASTQ object like this:
 	>>> 	print(read.quali)
 
 .. note::
-	interation with ``build_index=True`` return read object which allows you to access attribution of read. New in pyfastx 0.6.3.
+	iteration with ``build_index=True`` return read object which allows you to access attribution of read. New in pyfastx 0.6.3.
 
 Read plain or gzipped file and build index, support for random access to reads from FASTQ.
 
