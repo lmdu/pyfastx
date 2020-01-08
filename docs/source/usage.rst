@@ -4,7 +4,22 @@ FASTA
 Read FASTA file
 ---------------
 
-The fastest way to parse flat or gzipped FASTA file without building index.
+Read plain or gzipped FASTA file and build index, support for random access to FASTA.
+
+.. code:: python
+
+	>>> import pyfastx
+	>>> fa = pyfastx.Fasta('test/data/test.fa.gz')
+	>>> fa
+	<Fasta> test/data/test.fa.gz contains 211 seqs
+
+.. note::
+	Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file. The index file can be reused to save time when you read seqeunces from FASTA file next time.
+
+FASTA records iteration
+-----------------------
+
+The fastest way to iterate plain or gzipped FASTA file without building index, the iteration will return a tuple contains name and sequence.
 
 .. code:: python
 
@@ -22,20 +37,7 @@ You can also iterate sequence object from FASTA object like this:
 	>>> 	print(seq.seq)
 	>>> 	print(seq.description)
 
-.. note::
-	iteration with ``build_index=True`` return sequence object which allows you to access attribution of sequence. New in pyfastx 0.6.3.
-
-Read flat or gzipped FASTA file and build index, support for random access to FASTA.
-
-.. code:: python
-
-	>>> import pyfastx
-	>>> fa = pyfastx.Fasta('test/data/test.fa.gz')
-	>>> fa
-	<Fasta> test/data/test.fa.gz contains 211 seqs
-
-.. note::
-	Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file.
+Iteration with ``build_index=True`` (default) return sequence object which allows you to access attributions of sequence. New in pyfastx 0.6.3.
 
 Get FASTA information
 ---------------------
@@ -365,7 +367,19 @@ FASTQ
 Read FASTQ file
 ---------------
 
-The fastest way to parse plain or gzipped FASTQ file without building index.
+Read plain or gzipped file and build index, support for random access to reads from FASTQ.
+
+.. code:: python
+
+	>>> import pyfastx
+	>>> fq = pyfastx.Fastq('tests/data/test.fq.gz')
+	>>> fq
+	<Fastq> tests/data/test.fq.gz contains 100 reads
+
+FASTQ records iteration
+-----------------------
+
+The fastest way to parse plain or gzipped FASTQ file without building index, the iteration will return a tuple contains read name, seq and quality.
 
 .. code:: python
 
@@ -386,17 +400,7 @@ You can also iterate read object from FASTQ object like this:
 	>>> 	print(read.qual)
 	>>> 	print(read.quali)
 
-.. note::
-	iteration with ``build_index=True`` return read object which allows you to access attribution of read. New in pyfastx 0.6.3.
-
-Read plain or gzipped file and build index, support for random access to reads from FASTQ.
-
-.. code:: python
-
-	>>> import pyfastx
-	>>> fq = pyfastx.Fastq('tests/data/test.fq.gz')
-	>>> fq
-	<Fastq> tests/data/test.fq.gz contains 100 reads
+Iteration with ``build_index=True`` (default) return read object which allows you to access attribution of read. New in pyfastx 0.6.3.
 
 Get FASTQ information
 ---------------------
