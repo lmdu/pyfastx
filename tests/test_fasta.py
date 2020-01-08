@@ -143,21 +143,22 @@ class FastaTest(unittest.TestCase):
 	def test_key_identifier(self):
 		fikeys = list(self.faidx.keys())
 		fxkeys = list(self.fastx.keys())
+		keyobj = self.fastx.keys()
 
 		self.assertEqual(sorted(fikeys), sorted(fxkeys))
 
 		#id counts
-		self.assertEqual(len(fikeys), len(fxkeys))
+		self.assertEqual(len(fikeys), len(keyobj))
 
 		idx = self.get_random_index()
 		#get id from identifier class
-		self.assertEqual(fikeys[idx], fxkeys[idx])
+		self.assertEqual(fikeys[idx], keyobj[idx])
 
 		#negative index
-		self.assertEqual(fikeys[len(fikeys)-idx], fxkeys[len(fikeys)-idx])
+		self.assertEqual(fikeys[len(fikeys)-idx], keyobj[len(fikeys)-idx])
 
 		#check contains
-		self.assertTrue(self.faidx[idx].name in fxkeys)
+		self.assertTrue(self.faidx[idx].name in keyobj)
 
 	def test_keys_sort(self):
 		#sort by id
