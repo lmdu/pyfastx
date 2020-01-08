@@ -51,8 +51,11 @@ typedef struct {
 	//kseq for iteration
 	kseq_t *kseq;
 
-	//the ID of the current readed read
-	uint64_t current_read;
+	//the ID of the current iter read
+	uint64_t iter_id;
+
+	//if build_index is True means has index
+	uint16_t has_index;
 
 	//gzip index
 	zran_index_t* gzip_index;

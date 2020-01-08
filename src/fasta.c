@@ -72,6 +72,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	strcpy(obj->file_name, file_name);
 
 	obj->uppercase = uppercase;
+	obj->has_index = build_index;
 
 	//create index
 	obj->index = pyfastx_init_index(obj->file_name, uppercase, memory_index, key_func);
@@ -96,6 +97,11 @@ void pyfastx_fasta_dealloc(pyfastx_Fasta *self){
 
 PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){
 	pyfastx_rewind_index(self->index);
+
+	if (self->has_index) {
+		self->iter_id = 0;
+	}
+
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
@@ -105,7 +111,18 @@ PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self){
 }
 
 PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
-	return pyfastx_get_next_seq(self->index);
+	if (self->has_index) {
+		++self->iter_id;
+
+		if (self->iter_id > self->seq_counts) {
+			return NULL;
+		} else {
+			return pyfastx_index_get_seq_by_id(self->index, self->iter_id);
+		}
+
+	} else {
+		return pyfastx_get_next_seq(self->index);
+	}
 }
 
 PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self){

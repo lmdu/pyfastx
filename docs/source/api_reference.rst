@@ -35,7 +35,7 @@ pyfastx.Fasta
 
 	:param bool uppercase: always output uppercase sequence, default: ``True``
 
-	:param bool build_index: build index for random access to FASTA sequence, default: ``True``
+	:param bool build_index: build index for random access to FASTA sequence, default: ``True``. If build_index is False, iteration will return a tuple (name, seq); If build_index is True, iteration will return a sequence object.
 
 	:param bool full_index: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
 
@@ -248,7 +248,7 @@ New in ``pyfastx`` 0.4.0
 
 	:param str file_name: input fastq file path
 
-	:param bool build_index: build index for random access to FASTQ reads, default: ``True``
+	:param bool build_index: build index for random access to FASTQ reads, default: ``True``. If build_index is False, iteration will return a tuple (name, seq, qual); If build_index is True, iteration will return a read object
 
 	:param bool composition: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
 

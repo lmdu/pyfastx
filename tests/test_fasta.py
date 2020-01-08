@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-from __future__ import division
-
 import os
 import gzip
 import random
@@ -10,12 +6,8 @@ import pyfaidx
 import unittest
 import statistics
 
-#os.chdir(os.path.dirname(__file__))
-
 gzip_fasta = 'tests/data/test.fa.gz'
 flat_fasta = 'tests/data/test.fa'
-gzip_fastq = 'tests/data/test.fq.gz'
-flat_fastq = 'tests/data/test.fq'
 
 class FastaTest(unittest.TestCase):
 	def setUp(self):
@@ -30,61 +22,20 @@ class FastaTest(unittest.TestCase):
 
 		self.faidx = pyfaidx.Fasta(flat_fasta, sequence_always_upper=True)
 		
-		self.fastq = pyfastx.Fastq(gzip_fastq)
-
-		#reload index
-		self.fastq = pyfastx.Fastq(gzip_fastq)
-
-		#flat fastq
-		self.flatq = pyfastx.Fastq(flat_fastq)
-		
 		self.count = len(self.fastx)
-
-		self.reads = {}
-		self.bases = {'A': 0, 'T': 0, 'G': 0, 'C':0, 'N':0}
-		i = 0
-		c = -1
-		with open(flat_fastq) as fh:
-			for line in fh:
-				i += 1
-				
-				if i % 4 == 1:
-					c += 1
-					self.reads[c] = [line[1:].strip().split()[0], 0, 0]
-
-				elif i % 4 == 2:
-					self.reads[c][1] = line.strip()
-					
-					self.bases['A'] += line.count('A')
-					self.bases['T'] += line.count('T')
-					self.bases['G'] += line.count('G')
-					self.bases['C'] += line.count('C')
-					self.bases['N'] += line.count('N')
-
-				elif i % 4 == 0:
-					self.reads[c][2] = line.strip()
 
 	def tearDown(self):
 		if os.path.exists('{}.fxi'.format(gzip_fasta)):
 			os.remove('{}.fxi'.format(gzip_fasta))
 
-		if os.path.exists('{}.fai'.format(flat_fasta)):
-			os.remove('{}.fai'.format(flat_fasta))
-
 		if os.path.exists('{}.fxi'.format(flat_fasta)):
 			os.remove('{}.fxi'.format(flat_fasta))
 
-		if os.path.exists('{}.fxi'.format(gzip_fastq)):
-			os.remove('{}.fxi'.format(gzip_fastq))
-
-		if os.path.exists('{}.fxi'.format(flat_fastq)):
-			os.remove('{}.fxi'.format(flat_fastq))
+		if os.path.exists('{}.fai'.format(flat_fasta)):
+			os.remove('{}.fai'.format(flat_fasta))
 
 	def get_random_index(self):
 		return random.randint(0, self.count-1)
-
-	def get_random_read(self):
-		return random.randint(0, len(self.fastq)-1)
 
 	def test_module(self):
 		# gzip check test
@@ -145,10 +96,17 @@ class FastaTest(unittest.TestCase):
 		name = self.faidx[idx].name
 		self.assertTrue(name in self.fastx)
 
-	def test_iter(self):
-		for name, result in self.fastx:
-			expect = self.faidx[name][:].seq
-			self.assertEqual(expect, result)
+	def test_iter_object(self):
+		for seq in self.fastx:
+			expect = self.faidx[seq.name][:].seq
+			self.assertEqual(expect, seq.seq)
+
+	def test_iter_tuple(self):
+		fa = pyfastx.Fasta(gzip_fasta, build_index=False)
+		
+		for name, seq in fa:
+			expect = str(self.faidx[name])
+			self.assertEqual(expect, seq)
 
 	def test_stat(self):
 		lens = sorted([len(seq) for seq in self.faidx], reverse=True)
@@ -279,6 +237,26 @@ class FastaTest(unittest.TestCase):
 		self.assertEqual(str(expect.complement), result.complement)
 		self.assertEqual(str(-expect), result.antisense)
 
+	def test_seq_raw(self):
+		idx = self.get_random_index()
+
+		seq = self.fastx[idx]
+
+		lines = []
+		with open(flat_fasta) as fh:
+			for line in fh:
+				if line.startswith('>{}'.format(seq.name)):
+					lines.append(line)
+					continue
+
+				if lines:
+					if line[0] == '>':
+						break
+
+					lines.append(line)
+
+		self.assertEqual(''.join(lines).replace('\n','\r\n'), seq.raw)
+
 	def test_seq_slice(self):
 		idx = self.get_random_index()
 		expect = str(self.faidx[idx])
@@ -379,77 +357,6 @@ class FastaTest(unittest.TestCase):
 		result = self.fastx.fetch(name, intervals)
 
 		self.assertEqual(expect, result)
-
-	def test_fastq(self):
-		# test gzip format
-		self.assertEqual(pyfastx.gzip_check(gzip_fastq), self.fastq.is_gzip)
-
-		# test seq length
-		self.assertEqual(self.fastq.size, sum(self.bases.values()))
-
-		# test length
-		self.assertEqual(len(self.reads), len(self.fastq))
-
-		# test gc content
-		result = round(self.fastq.gc_content, 2)
-		
-		expect = round((self.bases['G']+self.bases['C'])/(sum(self.bases.values()))*100, 2)
-		self.assertEqual(expect, result)
-
-		# test composition
-		self.assertEqual(self.fastq.composition, self.bases)
-
-		# test encoding type
-		self.assertEqual(['Sanger Phred+33', 'Illumina 1.8+ Phred+33'], self.fastq.encoding_type)
-
-		# test phred
-		self.assertEqual(self.fastq.phred, 33)
-
-	def test_read(self):
-		idx = self.get_random_read()
-		result = self.fastq[idx]
-		expect = self.reads[idx]
-
-		del result
-		result = self.fastq[idx]
-
-		read0 = self.flatq[idx]
-
-		# test length
-		self.assertEqual(len(result), len(expect[1]))
-
-		# test name
-		self.assertEqual(result.name, expect[0])
-
-		# test str
-		self.assertEqual(str(result), expect[1])
-
-		# test seq
-		self.assertEqual(result.seq, expect[1])
-		self.assertEqual(read0.seq, expect[1])
-
-		# test quality
-		self.assertEqual(result.qual, expect[2])
-		self.assertEqual(read0.qual, expect[2])
-
-		# test quality integer
-		self.assertEqual(result.quali, [ord(b)-33 for b in expect[2]])
-
-		result = self.fastq[expect[0]]
-
-		# test subscript
-		self.assertEqual(result.seq, expect[1])
-
-		# test contain
-		self.assertTrue(result.name in self.fastq)
-
-		# test read iter
-		i = -1
-		for read in self.fastq:
-			i += 1
-			self.assertEqual(read.name, self.reads[i][0])
-			self.assertEqual(read.seq, self.reads[i][1])
-			self.assertEqual(read.qual, self.reads[i][2])
 
 if __name__ == '__main__':
 	unittest.main()

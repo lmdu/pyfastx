@@ -24,6 +24,12 @@ typedef struct {
 	//total sequence length (bp)
 	uint64_t seq_length;
 
+	//if build_index is True means has index
+	uint16_t has_index;
+
+	//current iter sequence id
+	uint32_t iter_id;
+
 	//a float for GC content (%)
 	//float gc_content;
 

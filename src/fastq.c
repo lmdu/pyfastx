@@ -212,7 +212,6 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->gzfd = gzopen(file_name, "rb");
 	obj->ks = ks_init(obj->gzfd);
 	obj->kseq = kseq_init(obj->gzfd);
-	obj->current_read = 0;
 
 	//create index file
 	obj->index_file = (char *)malloc(strlen(file_name) + 5);
@@ -223,6 +222,8 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	//initail index connection
 	obj->index_db = NULL;
+
+	obj->has_index = build_index;
 
 	//inital phred
 	obj->phred = phred;
@@ -385,29 +386,26 @@ int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
 PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 	gzrewind(self->gzfd);
 	kseq_rewind(self->kseq);
-	self->current_read = 0;
+
+	if (self->has_index) {
+		self->iter_id = 0;
+	}
+	
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
 
 PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
-	if (kseq_read(self->kseq) >= 0) {
-		pyfastx_Read *read = PyObject_New(pyfastx_Read, &pyfastx_ReadType);
+	if (self->has_index) {
+		++self->iter_id;
 
-		if (!read) {
-			return NULL;
+		if (self->iter_id <= self->read_counts) {
+			return pyfastx_fastq_get_read_by_id(self, self->iter_id);
 		}
-
-		++self->current_read;
-		read->id = self->current_read;
-		read->name = self->kseq->name.s;
-		read->read_len = self->kseq->seq.l;
-		read->seq = self->kseq->seq.s;
-		read->qual = self->kseq->qual.s;
-		read->phred = self->phred;
-
-		Py_INCREF(read);
-		return (PyObject *)read;
+	} else {
+		if (kseq_read(self->kseq) >= 0) {
+			return Py_BuildValue("sss", self->kseq->name.s, self->kseq->seq.s, self->kseq->qual.s);
+		}
 	}
 
 	return NULL;
