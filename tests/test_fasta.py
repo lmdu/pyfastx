@@ -46,6 +46,7 @@ class FastaTest(unittest.TestCase):
 			self.assertEqual(version, pyfastx.version())
 
 		print(pyfastx.version(debug=True))
+		
 
 	def test_fasta(self):
 		#fasta format
