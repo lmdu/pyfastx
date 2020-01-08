@@ -107,7 +107,7 @@ class FastaTest(unittest.TestCase):
 			expect = str(self.faidx[name])
 			self.assertEqual(expect, seq)
 
-	def test_stat(self):
+	def test_statistics(self):
 		lens = sorted([len(seq) for seq in self.faidx], reverse=True)
 		half = sum(lens)/2
 		tlen = 0

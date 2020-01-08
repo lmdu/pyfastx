@@ -26,6 +26,7 @@ before_install:
   - $PIP install cpp-coveralls
   - $PIP install pyfaidx
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
+      sqlite3 --version;
       wget https://www.sqlite.org/2019/sqlite-autoconf-3300100.tar.gz;
       tar xzf sqlite-autoconf-3300100.tar.gz;
       cd sqlite-autoconf-3300100;
@@ -60,6 +61,7 @@ script:
       rm -rf build;
       rm pyfastx.cpython*;
       export CPPFLAGS=--coverage;
+      sqlite3 --version;
       python setup.py test;
     fi
 
