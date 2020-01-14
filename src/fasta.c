@@ -290,11 +290,10 @@ PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
 		
 	} else if (PyUnicode_CheckExact(item)) {
 		char *key = PyUnicode_AsUTF8(item);
-
 		return pyfastx_index_get_seq_by_name(self->index, key);
 
 	} else {
-		PyErr_SetString(PyExc_KeyError, "key error");
+		PyErr_SetString(PyExc_KeyError, "the key must be index number or sequence name");
 		return NULL;
 	}
 }

@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.6.4 (2020-01-14)
+--------------------------
+
+- Fixed last sequence fetching error caused by missing \n
+- Improved fasta/q object key error message to make it more human
+
 Version 0.6.3 (2020-01-08)
 --------------------------
 

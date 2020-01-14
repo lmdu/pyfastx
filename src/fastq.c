@@ -324,7 +324,7 @@ PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, char* name) {
 	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, name, -1, NULL);
 	if(sqlite3_step(stmt) != SQLITE_ROW){
-		PyErr_SetString(PyExc_KeyError, name);
+		PyErr_Format(PyExc_KeyError, "%s does not exist in fastq file", name);
 		return NULL;
 	}
 
@@ -349,11 +349,10 @@ PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
 		
 	} else if (PyUnicode_Check(item)) {
 		char *key = PyUnicode_AsUTF8(item);
-
 		return pyfastx_fastq_get_read_by_name(self, key);
 
 	} else {
-		PyErr_SetString(PyExc_KeyError, "key error");
+		PyErr_SetString(PyExc_KeyError, "the key must be index number or read name");
 		return NULL;
 	}
 }

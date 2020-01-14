@@ -382,7 +382,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
 	sqlite3_bind_text(stmt, 1, name, -1, NULL);
 	
 	if(sqlite3_step(stmt) != SQLITE_ROW){
-		PyErr_SetString(PyExc_KeyError, name);
+		PyErr_Format(PyExc_KeyError, "%s does not exist in fasta file", name);
 		return NULL;
 	}
 
@@ -439,8 +439,10 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	} else {
 		fseek(self->fd, offset, SEEK_SET);
 		if (fread(self->cache_seq, bytes, 1, self->fd) != 1) {
-			PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
-			return NULL;
+			if (!feof(self->fd)) {
+				PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
+				return NULL;
+			}
 		}
 	}
 

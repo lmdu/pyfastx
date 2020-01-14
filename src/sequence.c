@@ -31,8 +31,10 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	} else {
 		fseek(self->index->fd, self->offset, SEEK_SET);
 		if (fread(self->index->cache_seq, self->byte_len, 1, self->index->fd) != 1) {
-			PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
-			return NULL;
+			if (!feof(self->index->fd)) {
+				PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
+				return NULL;
+			}
 		}
 	}
 
@@ -235,8 +237,10 @@ PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
 		} else {
 			fseek(self->index->fd, new_offset, SEEK_SET);
 			if (fread(buff, new_bytelen, 1, self->index->fd) != 1) {
-				PyErr_SetString(PyExc_RuntimeError, "reading raw sequence error");
-				return NULL;
+				if (!feof(self->index->fd)) {
+					PyErr_SetString(PyExc_RuntimeError, "reading raw sequence error");
+					return NULL;
+				}
 			}
 		}
 
