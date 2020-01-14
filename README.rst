@@ -832,8 +832,8 @@ If you intensively check sequence names exists in FASTA file using ``in`` operat
 	>>> fa = pyfastx.Fasta('tests/data/test.fa.gz')
 	>>> # Suppose seqnames has 100000 names
 	>>> for seqname in seqnames:
-	>>> 	if seqname in fa:
-	>>>			do something
+	>>>     if seqname in fa:
+	>>>	        do something
 
 This will take a long time to finish. Becuase, pyfastx does not load the index into memory, the ``in`` operating is corresponding to sql query existence from index database. The faster alternative way to do this is:
 
@@ -843,8 +843,8 @@ This will take a long time to finish. Becuase, pyfastx does not load the index i
 	>>> # load all sequence names into a set object
 	>>> all_names = set(fa.keys())
 	>>> for seqname in seqnames:
-	>>> 	if seqname in all_names:
-	>>>			do something
+	>>>     if seqname in all_names:
+	>>>	        do something
 
 Testing
 =======
