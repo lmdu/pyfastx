@@ -825,7 +825,7 @@ Sample sequences
 Drawbacks
 =========
 
-If you intensively check sequence names exists in FASTA file using `in` operator on FASTA object like:
+If you intensively check sequence names exists in FASTA file using ``in`` operator on FASTA object like:
 
 .. code:: python
 
@@ -835,7 +835,7 @@ If you intensively check sequence names exists in FASTA file using `in` operator
 	>>> 	if seqname in fa:
 	>>>			do something
 
-This will take a long time to finish. Becuase, pyfastx does not load the index into memory, the `in` operating is corresponding to sql query existence from index database. The faster alternative way to do this is:
+This will take a long time to finish. Becuase, pyfastx does not load the index into memory, the ``in`` operating is corresponding to sql query existence from index database. The faster alternative way to do this is:
 
 .. code:: python
 
