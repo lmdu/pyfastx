@@ -10,15 +10,10 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	sqlite3_stmt *stmt;
 	
 	//sequence count
-	sqlite3_prepare_v2(self->index->index_db, "SELECT COUNT(*) FROM seq LIMIT 1;", -1, &stmt, NULL);
+	sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM stat LIMIT 1;", -1, &stmt, NULL);
 	sqlite3_step(stmt);
 	self->seq_counts = sqlite3_column_int(stmt, 0);
-	sqlite3_reset(stmt);
-
-	//sequence length
-	sqlite3_prepare_v2(self->index->index_db, "SELECT SUM(slen) FROM seq LIMIT 1;", -1, &stmt, NULL);
-	sqlite3_step(stmt);
-	self->seq_length = sqlite3_column_int64(stmt, 0);
+	self->seq_length = sqlite3_column_int64(stmt, 1);
 	sqlite3_finalize(stmt);
 }
 

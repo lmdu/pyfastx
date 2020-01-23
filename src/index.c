@@ -107,6 +107,12 @@ void pyfastx_create_index(pyfastx_Index *self){
 	//real line len
 	uint32_t real_len;
 
+	//total sequence count
+	uint32_t total_seq = 0;
+
+	//total sequence length
+	uint64_t total_len = 0;
+
 	//reading file for kseq
 	kstream_t* ks;
 
@@ -138,6 +144,10 @@ void pyfastx_create_index(pyfastx_Index *self){
 			elen INTEGER, --end length\n \
 			norm INTEGER, --line with the same length or not\n \
 			descr TEXT --sequence description\n \
+		); \
+		CREATE stat ( \
+			seqnum INTEGER, --total seq counts \n \
+			seqlen INTEGER --total seq length \n \
 		); \
 		CREATE TABLE comp ( \
 			ID INTEGER PRIMARY KEY, \
@@ -213,6 +223,13 @@ void pyfastx_create_index(pyfastx_Index *self){
 				sqlite3_bind_text(stmt, 9, description, -1, NULL);
 				sqlite3_step(stmt);
 				sqlite3_reset(stmt);
+
+				++total_seq;
+				total_len += seq_len;
+
+				if (total_seq % 100000 == 0) {
+					sqlite3_exec(self->index_db, "COMMIT;BEGIN TRANSACTION;", NULL, NULL, NULL);
+				}
 			}
 
 			//reset
@@ -281,8 +298,17 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
+	++total_seq;
+	total_len += seq_len;
+
 	sqlite3_exec(self->index_db, "CREATE INDEX chromidx ON seq (chrom);", NULL, NULL, NULL);
 	sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
+
+	sqlite3_prepare_v2(self->index_db, "INSERT INTO stat VALUES (?,?)", -1, &stmt, NULL);
+	sqlite3_bind_int(stmt, 1, total_seq);
+	sqlite3_bind_int64(stmt, total_len);
+	sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
 
 	ks_destroy(ks);
 	free(line.s);
