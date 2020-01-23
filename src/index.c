@@ -145,7 +145,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			norm INTEGER, --line with the same length or not\n \
 			descr TEXT --sequence description\n \
 		); \
-		CREATE stat ( \
+		CREATE TABLE stat ( \
 			seqnum INTEGER, --total seq counts \n \
 			seqlen INTEGER --total seq length \n \
 		); \
@@ -213,23 +213,19 @@ void pyfastx_create_index(pyfastx_Index *self){
 				seq_normal = (bad_line > 1) ? 0 : 1;
 
 				sqlite3_bind_null(stmt, 1);
-				sqlite3_bind_text(stmt, 2, chrom, -1, NULL);
+				sqlite3_bind_text(stmt, 2, chrom, -1, free);
 				sqlite3_bind_int64(stmt, 3, start);
 				sqlite3_bind_int(stmt, 4, position-start-line.l-1);
 				sqlite3_bind_int(stmt, 5, seq_len);
 				sqlite3_bind_int(stmt, 6, line_len);
 				sqlite3_bind_int(stmt, 7, line_end);
 				sqlite3_bind_int(stmt, 8, seq_normal);
-				sqlite3_bind_text(stmt, 9, description, -1, NULL);
+				sqlite3_bind_text(stmt, 9, description, -1, free);
 				sqlite3_step(stmt);
 				sqlite3_reset(stmt);
 
 				++total_seq;
 				total_len += seq_len;
-
-				if (total_seq % 100000 == 0) {
-					sqlite3_exec(self->index_db, "COMMIT;BEGIN TRANSACTION;", NULL, NULL, NULL);
-				}
 			}
 
 			//reset
@@ -287,14 +283,14 @@ void pyfastx_create_index(pyfastx_Index *self){
 	seq_normal = (bad_line > 1) ? 0 : 1;
 
 	sqlite3_bind_null(stmt, 1);
-	sqlite3_bind_text(stmt, 2, chrom, -1, NULL);
+	sqlite3_bind_text(stmt, 2, chrom, -1, free);
 	sqlite3_bind_int64(stmt, 3, start);
 	sqlite3_bind_int(stmt, 4, position-start);
 	sqlite3_bind_int(stmt, 5, seq_len);
 	sqlite3_bind_int(stmt, 6, line_len);
 	sqlite3_bind_int(stmt, 7, line_end);
 	sqlite3_bind_int(stmt, 8, seq_normal);
-	sqlite3_bind_text(stmt, 9, description, -1, NULL);
+	sqlite3_bind_text(stmt, 9, description, -1, free);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
@@ -304,9 +300,9 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_exec(self->index_db, "CREATE INDEX chromidx ON seq (chrom);", NULL, NULL, NULL);
 	sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
 
-	sqlite3_prepare_v2(self->index_db, "INSERT INTO stat VALUES (?,?)", -1, &stmt, NULL);
+	sqlite3_prepare_v2(self->index_db, "INSERT INTO stat VALUES (?,?);", -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, total_seq);
-	sqlite3_bind_int64(stmt, total_len);
+	sqlite3_bind_int64(stmt, 2, total_len);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 

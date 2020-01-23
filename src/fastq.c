@@ -109,7 +109,7 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 
 				//write to sqlite3
 				sqlite3_bind_null(stmt, 1);
-				sqlite3_bind_text(stmt, 2, name, -1, NULL);
+				sqlite3_bind_text(stmt, 2, name, -1, free);
 				sqlite3_bind_int(stmt, 3, dlen);
 				sqlite3_bind_int(stmt, 4, rlen);
 				sqlite3_bind_int64(stmt, 5, soff);
