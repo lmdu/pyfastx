@@ -6,7 +6,7 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 	sqlite3_stmt *stmt;
 	int64_t soff = 0, qoff = 0, pos = 0;
 	uint64_t size = 0;
-	char* name = NULL;
+	kstring_t name = {0, 0, 0};
 	char* space;
 	int l, j, rlen = 0;
 	int dlen = 0;
@@ -78,17 +78,24 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 
 		switch(j) {
 			case 1:
-				name = (char *)malloc(line.l);
-				memcpy(name, line.s+1, line.l);
-
+				if (name.m < line.l) {
+					name.s = (char *)realloc(name.s, line.l);
+					name.m = line.l;
+				}
 				dlen = line.l;
+				memcpy(name.s, line.s+1, line.l);
+				name.l = line.l;
 
-				if ((space = strchr(name, ' ')) != NULL) {
-					*space = '\0';
+				if (name.s[name.l] == '\r') {
+					name.s[name.l] = '\0';
+					--name.l;
 				}
 
-				if ((space = strchr(name, '\r')) != NULL) {
+				space = strchr(name.s, ' ');
+
+				if (space != NULL) {
 					*space = '\0';
+					name.l = space - name.s;
 				}
 
 				break;
@@ -109,7 +116,7 @@ void pyfastx_fastq_build_index(pyfastx_Fastq *self) {
 
 				//write to sqlite3
 				sqlite3_bind_null(stmt, 1);
-				sqlite3_bind_text(stmt, 2, name, -1, free);
+				sqlite3_bind_text(stmt, 2, name.s, name.l, SQLITE_STATIC);
 				sqlite3_bind_int(stmt, 3, dlen);
 				sqlite3_bind_int(stmt, 4, rlen);
 				sqlite3_bind_int64(stmt, 5, soff);
