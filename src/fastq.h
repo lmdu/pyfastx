@@ -66,7 +66,7 @@ typedef struct {
 extern PyTypeObject pyfastx_FastqType;
 
 void pyfastx_fastq_dealloc(pyfastx_Fastq *self);
-void pyfastx_fastq_build_index(pyfastx_Fastq *self);
+void pyfastx_fastq_create_index(pyfastx_Fastq *self);
 void pyfastx_fastq_calc_composition(pyfastx_Fastq *self);
 PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
 

@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.6.5 (2020-01-31)
+--------------------------
+
+- Reduced memory usage when building index for large fasta
+- Removed rebuild_index method from Fasta object due to segmentation fault
+- Optimized compatibility between sqlite3 and python GIL
+
 Version 0.6.4 (2020-01-14)
 --------------------------
 

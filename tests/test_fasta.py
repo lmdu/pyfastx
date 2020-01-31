@@ -4,17 +4,13 @@ import random
 import pyfastx
 import pyfaidx
 import unittest
+import threading
 
 gzip_fasta = 'tests/data/test.fa.gz'
 flat_fasta = 'tests/data/test.fa'
 
 class FastaTest(unittest.TestCase):
 	def setUp(self):
-		self.fastx = pyfastx.Fasta(gzip_fasta, build_index=False)
-		self.fastx.build_index()
-		self.fastx.rebuild_index()
-
-		#reload index
 		self.fastx = pyfastx.Fasta(gzip_fasta)
 
 		self.fasta = pyfastx.Fasta(flat_fasta)
@@ -46,7 +42,16 @@ class FastaTest(unittest.TestCase):
 			self.assertEqual(version, pyfastx.version())
 
 		print(pyfastx.version(debug=True))
-		
+	
+	def test_build(self):
+		self.fastx = None
+
+		if os.path.exists('{}.fxi'.format(gzip_fasta)):
+			os.remove('{}.fxi'.format(gzip_fasta))
+
+		fa = pyfastx.Fasta(gzip_fasta, build_index=False)
+		fa.build_index()
+		fa = pyfastx.Fasta(gzip_fasta)
 
 	def test_fasta(self):
 		#fasta format

@@ -53,6 +53,16 @@ class FastaTest(unittest.TestCase):
 	def get_random_read(self):
 		return random.randint(0, len(self.fastq)-1)
 
+	def test_build(self):
+		self.fastx = None
+
+		if os.path.exists('{}.fxi'.format(gzip_fastq)):
+			os.remove('{}.fxi'.format(gzip_fastq))
+
+		fq = pyfastx.Fastq(gzip_fastq, build_index=False)
+		fq.build_index()
+		fq = pyfastx.Fastq(gzip_fastq)
+
 	def test_fastq(self):
 		# test gzip format
 		self.assertEqual(pyfastx.gzip_check(gzip_fastq), self.fastq.is_gzip)

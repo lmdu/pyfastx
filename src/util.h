@@ -30,4 +30,11 @@ int is_subset(char *seq1, char *seq2);
 void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* index_file);
 void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* index_file);
 
+//sqlite3 compatable with python GIL
+//extracted from apsw project
+//https://github.com/rogerbinns/apsw/blob/07571365b6fbb25e2691071998526c351b04a04d/src/util.c
+/* call where no error is returned */
+#define PYFASTX_SQLITE_CALL(x) \
+  do { Py_BEGIN_ALLOW_THREADS { x; } Py_END_ALLOW_THREADS ; } while(0)
+
 #endif

@@ -128,10 +128,6 @@ pyfastx.Fasta
 
 		build index for FASTA file
 
-	.. py:method:: rebuild_index()
-
-		rebuild index for FASTA file
-
 	.. py:method:: keys()
 
 		get all names of sequences
@@ -289,6 +285,10 @@ New in ``pyfastx`` 0.4.0
 		New in ``pyfastx`` 0.4.1
 
 		Guess the quality encoding type used by FASTQ sequence file
+
+	.. py:method:: build_index()
+
+		Build index for fastq file when build_index set to False
 
 pyfastx.Read
 ------------

@@ -19,11 +19,11 @@ typedef struct {
 	//file format 1: fasta, 2: fastq
 	//uint16_t format;
 
-	//sort by 1: id, 2: name, 3: length
-	char *sort;
+	//sort by 0: id, 1: name, 2: length
+	uint16_t sort;
 
 	//oder 0: asc, 1: desc
-	char *order;
+	uint16_t order;
 
 	//filter string
 	char *temp_filter;

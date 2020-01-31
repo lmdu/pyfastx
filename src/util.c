@@ -341,6 +341,7 @@ void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* 
 	}
 	
 	fwrite(sqlite3_column_blob(stmt, 0), bytes, 1, fh);
+	sqlite3_finalize(stmt);
 	fclose(fh);
 
 	fh = fopen(temp_index, "rb");
@@ -349,6 +350,7 @@ void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* 
 		PyErr_SetString(PyExc_RuntimeError, "failed to import gzip index");
 		return;
 	}
+
 	fclose(fh);
 	remove(temp_index);
 }
