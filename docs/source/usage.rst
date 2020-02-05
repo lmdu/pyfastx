@@ -14,7 +14,7 @@ Read plain or gzipped FASTA file and build index, support for random access to F
 	<Fasta> test/data/test.fa.gz contains 211 seqs
 
 .. note::
-	Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file. The index file can be reused to save time when you read seqeunces from FASTA file next time.
+	Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file. The index file can be reused to save time when you read sequences from FASTA file next time.
 
 FASTA records iteration
 -----------------------
@@ -48,10 +48,10 @@ Get FASTA information
 	>>> len(fa)
 	211
 
-	>>> # get total sequnce length of FASTA
+	>>> # get total sequence length of FASTA
 	>>> fa.size
 	86262
-	
+
 	>>> # get GC content of DNA sequences in FASTA
 	>>> fa.gc_content
 	43.529014587402344
@@ -60,7 +60,7 @@ Get FASTA information
 	>>> # New in pyfastx 0.3.8
 	>>> fa.gc_skews
 	0.004287730902433395
-	
+
 	>>> # get composition of nucleotides in FASTA
 	>>> fa.composition
 	{'A': 24534, 'C': 18694, 'G': 18855, 'T': 24179}
@@ -136,7 +136,7 @@ New in ``pyfastx`` 0.3.0
 	>>> fa.mean
 	408
 
-	>>> # get seqeunce median length
+	>>> # get sequence median length
 	>>> fa.median
 	430
 
@@ -205,12 +205,12 @@ Get a sequence from FASTA
 	>>> s1 = fa['JZ822577.1']
 	>>> s1
 	<Sequence> JZ822577.1 with length of 333
-	
+
 	>>> # get sequence like list
 	>>> s2 = fa[2]
 	>>> s2
 	<Sequence> JZ822579.1 with length of 176
-	
+
 	>>> # get last sequence
 	>>> s3 = fa[-1]
 	>>> s3
@@ -233,7 +233,7 @@ Get sequence information
 	>>> # New in pyfastx 0.3.7
 	>>> s.id
 	211
-	
+
 	>>> # get sequence name
 	>>> s.name
 	'JZ840318.1'
@@ -241,7 +241,7 @@ Get sequence information
 	>>> # get sequence description, New in pyfastx 0.3.1
 	>>> s.description
 	'R283 cDNA library of flower petals in tree peony by suppression subtractive hybridization Paeonia suffruticosa cDNA, mRNA sequence'
-	
+
 	>>> # get sequence string
 	>>> s.seq
 	'ACTGGAGGTTCTTCTTCCTGTGGAAAGTAACTTGTTTTGCCTTCACCTGCCTGTTCTTCACATCAACCTTGTTCCCACACAAAACAATGGGAATGTTCTCACACACCCTGCAGAGATCACGATGCCATGTTGGT'
@@ -255,11 +255,11 @@ Get sequence information
 	>>> # get sequence length
 	>>> len(s)
 	134
-	
+
 	>>> # get GC content if dna sequence
 	>>> s.gc_content
 	46.26865768432617
-	
+
 	>>> # get nucleotide composition if dna sequence
 	>>> s.composition
 	{'A': 31, 'C': 37, 'G': 25, 'T': 41, 'N': 0}
@@ -294,7 +294,7 @@ Sequence object can be sliced like a python string
 	'CCATGTTGGT'
 
 .. note::
-	
+
 	Slicing start and end coordinates are 0-based. Currently, pyfastx does not support an optional third ``step`` or ``stride`` argument. For example ``ss[::-1]``
 
 Reverse and complement sequence
@@ -549,7 +549,7 @@ New in ``pyfastx`` 0.5.0
 
 .. code:: python
 
-	>>> # sort identifiers by length with descending order 
+	>>> # sort identifiers by length with descending order
 	>>> for name in ids.sort(key='length', reverse=True):
 	>>> 	print(name)
 
