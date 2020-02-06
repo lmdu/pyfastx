@@ -256,7 +256,7 @@ Get counts of sequences whose length >= specified length
 Get subsequences
 ----------------
 
-Subseuqneces can be retrieved from FASTA file by using a list of [start, end] coordinates
+Subsequences can be retrieved from FASTA file by using a list of [start, end] coordinates
 
 .. code:: python
 
@@ -650,7 +650,7 @@ New in ``pyfastx`` 0.5.0
 
 .. code:: python
 
-    >>> # sort identifiers by length with descending order 
+    >>> # sort identifiers by length with descending order
     >>> for name in ids.sort(key='length', reverse=True):
     >>>     print(name)
 
