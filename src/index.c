@@ -122,8 +122,10 @@ void pyfastx_create_index(pyfastx_Index *self){
 	//read for line
 	kstring_t line = {0, 0, 0};
 
-	//description line
-	kstring_t description = {0, 0, 0};
+	char *header_pos;
+
+	//description line length
+	int desc_len = 0;
 
 	//chromosome name
 	kstring_t chrom = {0, 0, 0};
@@ -149,7 +151,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			llen INTEGER, --line lenght\n \
 			elen INTEGER, --end length\n \
 			norm INTEGER, --line with the same length or not\n \
-			descr TEXT --sequence description\n \
+			dlen INTEGER --description header line length\n \
 		); \
 		CREATE TABLE stat ( \
 			seqnum INTEGER, --total seq counts \n \
@@ -227,7 +229,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 				sqlite3_bind_int(stmt, 6, line_len);
 				sqlite3_bind_int(stmt, 7, line_end);
 				sqlite3_bind_int(stmt, 8, seq_normal);
-				sqlite3_bind_text(stmt, 9, description.s, description.l, SQLITE_STATIC);
+				sqlite3_bind_int(stmt, 9, desc_len);
 				sqlite3_step(stmt);
 				sqlite3_reset(stmt);
 
@@ -249,32 +251,28 @@ void pyfastx_create_index(pyfastx_Index *self){
 				line_end = 2;
 			}
 
-			if (description.m < line.l) {
-				description.s = (char *)realloc(description.s, line.l);
-				description.m = line.l;
-			}
+			desc_len = line.l - line_end;
 
-			memcpy(description.s, line.s+1, line.l-line_end);
-			description.l = line.l - line_end;
-			description.s[description.l] = '\0';
-
-			if (chrom.m < description.m) {
-				chrom.m = description.m;
+			if (chrom.m < line.l) {
+				chrom.m = line.l;
 				chrom.s = (char *)realloc(chrom.s, chrom.m);
 			}
 
+			//remove > sign at the start position
+			header_pos = line.s + 1;
+
 			if (self->key_func == Py_None) {
-				space_pos = strchr(description.s, ' ');
+				space_pos = strchr(header_pos, ' ');
 				if (space_pos == NULL) {
-					chrom.l = description.l;
+					chrom.l = desc_len;
 				} else {
-					chrom.l = space_pos - description.s;
+					chrom.l = space_pos - header_pos;
 				}
-				memcpy(chrom.s, description.s, chrom.l);
+				memcpy(chrom.s, header_pos, chrom.l);
 				chrom.s[chrom.l] = '\0';
 			} else {
 				PyGILState_STATE state = PyGILState_Ensure();
-				PyObject *result = PyObject_CallFunction(self->key_func, "s", description.s);
+				PyObject *result = PyObject_CallFunction(self->key_func, "s", header_pos);
 				PyGILState_Release(state);
 				temp_chrom = PyUnicode_AsUTF8AndSize(result, &chrom.l);
 				memcpy(chrom.s, temp_chrom, chrom.l);
@@ -315,7 +313,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_bind_int(stmt, 6, line_len);
 	sqlite3_bind_int(stmt, 7, line_end);
 	sqlite3_bind_int(stmt, 8, seq_normal);
-	sqlite3_bind_text(stmt, 9, description.s, description.l, SQLITE_STATIC);
+	sqlite3_bind_int(stmt, 9, desc_len);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
@@ -335,6 +333,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 	ks_destroy(ks);
 	free(line.s);
+	free(chrom.s);
 
 	//create gzip random access index
 	if (self->gzip_format) {

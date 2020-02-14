@@ -184,8 +184,9 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	int nbytes;
 	char *descr;
 	int ret;
+	int64_t new_offset;
 
-	const char *sql = "SELECT descr FROM seq WHERE ID=? LIMIT 1";
+	const char *sql = "SELECT dlen FROM seq WHERE ID=? LIMIT 1";
 	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
@@ -193,17 +194,31 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 		ret = sqlite3_step(stmt);
 	);
 
-	if (ret == SQLITE_ROW) {
-		PYFASTX_SQLITE_CALL(nbytes = sqlite3_column_bytes(stmt, 0));
-		descr = (char *)malloc(nbytes + 1);
-		PYFASTX_SQLITE_CALL(memcpy(descr, (char *)sqlite3_column_text(stmt, 0), nbytes));
-		descr[nbytes] = '\0';	
-	} else {
+	if (ret != SQLITE_ROW) {
 		PyErr_SetString(PyExc_RuntimeError, "can not get sequence description");
 		return NULL;
 	}
 
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+	PYFASTX_SQLITE_CALL(
+		nbytes = sqlite3_column_int(stmt, 0);
+		sqlite3_finalize(stmt);
+	);
+
+	descr = (char *)malloc(nbytes + 1);
+	new_offset = self->offset - nbytes - self->end_len;
+	
+	if (self->index->gzip_format) {
+		zran_seek(self->index->gzip_index, new_offset, SEEK_SET, NULL);
+		zran_read(self->index->gzip_index, descr, nbytes);
+	} else {
+		fseek(self->index->fd, new_offset, SEEK_SET);
+		if (fread(descr, nbytes, 1, self->index->fd) != 1) {
+			PyErr_SetString(PyExc_RuntimeError, "reading raw sequence error");
+			return NULL;
+		}
+	}
+
+	descr[nbytes] = '\0';
 	return Py_BuildValue("s", descr);
 }
 
@@ -224,15 +239,15 @@ PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
 	char *buff;
 	int ret;
 
-	const char *sql = "SELECT descr FROM seq WHERE ID=? LIMIT 1";
+	const char *sql = "SELECT dlen FROM seq WHERE ID=? LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, self->id);
 	ret = sqlite3_step(stmt);
 
 	if (ret == SQLITE_ROW) {
-		PYFASTX_SQLITE_CALL(nbytes = sqlite3_column_bytes(stmt, 0));
+		PYFASTX_SQLITE_CALL(nbytes = sqlite3_column_int(stmt, 0));
 	} else {
-		PyErr_SetString(PyExc_RuntimeError, "get sequence description error");
+		PyErr_SetString(PyExc_RuntimeError, "get sequence description length error");
 		return NULL;
 	}
 
