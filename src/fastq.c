@@ -669,7 +669,6 @@ PyObject* pyfastx_fastq_gc_content(pyfastx_Fastq *self, void* closure) {
 	
 	if (ret != SQLITE_ROW) {
 		PyErr_SetString(PyExc_RuntimeError, "can not calculate gc content");
-		sqlite3_finalize(stmt);
 		return NULL;
 	}
 

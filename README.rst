@@ -53,6 +53,10 @@ pyfastx
    :target: https://pypi.org/project/pyfastx
    :alt: License
 
+.. image:: https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat
+   :target: http://bioconda.github.io/recipes/pyfastx/README.html
+   :alt: Bioconda
+
 *a robust python module for fast random access to sequences from plain and gzipped FASTA/Q file*
 
 .. contents:: Table of Contents

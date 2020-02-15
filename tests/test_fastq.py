@@ -88,43 +88,9 @@ class FastaTest(unittest.TestCase):
 		# test phred
 		self.assertEqual(self.fastq.phred, 33)
 
-	def test_read(self):
-		idx = self.get_random_read()
-		result = self.fastq[idx]
-		expect = self.reads[idx]
-
-		del result
-		result = self.fastq[idx]
-
-		read0 = self.flatq[idx]
-
-		# test length
-		self.assertEqual(len(result), len(expect[1]))
-
-		# test name
-		self.assertEqual(result.name, expect[0])
-
-		# test str
-		self.assertEqual(str(result), expect[1])
-
-		# test seq
-		self.assertEqual(result.seq, expect[1])
-		self.assertEqual(read0.seq, expect[1])
-
-		# test quality
-		self.assertEqual(result.qual, expect[2])
-		self.assertEqual(read0.qual, expect[2])
-
-		# test quality integer
-		self.assertEqual(result.quali, [ord(b)-33 for b in expect[2]])
-
-		result = self.fastq[expect[0]]
-
-		# test subscript
-		self.assertEqual(result.seq, expect[1])
-
-		# test contain
-		self.assertTrue(result.name in self.fastq)
+	def test_negative(self):
+		read = self.fastq[-1]
+		self.assertEqual(read.name, self.reads[len(self.reads)-1][0])
 
 	def test_iter_object(self):
 		# test read iter
@@ -143,41 +109,18 @@ class FastaTest(unittest.TestCase):
 			self.assertEqual(seq, self.reads[i][1])
 			self.assertEqual(qual, self.reads[i][2])
 
-	def test_read_description(self):
-		idx = self.get_random_read()
-		read = self.fastq[idx]
+	def test_repr(self):
+		self.assertEqual(repr(self.fastq), "<Fastq> {} contains {} reads".format(gzip_fastq, len(self.reads)))
 
-		i = -1
-		with open(flat_fastq) as fh:
-			for line in fh:
-				if line[0] == '@':
-					i += 1
+	def test_exception(self):
+		with self.assertRaises(FileExistsError):
+			pyfastx.Fastq('a_fastq_file_not_exists')
 
-					if i == idx:
-						break
+		with self.assertRaises(IndexError):
+			self.fastq[len(self.fastq)]
 
-		self.assertEqual(line.strip(), read.description)
-
-
-	def test_read_raw(self):
-		idx = self.get_random_read()
-		read = self.fastq[idx]
-
-		i = -1
-		lines = []
-		with gzip.open(gzip_fastq, 'rt') as fh:
-			for line in fh:
-				if line.startswith('@{}'.format(read.name)):
-					lines.append(line)
-					continue
-
-				if lines:
-					if line[0] == '@':
-						break
-
-					lines.append(line)
-
-		self.assertEqual(''.join(lines), read.raw)
+		with self.assertRaises(KeyError):
+			self.fastq[int]
 
 
 
