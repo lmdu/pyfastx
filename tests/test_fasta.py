@@ -8,6 +8,8 @@ import threading
 
 gzip_fasta = 'tests/data/test.fa.gz'
 flat_fasta = 'tests/data/test.fa'
+rna_fasta = 'tests/data/rna.fa'
+protein_fasta = 'tests/data/protein.fa'
 
 class FastaTest(unittest.TestCase):
 	def setUp(self):
@@ -28,6 +30,12 @@ class FastaTest(unittest.TestCase):
 
 		if os.path.exists('{}.fai'.format(flat_fasta)):
 			os.remove('{}.fai'.format(flat_fasta))
+
+		if os.path.exists('{}.fxi'.format(rna_fasta)):
+			os.remove('{}.fxi'.format(rna_fasta))
+
+		if os.path.exists('{}.fxi'.format(protein_fasta)):
+			os.remove('{}.fxi'.format(protein_fasta))
 
 	def get_random_index(self):
 		return random.randint(0, self.count-1)
@@ -54,8 +62,8 @@ class FastaTest(unittest.TestCase):
 		fa = pyfastx.Fasta(gzip_fasta)
 
 	def test_fasta(self):
-		#fasta format
-		self.assertEqual(self.fastx.type, 'DNA')
+		#test gzip
+		self.assertFalse(self.fasta.is_gzip)
 
 		#seq counts
 		self.assertEqual(len(self.fastx), len(self.faidx.keys()))
@@ -103,6 +111,21 @@ class FastaTest(unittest.TestCase):
 		name = self.faidx[idx].name
 		self.assertTrue(name in self.fastx)
 
+		#test repr
+		self.assertEqual(repr(self.fastx), "<Fasta> {} contains {} sequences".format(gzip_fasta, self.count))
+
+	def test_seq_type(self):
+		#test dna format
+		self.assertEqual(self.fastx.type, 'DNA')
+
+		#test rna format
+		rna = pyfastx.Fasta(rna_fasta)
+		self.assertEqual(rna.type, "RNA")
+
+		#test protein format
+		prot = pyfastx.Fasta(protein_fasta)
+		self.assertEqual(prot.type, "protein")
+
 	def test_iter_object(self):
 		for seq in self.fastx:
 			expect = self.faidx[seq.name][:].seq
@@ -149,210 +172,7 @@ class FastaTest(unittest.TestCase):
 		result = self.fastx.count(200)
 		self.assertEqual(expect, result)
 
-	def test_key_identifier(self):
-		fikeys = list(self.faidx.keys())
-		fxkeys = list(self.fastx.keys())
-		keyobj = self.fastx.keys()
-
-		self.assertEqual(sorted(fikeys), sorted(fxkeys))
-
-		#id counts
-		self.assertEqual(len(fikeys), len(keyobj))
-
-		idx = self.get_random_index()
-		#get id from identifier class
-		self.assertEqual(fikeys[idx], keyobj[idx])
-
-		#negative index
-		self.assertEqual(fikeys[len(fikeys)-idx], keyobj[len(fikeys)-idx])
-
-		#check contains
-		self.assertTrue(self.faidx[idx].name in keyobj)
-
-	def test_keys_sort(self):
-		#sort by id
-		keys = self.fastx.keys()
-
-		expect = [seq.name for seq in self.faidx]
-		expect.reverse()
-		result = [name for name in keys.sort('id', reverse=True)]
-		self.assertEqual(expect, result)
-
-		#sort by name
-		expect = sorted([seq.name for seq in self.faidx])
-		result = [name for name in keys.sort('name')]
-		self.assertEqual(expect, result)
-
-		#sort by length
-		lens = [(seq.name, len(seq)) for seq in self.faidx]
-		expect = [it[0] for it in sorted(lens, key=lambda x: x[1])]
-		result = [name for name in keys.sort('length')]
-		self.assertEqual(expect, result)
-
-		keys.reset()
-
-	def test_keys_filter(self):
-		ids = self.fastx.keys()
-
-		#test greater than
-		expect = list(ids.filter(ids>700))
-		result = [seq.name for seq in self.faidx if len(seq) > 700]
-		self.assertEqual(expect, result)
-
-		#test two compare
-		expect = list(ids.filter(600<=ids<=700))
-		result = [seq.name for seq in self.faidx if len(seq) >= 600 and len(seq) <= 700]
-		self.assertEqual(expect, result)
-
-		#test like compare
-		expect = list(ids.filter(ids % 'JZ8226'))
-		result = [seq.name for seq in self.faidx if seq.name.startswith('JZ8226')]
-		self.assertEqual(expect, result)
-
-		#test all compare
-		expect = list(ids.filter(ids % 'JZ8226', ids>=300).sort('name', reverse=True))
-		result = [seq.name for seq in self.faidx if seq.name.startswith('JZ8226') and len(seq) >= 300]
-		self.assertEqual(sorted(result, reverse=True), expect)
-
-		ids.reset()
-
-	def test_seq_by_index(self):
-		#test get seq by index
-		idx = self.get_random_index()
-		expect = self.faidx[idx][:]
-		result = self.fastx[idx]
-
-		self.assertEqual(expect.name, result.name)
-		self.assertEqual(expect.seq, result.seq)
-
-		#test subseq
-		self.assertEqual(expect[0:10].seq, result[0:10].seq)
-
-		#test negative index
-		idx = (self.get_random_index() + 1) * -1
-		expect = self.faidx[idx][:]
-		result = self.fastx[idx]
-
-		self.assertEqual(expect.name, result.name)
-		self.assertEqual(expect.seq, result.seq)
-
-	def test_seq_by_key(self):
-		idx = self.get_random_index()
-		key = list(self.faidx.keys())[idx]
-
-		expect = self.faidx[key][:]
-		result = self.fastx[key]
-
-		self.assertEqual(expect.name, result.name)
-		self.assertEqual(expect.seq, result.seq)
-
-	def test_seq_reverse_complement(self):
-		idx = self.get_random_index()
-		expect = self.faidx[idx][:]
-		result = self.fastx[idx]
-
-		self.assertEqual(str(expect.reverse), result.reverse)
-		self.assertEqual(str(expect.complement), result.complement)
-		self.assertEqual(str(-expect), result.antisense)
-
-	def test_seq_raw(self):
-		idx = self.get_random_index()
-
-		seq = self.fastx[idx]
-
-		lines = []
-		with open(flat_fasta) as fh:
-			for line in fh:
-				if line.startswith('>{}'.format(seq.name)):
-					lines.append(line)
-					continue
-
-				if lines:
-					if line[0] == '>':
-						break
-
-					lines.append(line)
-
-		self.assertEqual(''.join(lines).replace('\n','\r\n'), seq.raw)
-
-	def test_seq_slice(self):
-		idx = self.get_random_index()
-		expect = str(self.faidx[idx])
-		result = self.fastx[idx]
-		flatseq = self.fasta[idx]
-
-		#test gzip subseq
-		self.assertEqual(expect[5:10], result[5:10].seq)
-		
-		#test flat subseq
-		self.assertEqual(expect[5:10], flatseq[5:10].seq)
-
-
-		self.assertEqual(expect[20:], result[20:].seq)
-
-		#test two level slice
-		self.assertEqual(expect[10:100][:20], result[10:100][:20].seq)
-
-		#test sequence index
-		pos = random.randint(0, len(expect) - 1)
-		self.assertEqual(expect[pos], result[pos])
-
-		pos = random.randint(1, len(expect)) * -1
-		self.assertEqual(expect[pos], result[pos])
-
-		del flatseq
-
-	def test_seq_content(self):
-		idx = self.get_random_index()
-		result = self.fastx[idx]
-		expect = self.faidx[idx]
-
-		content = {'A': 0, 'C': 0, 'G': 0, 'T': 0}
-		content['A'] += expect[:].seq.count('A')
-		content['C'] += expect[:].seq.count('C')
-		content['G'] += expect[:].seq.count('G')
-		content['T'] += expect[:].seq.count('T')
-
-		expect_gc = (content['G']+content['C'])/sum(content.values())*100
-
-		self.assertEqual(result.composition, content)
-		self.assertEqual(round(result.gc_content, 3), round(expect_gc, 3))
-
-		#test gc skew
-		expect_skew = (content['G']-content['C'])/(content['G']+content['C'])
-		self.assertEqual(round(result.gc_skew, 3), round(expect_skew, 3))
-
-	def test_seq_iter(self):
-		idx = self.get_random_index()
-		fai_seq = self.faidx[idx]
-		fxi_seq = self.fastx[idx]
-		fas_seq = self.fasta[idx]
-
-		# test read seq line by line
-		flatsq = [line for line in fas_seq]
-		expect = [str(line) for line in fai_seq]
-		result = [line for line in fxi_seq]
-
-		self.assertEqual(expect, result)
-		self.assertEqual(expect, flatsq)
-
-		# test seq long name
-		self.assertEqual(fai_seq.long_name.strip(), fxi_seq.description)
-
-		# test seq str
-		self.assertEqual(str(fai_seq), str(fxi_seq))
-
-		# test seq contains
-		s, e = sorted(random.sample(range(1, len(fai_seq)), 2))
-		segment = str(fai_seq)[s-1:e]
-		self.assertTrue(segment in fxi_seq)
-
-		# test seq search
-		expect = str(fai_seq).index(segment) + 1
-		result = fxi_seq.search(segment)
-		self.assertEqual(expect, result)
-
-	def test_get_seq(self):
+	def test_seq_fetch(self):
 		idx = self.get_random_index()
 		name = list(self.faidx.keys())[idx]
 		l = len(self.fastx[idx])
@@ -375,6 +195,37 @@ class FastaTest(unittest.TestCase):
 		result = self.fastx.fetch(name, intervals)
 
 		self.assertEqual(expect, result)
+
+	def test_exception(self):
+		with self.assertRaises(TypeError):
+			pyfastx.Fasta(flat_fasta, key_func=1)
+
+		with self.assertRaises(FileExistsError):
+			pyfastx.Fasta('a_file_not_exists')
+
+		with self.assertRaises(ValueError):
+			self.fastx.fetch('seq1', {'a':1})
+
+		with self.assertRaises(NameError):
+			self.fastx.fetch('seq1', (1,10))
+
+		with self.assertRaises(ValueError):
+			self.fastx.fetch(self.fastx[0].name, (1,10,20))
+
+		with self.assertRaises(ValueError):
+			self.fastx.fetch(self.fastx[0].name, (20, 10))
+
+		with self.assertRaises(ValueError):
+			self.fastx.fetch(self.fastx[0].name, [20, 10])
+
+		with self.assertRaises(IndexError):
+			self.fastx[self.count]
+
+		with self.assertRaises(KeyError):
+			self.fastx[int]
+
+		with self.assertRaises(ValueError):
+			self.fastx.nl(101)
 
 if __name__ == '__main__':
 	unittest.main()

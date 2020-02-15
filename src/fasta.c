@@ -280,7 +280,7 @@ PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self) {
 	ids->filter = NULL;
 	ids->temp_filter = NULL;
 
-	Py_INCREF(ids);
+	//Py_INCREF(ids);
 	return (PyObject *)ids;
 }
 

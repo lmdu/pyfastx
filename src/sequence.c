@@ -172,7 +172,7 @@ uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 }
 
 PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
-	if(self->start == 1 && self->end == self->seq_len){
+	if(self->start == 1 && self->end == self->parent_len){
 		return Py_BuildValue("s", self->name);
 	} else {
 		return PyUnicode_FromFormat("%s:%d-%d", self->name, self->start, self->end);
@@ -305,7 +305,7 @@ PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure){
 }
 
 PyObject *pyfastx_sequence_repr(pyfastx_Sequence* self){
-	if(self->start == 1 && self->end == self->seq_len){
+	if(self->start == 1 && self->end == self->parent_len){
 		return PyUnicode_FromFormat("<Sequence> %s with length of %d", self->name, self->seq_len);
 	} else {
 		return PyUnicode_FromFormat("<Sequence> %s from %d to %d", self->name, self->start, self->end);

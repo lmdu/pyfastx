@@ -210,7 +210,7 @@ PyObject *pyfastx_identifier_like(pyfastx_Identifier *self, PyObject *tag) {
 		PyErr_SetString(PyExc_ValueError, "the tag after % must be a string");
 		return NULL;
 	}
-	
+
 	return PyUnicode_FromFormat("chrom LIKE '%%%s%%'", PyUnicode_AsUTF8(tag));
 }
 
@@ -283,7 +283,7 @@ PyObject *pyfastx_identifier_reset(pyfastx_Identifier *self) {
 	}
 	
 	PYFASTX_SQLITE_CALL(
-		sqlite3_prepare_v2(self->index_db, "SELECT COUNT(*) FROM seq", -1, &stmt, NULL);
+		sqlite3_prepare_v2(self->index_db, "SELECT seqnum FROM stat", -1, &stmt, NULL);
 		ret = sqlite3_step(stmt);
 	);
 

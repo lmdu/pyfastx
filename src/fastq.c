@@ -341,7 +341,7 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 	read->seq = NULL;
 	read->qual = NULL;
 
-	Py_INCREF(read);
+	//Py_INCREF(read);
 	return (PyObject *)read;
 }
 

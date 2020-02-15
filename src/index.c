@@ -437,7 +437,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	//index
 	seq->index = self;
 
-	Py_INCREF(seq);
+	//Py_INCREF(seq);
 	return (PyObject *)seq;
 }
 
