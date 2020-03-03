@@ -409,12 +409,13 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 	char* keywords[] = {"subseq", "strand", NULL};
 
 	char *subseq;
+	int sublen;
 	char *seq;
 	char *result;
 	uint32_t start;
 	int strand = '+';
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|C", keywords, &subseq, &strand)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|C", keywords, &subseq, &sublen, &strand)){
 		return NULL;
 	}
 
@@ -429,7 +430,7 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 		Py_RETURN_NONE;
 	}
 	if(strand == '-'){
-		start = result - seq + strlen(subseq);
+		start = result - seq + sublen;
 	} else {
 		start = result - seq + 1;
 	}

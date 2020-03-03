@@ -100,7 +100,7 @@ for gfile in ${gfiles[@]:1}; do
 
 	#print result
 	printf "%s\t%s\t%s\t%s\t%s\t" $filename $gsize $seqcounts $longname $longlen
-	for((i=0;i<=$num;i++)); do
+	for((i=0;i<=num;i++)); do
 		mm=$(echo "scale=2;${memorys[$i]}/$repeats" | bc)
 		et=$(echo "scale=2;${times[$i]}/$repeats" | bc)
 		printf "%.2f\t%.2f\t" $mm $et

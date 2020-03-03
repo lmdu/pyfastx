@@ -64,7 +64,7 @@ for gfile in ${gfiles[@]:1}; do
 	longname=${array[2]}
 
 	#longest sequence length
-	longlen=${array[3]}
+	#longlen=${array[3]}
 
 	for i in $(seq 1 $repeats); do
 		num=-1
@@ -100,7 +100,7 @@ for gfile in ${gfiles[@]:1}; do
 
 	#print result
 	printf "%s\t%s\t%s\t%s\t%s\t" $filename $gsize $seqcounts
-	for((i=0;i<=$num;i++)); do
+	for((i=0;i<=num;i++)); do
 		mm=$(echo "scale=2;${memorys[$i]}/$repeats" | bc)
 		et=$(echo "scale=2;${times[$i]}/$repeats" | bc)
 		printf "%.2f\t%.2f\t" $mm $et

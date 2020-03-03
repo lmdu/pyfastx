@@ -1,5 +1,4 @@
 #include "util.h"
-#include "zlib.h"
 
 //check file is whether exists in disk
 uint16_t file_exists(char *file_name){

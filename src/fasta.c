@@ -32,6 +32,7 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 	//fasta file path
 	char *file_name;
+	int file_len;
 
 	//bool value for uppercase sequence
 	int uppercase = 1;
@@ -53,7 +54,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//paramters for fasta object construction
 	static char* keywords[] = {"file_name", "uppercase", "build_index", "full_index", "memory_index", "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iiiiO", keywords, &file_name, &uppercase, &build_index, &full_index, &memory_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiO", keywords, &file_name, &file_len, &uppercase, &build_index, &full_index, &memory_index, &key_func)){
 		return NULL;
 	}
 
@@ -75,7 +76,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 	
 	//initial sequence file name
-	obj->file_name = (char *)malloc(strlen(file_name) + 1);
+	obj->file_name = (char *)malloc(file_len + 1);
 	strcpy(obj->file_name, file_name);
 
 	obj->uppercase = uppercase;

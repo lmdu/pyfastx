@@ -220,6 +220,7 @@ PyObject *pyfastx_fastq_build_index(pyfastx_Fastq *self){
 
 PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
 	char *file_name;
+	int file_len;
 	int phred = 0;
 	int build_index = 1;
 	int composition = 0;
@@ -228,7 +229,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	pyfastx_Fastq *obj;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|iii", keywords, &file_name, &phred, &build_index, &composition)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iii", keywords, &file_name, &file_len, &phred, &build_index, &composition)) {
 		return NULL;
 	}
 
@@ -243,7 +244,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		return NULL;
 	}
 
-	obj->file_name = (char *)malloc(strlen(file_name) + 1);
+	obj->file_name = (char *)malloc(file_len + 1);
 	strcpy(obj->file_name, file_name);
 
 	//check input file is gzip or not
@@ -261,7 +262,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 
 	//create index file
-	obj->index_file = (char *)malloc(strlen(file_name) + 5);
+	obj->index_file = (char *)malloc(file_len + 5);
 	strcpy(obj->index_file, file_name);
 	strcat(obj->index_file, ".fxi");
 
@@ -544,14 +545,12 @@ void pyfastx_fastq_calc_composition(pyfastx_Fastq *self) {
 	sqlite3_finalize(stmt);
 	stmt = NULL;
 
-	if (phred == 0) {
-		if (maxqs > 74) {
-			phred = 64;
-		}
+	if (maxqs > 74) {
+		phred = 64;
+	}
 
-		if (minqs < 59) {
-			phred = 33;
-		}
+	if (minqs < 59) {
+		phred = 33;
 	}
 
 	//insert platform into index file

@@ -20,7 +20,7 @@ with open(sys.argv[1]) as fh:
 		p += 1
 		count = cols[p]
 
-		for i in range(len(tools)):
+		for i in range(7):
 			p += 1
 			memory = str(round(float(cols[p])/(1024*1024), 5))
 			p += 1

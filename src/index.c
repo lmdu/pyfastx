@@ -9,7 +9,7 @@ create a index
 @param uppercase, uppercase sequence
 @param uppercase
 */
-pyfastx_Index* pyfastx_init_index(char* file_name, int uppercase, int memory_index, PyObject* key_func){
+pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, int memory_index, PyObject* key_func){
 	pyfastx_Index* index;
 
 	index = (pyfastx_Index *)malloc(sizeof(pyfastx_Index));
@@ -29,7 +29,7 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int uppercase, int memory_ind
 	if (memory_index) {
 		index->index_file = ":memory:";
 	} else {
-		index->index_file = (char *)malloc(strlen(file_name) + 5);
+		index->index_file = (char *)malloc(file_len + 5);
 		strcpy(index->index_file, file_name);
 		strcat(index->index_file, ".fxi");
 	}
