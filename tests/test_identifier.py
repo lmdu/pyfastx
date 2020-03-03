@@ -1,10 +1,8 @@
 import os
-import gzip
 import random
 import pyfastx
 import pyfaidx
 import unittest
-import threading
 
 gzip_fasta = 'tests/data/test.fa.gz'
 flat_fasta = 'tests/data/test.fa'
@@ -16,7 +14,7 @@ class FastaTest(unittest.TestCase):
 		self.fasta = pyfastx.Fasta(flat_fasta)
 
 		self.faidx = pyfaidx.Fasta(flat_fasta, sequence_always_upper=True)
-		
+
 		self.count = len(self.fastx)
 
 	def tearDown(self):
@@ -112,13 +110,13 @@ class FastaTest(unittest.TestCase):
 	def test_id_exception(self):
 		keyobj = self.fastx.keys()
 		with self.assertRaises(IndexError):
-			keyobj[len(keyobj)]
+			_ = keyobj[len(keyobj)]
 
 		with self.assertRaises(ValueError):
-			keyobj % list
+			_ = keyobj % list
 
 		with self.assertRaises(ValueError):
-			keyobj.filter()
+			_ = keyobj.filter()
 
 if __name__ == '__main__':
 	unittest.main()

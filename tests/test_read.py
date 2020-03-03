@@ -2,7 +2,6 @@ import os
 import gzip
 import random
 import pyfastx
-import pyfaidx
 import unittest
 
 gzip_fastq = 'tests/data/test.fq.gz'

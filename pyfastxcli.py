@@ -239,7 +239,7 @@ def fastx_subseq(args):
 		sys.stdout.write("{}\n".format(subseq[start:end].seq))
 	else:
 		sys.stdout.write("{}\n".format(subseq.seq))
-	
+
 	sys.stdout.flush()
 
 def fasta_sample(args):

@@ -1,4 +1,5 @@
 #include "util.h"
+#include "zlib.h"
 
 //check file is whether exists in disk
 uint16_t file_exists(char *file_name){
@@ -7,6 +8,41 @@ uint16_t file_exists(char *file_name){
 		fclose(file);
 		return 1;
 	}
+	return 0;
+}
+
+//check file is fasta file
+int fasta_validator(gzFile fd) {
+	int c;
+	while ((c=gzgetc(fd)) != -1) {
+		if (isspace(c)) {
+			continue;
+		}
+
+		if (c == '>') {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+
+	return 0;
+}
+
+int fastq_validator(gzFile fd) {
+	int c;
+	while ((c=gzgetc(fd)) != -1) {
+		if (isspace(c)) {
+			continue;
+		}
+
+		if (c == '@') {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+
 	return 0;
 }
 

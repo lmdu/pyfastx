@@ -254,6 +254,12 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->ks = ks_init(obj->gzfd);
 	obj->kseq = kseq_init(obj->gzfd);
 
+	//check is correct fastq format
+	if (!fastq_validator(obj->gzfd)) {
+		PyErr_Format(PyExc_RuntimeError, "%s is not plain or gzip compressed fastq format", file_name);
+		return NULL;
+	}
+
 	//create index file
 	obj->index_file = (char *)malloc(strlen(file_name) + 5);
 	strcpy(obj->index_file, file_name);

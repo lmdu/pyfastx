@@ -84,6 +84,12 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//create index
 	obj->index = pyfastx_init_index(obj->file_name, uppercase, memory_index, key_func);
 
+	//check is correct fasta format
+	if (!fasta_validator(obj->index->gzfd)) {
+		PyErr_Format(PyExc_RuntimeError, "%s is not plain or gzip compressed fasta format", file_name);
+		return NULL;
+	}
+
 	//if build_index is True
 	if (build_index) {
 		pyfastx_build_index(obj->index);
@@ -736,11 +742,11 @@ PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 	alphabets[j] = '\0';
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 
-	if (is_subset("ACGTN", alphabets) || is_subset("ABCDGHKMNRSTVWY", alphabets)) {
+	if (is_subset("ACGTN", alphabets) || is_subset("ABCDGHKMNRSTVWY-", alphabets)) {
 		retval = "DNA";
-	} else if (is_subset("ACGUN", alphabets) || is_subset("ABCDGHKMNRSUVWY", alphabets)) {
+	} else if (is_subset("ACGUN", alphabets) || is_subset("ABCDGHKMNRSUVWY-", alphabets)) {
 		retval = "RNA";
-	} else if (is_subset("ACDEFGHIKLMNPQRSTVWY", alphabets)) {
+	} else if (is_subset("ACDEFGHIKLMNPQRSTVWY*-", alphabets)) {
 		retval = "protein";
 	} else {
 		retval = "unknown";

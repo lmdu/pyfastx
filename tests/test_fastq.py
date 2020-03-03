@@ -1,5 +1,4 @@
 import os
-import gzip
 import random
 import pyfastx
 import pyfaidx
@@ -75,7 +74,7 @@ class FastaTest(unittest.TestCase):
 
 		# test gc content
 		result = round(self.fastq.gc_content, 2)
-		
+
 		expect = round((self.bases['G']+self.bases['C'])/(sum(self.bases.values()))*100, 2)
 		self.assertEqual(expect, result)
 
@@ -114,13 +113,13 @@ class FastaTest(unittest.TestCase):
 
 	def test_exception(self):
 		with self.assertRaises(FileExistsError):
-			pyfastx.Fastq('a_fastq_file_not_exists')
+			_ = pyfastx.Fastq('a_fastq_file_not_exists')
 
 		with self.assertRaises(IndexError):
-			self.fastq[len(self.fastq)]
+			_ = self.fastq[len(self.fastq)]
 
 		with self.assertRaises(KeyError):
-			self.fastq[int]
+			_ = self.fastq[int]
 
 
 

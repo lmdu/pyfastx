@@ -1,10 +1,8 @@
 import os
-import gzip
 import random
 import pyfastx
 import pyfaidx
 import unittest
-import threading
 
 gzip_fasta = 'tests/data/test.fa.gz'
 flat_fasta = 'tests/data/test.fa'
@@ -219,7 +217,7 @@ class FastaTest(unittest.TestCase):
 			self.fastx.fetch(self.fastx[0].name, [20, 10])
 
 		with self.assertRaises(IndexError):
-			self.fastx[self.count]
+			_ = self.fastx[self.count]
 
 		with self.assertRaises(KeyError):
 			self.fastx[int]

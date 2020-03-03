@@ -1,10 +1,8 @@
 import os
-import gzip
 import random
 import pyfastx
 import pyfaidx
 import unittest
-import threading
 
 gzip_fasta = 'tests/data/test.fa.gz'
 flat_fasta = 'tests/data/test.fa'
@@ -102,8 +100,6 @@ class FastaTest(unittest.TestCase):
 		
 		#test flat subseq
 		self.assertEqual(expect[5:10], flatseq[5:10].seq)
-
-
 		self.assertEqual(expect[20:], result[20:].seq)
 
 		#test two level slice
