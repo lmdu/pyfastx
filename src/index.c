@@ -424,7 +424,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 		seq->line_len = sqlite3_column_int(stmt, 5);
 		seq->end_len = sqlite3_column_int(stmt, 6);
 		seq->normal = sqlite3_column_int(stmt, 7);
-		sqlite3_finalize(stmt);
+		//sqlite3_finalize(stmt);
 	);
 	
 	seq->parent_len = seq->seq_len;
@@ -444,6 +444,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
 	// sqlite3 prepare object
 	sqlite3_stmt *stmt;
+	PyObject *obj;
 	int ret;
 	
 	//select sql statement, chrom indicates seq name or chromomsome
@@ -460,12 +461,16 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
 		return NULL;
 	}
 
-	return pyfastx_index_make_seq(self, stmt);
+	obj = pyfastx_index_make_seq(self, stmt);
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+
+	return obj;
 }
 
 
 PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 	sqlite3_stmt *stmt;
+	PyObject *obj;
 	int ret;
 
 	const char* sql = "SELECT * FROM seq WHERE ID=? LIMIT 1;";
@@ -480,7 +485,10 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 		return NULL;
 	}
 
-	return pyfastx_index_make_seq(self, stmt);
+	obj = pyfastx_index_make_seq(self, stmt);
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+
+	return obj;
 }
 
 char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){

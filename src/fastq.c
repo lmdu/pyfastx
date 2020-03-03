@@ -339,7 +339,7 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 		read->read_len = sqlite3_column_int(stmt, 3);
 		read->seq_offset = sqlite3_column_int64(stmt, 4);
 		read->qual_offset = sqlite3_column_int64(stmt, 5);
-		sqlite3_finalize(stmt);
+		//sqlite3_finalize(stmt);
 	);
 	
 	read->gzfd = self->gzfd;
@@ -355,6 +355,7 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 
 PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint64_t read_id) {
 	sqlite3_stmt *stmt;
+	PyObject *obj;
 	int ret;
 
 	const char* sql = "SELECT * FROM read WHERE ID=? LIMIT 1;";
@@ -369,12 +370,16 @@ PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint64_t read_id) {
 		return NULL;
 	}
 
-	return pyfastx_fastq_make_read(self, stmt);
+	obj = pyfastx_fastq_make_read(self, stmt);
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+
+	return obj;
 }
 
 PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, char* name) {
 	// sqlite3 prepare object
 	sqlite3_stmt *stmt;
+	PyObject *obj;
 	int ret;
 	
 	//select sql statement, chrom indicates seq name or chromomsome
@@ -390,7 +395,10 @@ PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, char* name) {
 		return NULL;
 	}
 
-	return pyfastx_fastq_make_read(self, stmt);
+	obj = pyfastx_fastq_make_read(self, stmt);
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+
+	return obj;
 }
 
 PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
