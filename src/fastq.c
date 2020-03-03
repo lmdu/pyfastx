@@ -451,11 +451,11 @@ PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 	
 	if (self->has_index) {
 		//self->iter_id = 0;
-		if (self->iter_stmt != NULL) {
-			PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+		PYFASTX_SQLITE_CALL(
+			sqlite3_finalize(self->iter_stmt);
 			self->iter_stmt = NULL;
-		}
-		PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index_db, "SELECT * FROM read", -1, &self->iter_stmt, NULL));
+			sqlite3_prepare_v2(self->index_db, "SELECT * FROM read", -1, &self->iter_stmt, NULL);
+		);
 	} else {
 		kseq_rewind(self->kseq);
 	}
@@ -485,7 +485,6 @@ PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
 	}
 
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
-	self->iter_stmt = NULL;
 
 	return NULL;
 }

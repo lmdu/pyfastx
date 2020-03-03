@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.6.7 (2020-03-03)
+--------------------------
+
+- Added check for fasta/q format when open file
+- Added benchmark scripts for evaluating performance
+- Speed up the fasta/q object iteration
+- Optimzed str length warning caused by strlen
+
 Version 0.6.6 (2020-02-15)
 --------------------------
 
