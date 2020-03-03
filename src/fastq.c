@@ -257,7 +257,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	//check is correct fastq format
 	if (!fastq_validator(obj->gzfd)) {
-		PyErr_Format(PyExc_RuntimeError, "%s is not plain or gzip compressed fastq format", file_name);
+		PyErr_Format(PyExc_RuntimeError, "%s is not plain or gzip compressed fastq formatted file", file_name);
 		return NULL;
 	}
 
@@ -270,6 +270,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	//initail index connection
 	obj->index_db = 0;
+	obj->iter_stmt = NULL;
 
 	obj->has_index = build_index;
 
@@ -352,7 +353,7 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 	return (PyObject *)read;
 }
 
-PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint32_t read_id) {
+PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint64_t read_id) {
 	sqlite3_stmt *stmt;
 	int ret;
 
@@ -447,10 +448,16 @@ int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
 
 PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 	gzrewind(self->gzfd);
-	kseq_rewind(self->kseq);
-
+	
 	if (self->has_index) {
-		self->iter_id = 0;
+		//self->iter_id = 0;
+		if (self->iter_stmt != NULL) {
+			PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+			self->iter_stmt = NULL;
+		}
+		PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index_db, "SELECT * FROM read", -1, &self->iter_stmt, NULL));
+	} else {
+		kseq_rewind(self->kseq);
 	}
 	
 	Py_INCREF(self);
@@ -459,16 +466,26 @@ PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 
 PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
 	if (self->has_index) {
-		++self->iter_id;
+		//++self->iter_id;
 
-		if (self->iter_id <= self->read_counts) {
-			return pyfastx_fastq_get_read_by_id(self, self->iter_id);
+		//if (self->iter_id <= self->read_counts) {
+		//	return pyfastx_fastq_get_read_by_id(self, self->iter_id);
+		//}
+		int ret;
+		PYFASTX_SQLITE_CALL(ret = sqlite3_step(self->iter_stmt));
+
+		if (ret == SQLITE_ROW) {
+			return pyfastx_fastq_make_read(self, self->iter_stmt);
 		}
+
 	} else {
 		if (kseq_read(self->kseq) >= 0) {
 			return Py_BuildValue("sss", self->kseq->name.s, self->kseq->seq.s, self->kseq->qual.s);
 		}
 	}
+
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+	self->iter_stmt = NULL;
 
 	return NULL;
 }

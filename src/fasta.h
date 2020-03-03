@@ -28,16 +28,10 @@ typedef struct {
 	uint16_t has_index;
 
 	//current iter sequence id
-	uint32_t iter_id;
+	//uint32_t iter_id;
 
-	//a float for GC content (%)
-	//float gc_content;
-
-	//GC skew
-	//float gc_skew;
-
-	//a dict for storing A T G C N (unknown base) counts in fasta
-	//PyObject* composition;
+	//cursor for iteration
+	sqlite3_stmt *iter_stmt;
 
 	//index for fast random access to sequence
 	pyfastx_Index* index;

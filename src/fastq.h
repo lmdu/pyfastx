@@ -52,7 +52,8 @@ typedef struct {
 	kseq_t *kseq;
 
 	//the ID of the current iter read
-	uint64_t iter_id;
+	//uint64_t iter_id;
+	sqlite3_stmt *iter_stmt;
 
 	//if build_index is True means has index
 	uint16_t has_index;

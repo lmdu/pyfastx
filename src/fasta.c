@@ -83,11 +83,14 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->has_index = build_index;
 
 	//create index
-	obj->index = pyfastx_init_index(obj->file_name, uppercase, memory_index, key_func);
+	obj->index = pyfastx_init_index(obj->file_name, file_len, uppercase, memory_index, key_func);
+
+	//initial iterator stmt
+	obj->iter_stmt = NULL;
 
 	//check is correct fasta format
 	if (!fasta_validator(obj->index->gzfd)) {
-		PyErr_Format(PyExc_RuntimeError, "%s is not plain or gzip compressed fasta format", file_name);
+		PyErr_Format(PyExc_RuntimeError, "%s is not plain or gzip compressed fasta formatted file", file_name);
 		return NULL;
 	}
 
@@ -113,7 +116,13 @@ PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){
 	pyfastx_rewind_index(self->index);
 
 	if (self->has_index) {
-		self->iter_id = 0;
+		//self->iter_id = 0;
+		if (self->iter_stmt != NULL) {
+			PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+			self->iter_stmt = NULL;
+		}
+
+		PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM seq", -1, &self->iter_stmt, NULL));
 	}
 
 	Py_INCREF(self);
@@ -126,17 +135,26 @@ PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self){
 
 PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 	if (self->has_index) {
-		++self->iter_id;
+		//++self->iter_id;
 
-		if (self->iter_id > self->seq_counts) {
-			return NULL;
-		} else {
-			return pyfastx_index_get_seq_by_id(self->index, self->iter_id);
+		//if (self->iter_id <= self->seq_counts) {
+		//	return pyfastx_index_get_seq_by_id(self->index, self->iter_id);
+		//}
+
+		int ret;
+		PYFASTX_SQLITE_CALL(ret = sqlite3_step(self->iter_stmt));
+		if (ret == SQLITE_ROW) {
+			return pyfastx_index_make_seq(self->index, self->iter_stmt);
 		}
 
 	} else {
 		return pyfastx_get_next_seq(self->index);
 	}
+
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+	self->iter_stmt = NULL;
+
+	return NULL;
 }
 
 PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self){
