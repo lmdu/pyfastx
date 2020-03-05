@@ -2,7 +2,15 @@
 
 ## Test tools
 
-All tools support for random access were used to perform benchmark including samtools (v1.9), pysam (v0.15.3), seqkit (v0.11.0), pyfasta (v0.5.2), pyfaidx (v0.5.5.2).
+All tools support for random access were used to perform benchmark. Python 3.6.6 was used to test tools that was developed as Python package.
+
+| Tools    | Version  | Language  | URL                                       |
+|----------|----------|-----------|-------------------------------------------|
+| samtools | v1.9     | C         | http://www.htslib.org/                    |
+| pysam    | v0.15.3  | C, Python | https://github.com/pysam-developers/pysam |
+| seqkit   | v0.11.0  | Go        | https://bioinf.shenwei.me/seqkit/         |
+| pyfasta  | v0.5.2   | Python    | https://github.com/brentp/pyfasta         |
+| pyfaidx  | v0.5.5.2 | Python    | https://github.com/mdshw5/pyfaidx         |
 
 ## Test data
 
@@ -37,22 +45,22 @@ We used linux command ``/usr/bin/time -f "%e %M"`` to estimate the running time 
 ### Building index
 
 ```sh
-$ benchmark_build_index.sh 3 data/*.fa > benchmark_result_build_index.tsv
-$ python make_ggplot2_matrix_for_index_access.py benchmark_result_build_index.tsv > build_index_matrix.tsv
+./benchmark_build_index.sh 3 data/*.fa > benchmark_result_build_index.tsv
+python make_ggplot2_matrix_for_index_access.py benchmark_result_build_index.tsv > build_index_matrix.tsv
 ```
 
 ### Random access to longest sequence
 
 ```sh
-$ benchmark_random_access.sh 3 data/*.fa > benchmark_result_random_access.tsv
-$ python make_ggplot2_matrix_for_index_access.py benchmark_result_random_access.tsv > random_access_matrix.tsv
+./benchmark_random_access.sh 3 data/*.fa > benchmark_result_random_access.tsv
+python make_ggplot2_matrix_for_index_access.py benchmark_result_random_access.tsv > random_access_matrix.tsv
 ```
 
 ### Reverse complement longest sequence
 
 ```sh
-$ benchmark_reverse_complement.sh 3 data/*.fa > benchmark_result_reverse_complement.tsv
-$ python make_ggplot2_matrix_for_reverse_complement.py benchmark_result_reverse_complement.tsv > reverse_complement_matrix.tsv
+./benchmark_reverse_complement.sh 3 data/*.fa > benchmark_result_reverse_complement.tsv
+python make_ggplot2_matrix_for_reverse_complement.py benchmark_result_reverse_complement.tsv > reverse_complement_matrix.tsv
 ```
 
 ## Plot
