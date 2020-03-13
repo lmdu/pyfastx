@@ -4,7 +4,7 @@ environment:
   global:
     #MINGW_32: C:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32
     #MINGW_64: C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64
-    BUILD_DEPENDS: "zlib sqlite3"
+    BUILD_DEPENDS: "zlib sqlite"
     TWINE_REPOSITORY: pypi
     TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
 
@@ -51,7 +51,7 @@ install:
   - python --version
 
 build_script:
-  - conda install --yes zlib sqlite3 conda-build
+  - conda install --yes %BUILD_DEPENDS% conda-build
   - conda create --yes -n build_env python=%PYTHON_VERSION% %BUILD_DEPENDS%
   - CALL conda.bat activate build_env
   - conda update --yes setuptools pip
