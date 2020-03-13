@@ -59,9 +59,9 @@ build_script:
   - set ZLIB_HOME=%PYTHON%\\Library
   - dir %ZLIB_HOME%\\include
   - dir %ZLIB_HOME%\\lib
-  - python setup.py build_ext --inplace
+  - python setup.py bdist_wheel
 
 artifacts:
   #- path: "wheelhouse\\*.whl"
-  - path: "pyfastx*.pyd"
+  - path: "pyfastx*.whl"
     name: Wheels
