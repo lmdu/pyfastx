@@ -125,7 +125,7 @@ int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 		return 0;
 	}
 
-	name = PyUnicode_AsUTF8(key);
+	name = (char *)PyUnicode_AsUTF8(key);
 
 	sql = "SELECT * FROM seq WHERE chrom=? LIMIT 1;";
 	PYFASTX_SQLITE_CALL(
@@ -211,7 +211,7 @@ PyObject *pyfastx_identifier_like(pyfastx_Identifier *self, PyObject *tag) {
 		return NULL;
 	}
 
-	return PyUnicode_FromFormat("chrom LIKE '%%%s%%'", PyUnicode_AsUTF8(tag));
+	return PyUnicode_FromFormat("chrom LIKE '%%%s%%'", (char *)PyUnicode_AsUTF8(tag));
 }
 
 PyObject *pyfastx_identifier_filter(pyfastx_Identifier *self, PyObject *args) {
@@ -229,7 +229,7 @@ PyObject *pyfastx_identifier_filter(pyfastx_Identifier *self, PyObject *args) {
 
 	PyObject *sep = Py_BuildValue("s", " AND ");
 	PyObject *cat = PyUnicode_Join(sep, args);
-	tmp = PyUnicode_AsUTF8AndSize(cat, &l);
+	tmp = (char *)PyUnicode_AsUTF8AndSize(cat, &l);
 
 	if (self->filter) {
 		self->filter = (char *)realloc(self->filter, l+1);

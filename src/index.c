@@ -274,7 +274,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 				PyGILState_STATE state = PyGILState_Ensure();
 				PyObject *result = PyObject_CallFunction(self->key_func, "s", header_pos);
 				PyGILState_Release(state);
-				temp_chrom = PyUnicode_AsUTF8AndSize(result, &chrom.l);
+				temp_chrom = (char *)PyUnicode_AsUTF8AndSize(result, &chrom.l);
 				memcpy(chrom.s, temp_chrom, chrom.l);
 				chrom.s[chrom.l] = '\0';
 				free(temp_chrom);
@@ -456,7 +456,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
 		ret = sqlite3_step(stmt);
 	);
 	
-	if(ret != SQLITE_ROW){
+	if (ret != SQLITE_ROW) {
 		PyErr_Format(PyExc_KeyError, "%s does not exist in fasta file", name);
 		return NULL;
 	}
@@ -532,7 +532,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, self->cache_seq, bytes);
 	} else {
-		fseek(self->fd, offset, SEEK_SET);
+		FSEEK(self->fd, offset, SEEK_SET);
 		if (fread(self->cache_seq, bytes, 1, self->fd) != 1) {
 			if (!feof(self->fd)) {
 				PyErr_SetString(PyExc_RuntimeError, "reading sequence error");

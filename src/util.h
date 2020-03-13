@@ -42,4 +42,7 @@ int fastq_validator(gzFile fd);
 #define PYFASTX_SQLITE_CALL(x) \
   do { Py_BEGIN_ALLOW_THREADS { x; } Py_END_ALLOW_THREADS ; } while(0)
 
+//support large fseek offset
+#define FSEEK fseeko
+
 #endif

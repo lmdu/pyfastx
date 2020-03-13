@@ -325,7 +325,8 @@ PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
 		return pyfastx_index_get_seq_by_id(self->index, i+1);
 		
 	} else if (PyUnicode_CheckExact(item)) {
-		return pyfastx_index_get_seq_by_name(self->index, PyUnicode_AsUTF8(item));
+		
+		return pyfastx_index_get_seq_by_name(self->index, (char *)PyUnicode_AsUTF8(item));
 
 	} else {
 		PyErr_SetString(PyExc_KeyError, "the key must be index number or sequence name");
@@ -346,7 +347,7 @@ int pyfastx_fasta_contains(pyfastx_Fasta *self, PyObject *key){
 		return 0;
 	}
 	
-	name = PyUnicode_AsUTF8(key);
+	name = (char *)PyUnicode_AsUTF8(key);
 
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM seq WHERE chrom=? LIMIT 1;", -1, &stmt, NULL);

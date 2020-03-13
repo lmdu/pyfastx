@@ -27,6 +27,9 @@ typedef struct {
 	//gzip index read handle
 	gzFile gzfd;
 
+	//file handle
+	FILE* fd;
+
 	//gzip index
 	zran_index_t* gzip_index;
 

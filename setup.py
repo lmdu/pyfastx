@@ -11,7 +11,15 @@ lib_dirs = []
 
 if os.name == 'nt' and '64' in platform.architecture()[0]:
     link_args.append('-DMS_WIN64')
+    link_args.append('-D_FILE_OFFSET_BITS=64')
+    link_args.append('-D_LFS64_LARGEFILE=1')
+    link_args.append('-D_LARGEFILE64_SOURCE=1')
+    link_args.append('-D_LARGEFILE64_SUPPORT=1')
     comp_args.append('-DMS_WIN64')
+    comp_args.append('-D_FILE_OFFSET_BITS=64')
+    comp_args.append('-D_LFS64_LARGEFILE=1')
+    comp_args.append('-D_LARGEFILE64_SOURCE=1')
+    comp_args.append('-D_LARGEFILE64_SUPPORT=1')
 
 extension = Extension('pyfastx',
     sources = glob.glob('src/*.c'),

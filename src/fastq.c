@@ -343,6 +343,7 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 	);
 	
 	read->gzfd = self->gzfd;
+	read->fd = self->fd;
 	read->gzip_index = self->gzip_index;
 	read->gzip_format = self->gzip_format;
 	read->phred = self->phred;
@@ -418,8 +419,7 @@ PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
 		return pyfastx_fastq_get_read_by_id(self, i+1);
 		
 	} else if (PyUnicode_Check(item)) {
-		char *key = PyUnicode_AsUTF8(item);
-		return pyfastx_fastq_get_read_by_name(self, key);
+		return pyfastx_fastq_get_read_by_name(self, (char *)PyUnicode_AsUTF8(item));
 
 	} else {
 		PyErr_SetString(PyExc_KeyError, "the key must be index number or read name");
@@ -441,7 +441,7 @@ int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
 		return 0;
 	}
 
-	name = PyUnicode_AsUTF8(key);
+	name = (char *)PyUnicode_AsUTF8(key);
 	sql = "SELECT * FROM read WHERE name=? LIMIT 1;";
 
 	PYFASTX_SQLITE_CALL(

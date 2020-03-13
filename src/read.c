@@ -33,8 +33,15 @@ PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
         zran_seek(self->gzip_index, new_offset, SEEK_SET, NULL);
         zran_read(self->gzip_index, buff, new_bytelen);
     } else {
-        gzseek(self->gzfd, new_offset, SEEK_SET);
-        gzread(self->gzfd, buff, new_bytelen);
+        //gzseek(self->gzfd, new_offset, SEEK_SET);
+        //gzread(self->gzfd, buff, new_bytelen);
+        FSEEK(self->fd, new_offset, SEEK_SET);
+        if (fread(buff, new_bytelen, 1, self->fd) != 1) {
+            if (!feof(self->fd)) {
+                PyErr_SetString(PyExc_RuntimeError, "reading read raw string error");
+                return NULL;
+            }
+        }
     }
 
     if (buff[new_bytelen-1] == '\r') {
@@ -55,8 +62,15 @@ PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
             zran_seek(self->gzip_index, self->seq_offset, SEEK_SET, NULL);
             zran_read(self->gzip_index, self->seq, self->read_len);
         } else {
-            gzseek(self->gzfd, self->seq_offset, SEEK_SET);
-            gzread(self->gzfd, self->seq, self->read_len);
+            //gzseek(self->gzfd, self->seq_offset, SEEK_SET);
+            //gzread(self->gzfd, self->seq, self->read_len);
+            FSEEK(self->fd, self->seq_offset, SEEK_SET);
+            if (fread(self->seq, self->read_len, 1, self->fd) != 1) {
+                if (!feof(self->fd)) {
+                    PyErr_SetString(PyExc_RuntimeError, "reading read sequence error");
+                    return NULL;
+                }
+            }
         }
         self->seq[self->read_len] = '\0';
     }
@@ -79,8 +93,15 @@ PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
         zran_seek(self->gzip_index, new_offset, SEEK_SET, NULL);
         zran_read(self->gzip_index, buff, self->desc_len);
     } else {
-        gzseek(self->gzfd, new_offset, SEEK_SET);
-        gzread(self->gzfd, buff, self->desc_len);
+        //gzseek(self->gzfd, new_offset, SEEK_SET);
+        //gzread(self->gzfd, buff, self->desc_len);
+        FSEEK(self->fd, new_offset, SEEK_SET);
+        if (fread(buff, self->desc_len, 1, self->fd) != 1) {
+            if (!feof(self->fd)) {
+                PyErr_SetString(PyExc_RuntimeError, "reading read description error");
+                return NULL;
+            }
+        }  
     }
 
     if (buff[self->desc_len-1] == '\r') {
@@ -99,8 +120,15 @@ PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
             zran_seek(self->gzip_index, self->qual_offset, SEEK_SET, NULL);
             zran_read(self->gzip_index, self->qual, self->read_len);
         } else {
-            gzseek(self->gzfd, self->qual_offset, SEEK_SET);
-            gzread(self->gzfd, self->qual, self->read_len);
+            //gzseek(self->gzfd, self->qual_offset, SEEK_SET);
+            //gzread(self->gzfd, self->qual, self->read_len);
+            FSEEK(self->fd, self->qual_offset, SEEK_SET);
+            if (fread(self->qual, self->read_len, 1, self->fd) != 1) {
+                if (!feof(self->fd)) {
+                    PyErr_SetString(PyExc_RuntimeError, "reading read quality error");
+                    return NULL;
+                }
+            }
         }
         self->qual[self->read_len] = '\0';
     }
