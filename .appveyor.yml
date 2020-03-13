@@ -57,7 +57,8 @@ build_script:
   - conda update --yes setuptools pip
   - conda install --yes twine
   - set ZLIB_HOME=%PYTHON%\\Library
-  - dir %ZLIB_HOME%
+  - dir %ZLIB_HOME%\\include
+  - dir %ZLIB_HOME%\\lib
   - python setup.py build_ext --inplace
 
 artifacts:
