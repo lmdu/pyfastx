@@ -15,7 +15,7 @@ if os.name == 'nt':
     libs.append('zlib')
     libs.append('sqlite3')
     lib_dirs.append(os.path.join(zlib_home, "lib"))
-    link_args = ['/NODEFAULTLIB']
+    link_args = ['/Zl']
 
 '''
 if os.name == 'nt' and '64' in platform.architecture()[0]:
