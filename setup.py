@@ -15,7 +15,7 @@ if os.name == 'nt':
     libs.append('zlib')
     libs.append('sqlite3')
     lib_dirs.append(os.path.join(zlib_home, "lib"))
-    link_args.append('-fPIC')
+    link_args = ['/WHOLEARCHIVE:zlib.lib', '/WHOLEARCHIVE:sqlite3.zlib']
 
 '''
 if os.name == 'nt' and '64' in platform.architecture()[0]:
