@@ -63,5 +63,5 @@ build_script:
 
 artifacts:
   #- path: "wheelhouse\\*.whl"
-  - path: "pyfastx*.whl"
+  - path: "dist\\*.whl"
     name: Wheels
