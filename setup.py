@@ -31,13 +31,16 @@ if os.name == 'nt' and '64' in platform.architecture()[0]:
     comp_args.append('-D_LARGEFILE64_SUPPORT=1')
 '''
 
+depends = [f for f in glob.glob("src/*[ch]") if f!="src/module.c"]
+
 extension = Extension('pyfastx',
     sources = glob.glob('src/*.c'),
     libraries = libs,
     library_dirs = lib_dirs,
     include_dirs = include_dirs,
     extra_compile_args = comp_args,
-    extra_link_args = link_args
+    extra_link_args = link_args,
+    depends = depends
 )
 
 description = (
