@@ -58,7 +58,7 @@ build_script:
   - conda install --yes twine
   - set ZLIB_HOME=%PYTHON%\\Library
   - dir %ZLIB_HOME%
-  - python setup.py build_ext --inplace -c mingw32
+  - python setup.py build_ext --inplace
 
 artifacts:
   #- path: "wheelhouse\\*.whl"

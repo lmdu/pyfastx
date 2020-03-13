@@ -9,6 +9,14 @@ include_dirs = []
 libs = []
 lib_dirs = []
 
+if os.name == 'nt':
+    zlib_home = os.environ.get("ZLIB_HOME")
+    include_dirs.append(os.path.join(zlib_home, "include"))
+    libs.append('zlib')
+    libs.append('sqlite')
+    lib_dirs.append(os.path.join(zlib_home, "lib"))
+
+'''
 if os.name == 'nt' and '64' in platform.architecture()[0]:
     link_args.append('-DMS_WIN64')
     link_args.append('-D_FILE_OFFSET_BITS=64')
@@ -20,9 +28,13 @@ if os.name == 'nt' and '64' in platform.architecture()[0]:
     comp_args.append('-D_LFS64_LARGEFILE=1')
     comp_args.append('-D_LARGEFILE64_SOURCE=1')
     comp_args.append('-D_LARGEFILE64_SUPPORT=1')
+'''
 
 extension = Extension('pyfastx',
     sources = glob.glob('src/*.c'),
+    libraries = libs,
+    library_dirs = lib_dirs,
+    include_dirs = include_dirs,
     extra_compile_args = comp_args,
     extra_link_args = link_args
 )
