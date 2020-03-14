@@ -1,0 +1,63 @@
+environment:
+  global:
+    MINGW_32: C:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32
+    MINGW_64: C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64
+    TWINE_REPOSITORY: pypi
+    TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
+
+  matrix:
+    - PYTHON: C:\Python35
+      PYTHON_VERSION: 3.5
+      PYTHON_ARCH: 32
+
+    - PYTHON: C:\Python36
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 32
+
+    - PYTHON: C:\Python37
+      PYTHON_VERSION: 3.7
+      PYTHON_ARCH: 32
+
+    - PYTHON: C:\Python38
+      PYTHON_VERSION: 3.8
+      PYTHON_ARCH: 32
+
+    - PYTHON: C:\Python35-x64
+      PYTHON_VERSION: 3.5
+      PYTHON_ARCH: 64
+
+    - PYTHON: C:\Python36-x64
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 64
+
+    - PYTHON: C:\Python37-x64
+      PYTHON_VERSION: 3.7
+      PYTHON_ARCH: 64
+
+    - PYTHON: C:\Python38-x64
+      PYTHON_VERSION: 3.8
+      PYTHON_ARCH: 64
+
+install:
+  - appveyor DownloadFile https://github.com/lmdu/mingw64/raw/master/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z -FileName mw32.7z
+  - 7z x -oC:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0 mw32.7z > NUL
+  - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
+  - if [%PYTHON_ARCH%] == [32] SET PATH=%MINGW_32%\bin;%PATH%
+  - if [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
+  - COPY %MINGW_32%\opt\include\sqlite3.h %MINGW_32%\i686-w64-mingw32\include\sqlite3.h
+  - COPY %MINGW_32%\opt\lib\libsqlite3.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.a
+  - COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
+  - COPY %MINGW_64%\opt\lib\libsqlite3.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.a
+  - if [%PYTHON_VERSION%] GTR [3.4] gendef %PYTHON%\vcruntime140.dll
+  - if [%PYTHON_VERSION%] GTR [3.4] dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
+  - if [%PYTHON_VERSION%] GTR [3.4] python ci\fix_compiler_error.py %PYTHON%
+  - python -m pip install -U pip setuptools wheel twine
+
+build_script:
+  - python setup.py build -c mingw32
+  - pip wheel -v -w wheelhouse .
+  - IF "%APPVEYOR_REPO_TAG%" == "true" (twine upload --skip-existing wheelhouse/*.whl)
+
+artifacts:
+  - path: "wheelhouse\\*.whl"
+    name: Wheels
