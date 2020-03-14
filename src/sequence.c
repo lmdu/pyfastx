@@ -1,6 +1,5 @@
 #include "sequence.h"
 #include "structmember.h"
-#include "util.h"
 
 char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	//uint32_t seq_len;
@@ -29,16 +28,13 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
 		zran_read(self->index->gzip_index, self->index->cache_seq, self->byte_len);
 	} else {
-		gzseek(self->index->gzfd, self->offset, SEEK_SET);
-		gzread(self->index->gzfd, self->index->cache_seq, self->byte_len);
-		
-		/*FSEEK(self->index->fd, self->offset, SEEK_SET);
+		FSEEK(self->index->fd, self->offset, SEEK_SET);
 		if (fread(self->index->cache_seq, self->byte_len, 1, self->index->fd) != 1) {
 			if (!feof(self->index->fd)) {
 				PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
 				return NULL;
 			}
-		}*/
+		}
 	}
 
 	self->index->cache_seq[self->byte_len] = '\0';
@@ -65,10 +61,9 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 }*/
 
 void pyfastx_sequence_dealloc(pyfastx_Sequence* self) {
-	if (self->ks != NULL) {
-		ks_destroy(self->ks);
-	}
-
+	//if (self->ks != NULL) {
+	//	ks_destroy(self->ks);
+	//}
 	Py_TYPE(self)->tp_free(self);
 }
 
@@ -81,8 +76,7 @@ PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
 	if (self->index->gzip_format){
 		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
 	} else {
-		gzseek(self->index->gzfd, self->offset, SEEK_SET);
-		self->ks = ks_init(self->index->gzfd);
+		FSEEK(self->index->fd, self->offset, SEEK_SET);
 	}
 
 	Py_INCREF(self);
@@ -136,16 +130,19 @@ PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
 		return Py_BuildValue("s", buff);
 
 	} else {
-		kstring_t seq = {0, 0, 0};
-		if(ks_getuntil(self->ks, '\n', &seq, 0) >= 0){
-			if(seq.s[0] != '>'){
-				if(self->index->uppercase){
-					remove_space_uppercase(seq.s);
-				} else {
-					remove_space(seq.s);
-				}
-				return Py_BuildValue("s", seq.s);
+		char *seq = NULL;
+		if (get_line(&seq, self->index->fd) != -1) {
+			if (seq[0] == '>') {
+				return NULL;
 			}
+
+			if(self->index->uppercase){
+				remove_space_uppercase(seq);
+			} else {
+				remove_space(seq);
+			}
+
+			return Py_BuildValue("s", seq);
 		}
 	}
 	
@@ -384,8 +381,6 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		seq->byte_len = self->byte_len;
 		seq->index = self->index;
 
-		printf("prev offset: %I64d\n", seq->offset);
-
 		if (self->normal) {
 			//number of the lines before slice start
 			int before_sline = slice_start/(self->line_len - self->end_len);
@@ -402,13 +397,6 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 			seq->offset = self->offset + slice_start + self->end_len*before_sline;
 			seq->byte_len = seq->seq_len + cross_line*self->end_len;
 		}
-
-		printf("seq len: %d\n", seq->seq_len);
-		printf("parent len: %d\n", seq->parent_len);
-		printf("seq llen: %d\n", seq->line_len);
-		printf("end len: %d\n", seq->end_len);
-		printf("offset: %I64d\n", seq->offset);
-		printf("byte len: %d\n", seq->byte_len);
 
 		//Py_INCREF(seq);
 		return (PyObject *)seq;

@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.6.8 (2020-03-14)
+--------------------------
+
+- Fixed large offset seek error on windows
+- Fixed PyUnicode_AsUTF8 const char type warning
+- Changed sequence read line by line function
+- Changed gzread to fread for fastq information
+
 Version 0.6.7 (2020-03-03)
 --------------------------
 

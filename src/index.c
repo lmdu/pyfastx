@@ -428,7 +428,6 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	);
 	
 	seq->parent_len = seq->seq_len;
-	seq->ks = NULL;
 
 	//position
 	seq->start = 1;

@@ -270,47 +270,49 @@ int is_gzip_format(char* file_name){
 	return 1;
 }
 
-/* read line from zran indexed gzip file
-int64_t zran_readline(zran_index_t *index, char *linebuf, uint32_t bufsize) {
-	int64_t startpos;
-	int64_t ret;
-	uint16_t haveline;
-	char* readbuf = (char *)malloc(bufsize);
-	char* lineidx;
-	uint32_t idxpos;
+// read line from file
+// extracted from https://github.com/lattera/freebsd/blob/master/contrib/file/getline.c
+ssize_t get_until_delim(char **buf, int delimiter, FILE *fp) {
+	char *ptr, *eptr;
 
-	//record start position
-	startpos = zran_tell(index);
+	size_t bufsiz = 100;
 
-	while (1) {
-		ret = zran_read(index, readbuf, bufsize);
+	if (*buf == NULL) {
+		if ((*buf = malloc(bufsiz)) == NULL)
+			return -1;
+	}
 
-		if (ret == ZRAN_READ_EOF) {
-			return 0
+	for (ptr = *buf, eptr = *buf + bufsiz;;) {
+		int c = fgetc(fp);
+		if (c == -1) {
+			if (feof(fp))
+				return ptr == *buf ? -1 : ptr - *buf;
+			else
+				return -1;
 		}
-
-		lineidx = strchr(readbuf, '\n');
-		haveline = (lineidx != NULL) ? 1 : 0;
-
-		if (haveline) {
-			idxpos = (int)(lineidx - readbuf);
-			linebuf = (char *)realloc(linebuf, strlen(linebuf) + idxpos);
-			memcpy(linebuf+strlen(linebuf), readbuf, idxpos);
-			linebuf[strlen[linebuf]] = '\0';
-		} else {
-			linebuf = (char *)realloc(linebuf, strlen(linebuf) + bufsize);
-			memcpy(linebuf+strlen(linebuf), readbuf, bufsize);
-			linebuf[strlen(linebuf)] = '\0';
+		*ptr++ = c;
+		if (c == delimiter) {
+			*ptr = '\0';
+			return ptr - *buf;
 		}
-
-		if (haveline) {
-			break;
+		if (ptr + 2 >= eptr) {
+			char *nbuf;
+			size_t nbufsiz = bufsiz * 2;
+			ssize_t d = ptr - *buf;
+			if ((nbuf = realloc(*buf, nbufsiz)) == NULL)
+				return -1;
+			*buf = nbuf;
+			bufsiz = nbufsiz;
+			eptr = nbuf + nbufsiz;
+			ptr = nbuf + d;
 		}
 	}
-	zran_seek(index, startpos+strlen(linebuf), SEEK_SET, NULL);
-	free(readbuf);
-	return strlen(linebuf);
-}*/
+}
+
+ssize_t get_line(char **buf, FILE *fp) {
+	return get_until_delim(buf, '\n', fp);
+}
+
 
 void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* index_file) {
 	sqlite3_stmt *stmt;

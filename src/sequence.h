@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "stdint.h"
 #include "index.h"
+#include "util.h"
 
 //make sequence class
 typedef struct {
@@ -45,7 +46,7 @@ typedef struct {
 	uint16_t normal;
 
 	//for iteration
-	kstream_t *ks;
+	//kstream_t *ks;
 
 } pyfastx_Sequence;
 

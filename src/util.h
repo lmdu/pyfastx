@@ -35,6 +35,10 @@ void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* 
 int fasta_validator(gzFile fd);
 int fastq_validator(gzFile fd);
 
+//read line
+ssize_t get_until_delim(char **buf, int delimiter, FILE *fp);
+ssize_t get_line(char **buf, FILE *fp);
+
 //sqlite3 compatable with python GIL
 //extracted from apsw project
 //https://github.com/rogerbinns/apsw/blob/07571365b6fbb25e2691071998526c351b04a04d/src/util.c

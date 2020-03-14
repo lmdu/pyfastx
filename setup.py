@@ -12,30 +12,9 @@ define_macros = []
 
 sources = glob.glob('src/*.c')
 
-if os.name == 'nt':
-    #zlib_home = os.environ.get("ZLIB_HOME")
-    #include_dirs.append(os.path.join(zlib_home, "include"))
-    #libs.append('zlib')
-    #libs.append('sqlite3')
-    #lib_dirs.append(os.path.join(zlib_home, "lib"))
-    #link_args = []
-
-    #add zlib to source
-    sources.extend(glob.glob('zlib-1.2.11/*.c'))
-    include_dirs.append('zlib-1.2.11')
-    
-    #add sqlite3 to source
-    sources.extend(glob.glob('sqlite-amalgamation-3310100/sqlite3.c'))
-    include_dirs.append('sqlite-amalgamation-3310100')
-
-
-
 if os.name == 'nt' and '64' in platform.architecture()[0]:
-#    link_args.append('-DMS_WIN64')
-#    comp_args.append('-DMS_WIN64')
-    define_macros.append(('_FILE_OFFSET_BITS', 64))
-    define_macros.append(('_LARGEFILE64_SOURCE', 1))
-
+    link_args.append('-DMS_WIN64')
+    comp_args.append('-DMS_WIN64')
 
 extension = Extension('pyfastx',
     sources = sources,
