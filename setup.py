@@ -25,6 +25,7 @@ if os.name == 'nt':
 #    comp_args.append('-DMS_WIN64')
 #    define_macros.append(('_FILE_OFFSET_BITS', 64))
 #    define_macros.append(('_LARGEFILE64_SOURCE', 1))
+'''
 
 extension = Extension('pyfastx',
     sources = glob.glob('src/*.c'),
