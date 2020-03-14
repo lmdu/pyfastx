@@ -2,7 +2,7 @@ language: python
 
 env:
   global:
-    - CIBW_SKIP="cp27-*"
+    - CIBW_SKIP="cp27-* pp27-*"
     #- CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel sqlite-devel"
     - CIBW_BEFORE_BUILD_LINUX="sqlite3 --version; curl -O http://zlib.net/zlib-1.2.11.tar.gz;tar xzf zlib-1.2.11.tar.gz;cd zlib-1.2.11;./configure;make;make install;"
     - CIBW_BEFORE_BUILD_MACOS="sqlite3 --version; brew install zlib"
@@ -43,7 +43,7 @@ before_install:
     fi
       #export LD_LIBRARY_PATH="/usr/local/lib";
     #fi
-  #- echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+  - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 install:
   - $PIP install -U setuptools
@@ -62,7 +62,7 @@ script:
       rm pyfastx.cpython*;
       export CPPFLAGS=--coverage;
       sqlite3 --version;
-      python setup.py test;
+      python3 setup.py test;
     fi
 
 after_success:
