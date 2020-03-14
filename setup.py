@@ -1,13 +1,16 @@
 import os
 import glob
 import platform
-from setuptools import setup, Extension
+#from setuptools import setup, Extension
+from distutils.core import setup, Extension
 
 link_args = ['-lz', '-lsqlite3']
 comp_args = []
 include_dirs = []
 libs = []
 lib_dirs = []
+define_macros = []
+
 
 if os.name == 'nt':
     zlib_home = os.environ.get("ZLIB_HOME")
@@ -16,22 +19,12 @@ if os.name == 'nt':
     libs.append('sqlite3')
     lib_dirs.append(os.path.join(zlib_home, "lib"))
     link_args = []
-
 '''
-if os.name == 'nt' and '64' in platform.architecture()[0]:
-    link_args.append('-DMS_WIN64')
-    link_args.append('-D_FILE_OFFSET_BITS=64')
-    link_args.append('-D_LFS64_LARGEFILE=1')
-    link_args.append('-D_LARGEFILE64_SOURCE=1')
-    link_args.append('-D_LARGEFILE64_SUPPORT=1')
-    comp_args.append('-DMS_WIN64')
-    comp_args.append('-D_FILE_OFFSET_BITS=64')
-    comp_args.append('-D_LFS64_LARGEFILE=1')
-    comp_args.append('-D_LARGEFILE64_SOURCE=1')
-    comp_args.append('-D_LARGEFILE64_SUPPORT=1')
-'''
-
-depends = [f for f in glob.glob("src/*[ch]") if f!="src/module.c"]
+#if os.name == 'nt' and '64' in platform.architecture()[0]:
+#    link_args.append('-DMS_WIN64')
+#    comp_args.append('-DMS_WIN64')
+#    define_macros.append(('_FILE_OFFSET_BITS', 64))
+#    define_macros.append(('_LARGEFILE64_SOURCE', 1))
 
 extension = Extension('pyfastx',
     sources = glob.glob('src/*.c'),
@@ -40,7 +33,7 @@ extension = Extension('pyfastx',
     include_dirs = include_dirs,
     extra_compile_args = comp_args,
     extra_link_args = link_args,
-    depends = depends
+    define_macros = define_macros
 )
 
 description = (
