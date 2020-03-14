@@ -1,8 +1,7 @@
 import os
 import glob
 import platform
-#from setuptools import setup, Extension
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 link_args = ['-lz', '-lsqlite3']
 comp_args = []
@@ -11,14 +10,25 @@ libs = []
 lib_dirs = []
 define_macros = []
 
+sources = glob.glob('src/*.c')
 
 if os.name == 'nt':
-    zlib_home = os.environ.get("ZLIB_HOME")
-    include_dirs.append(os.path.join(zlib_home, "include"))
-    libs.append('zlib')
-    libs.append('sqlite3')
-    lib_dirs.append(os.path.join(zlib_home, "lib"))
-    link_args = []
+    #zlib_home = os.environ.get("ZLIB_HOME")
+    #include_dirs.append(os.path.join(zlib_home, "include"))
+    #libs.append('zlib')
+    #libs.append('sqlite3')
+    #lib_dirs.append(os.path.join(zlib_home, "lib"))
+    #link_args = []
+
+    #add zlib to source
+    sources.extend(glob.glob('zlib-1.2.11/*.c'))
+    include_dirs.append('zlib-1.2.11')
+    
+    #add sqlite3 to source
+    sources.extend(glob.glob('sqlite-amalgamation-3310100/sqlite3.c'))
+    include_dirs.append('sqlite-amalgamation-3310100')
+
+
 '''
 #if os.name == 'nt' and '64' in platform.architecture()[0]:
 #    link_args.append('-DMS_WIN64')
@@ -28,7 +38,7 @@ if os.name == 'nt':
 '''
 
 extension = Extension('pyfastx',
-    sources = glob.glob('src/*.c'),
+    sources = sources,
     libraries = libs,
     library_dirs = lib_dirs,
     include_dirs = include_dirs,

@@ -49,6 +49,11 @@ install:
   - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PYTHON%\Library\bin;%PATH%
   - conda info
   - python --version
+  - appveyor DownloadFile https://www.zlib.net/zlib1211.zip
+  - appveyor DownloadFile https://www.sqlite.org/2020/sqlite-amalgamation-3310100.zip
+  - 7z x zlib1211.zip
+  - 7z x sqlite-amalgamation-3310100.zip
+  - dir .
 
 build_script:
   - conda install --yes %BUILD_DEPENDS% conda-build
