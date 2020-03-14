@@ -29,13 +29,13 @@ if os.name == 'nt':
     include_dirs.append('sqlite-amalgamation-3310100')
 
 
-'''
-#if os.name == 'nt' and '64' in platform.architecture()[0]:
+
+if os.name == 'nt' and '64' in platform.architecture()[0]:
 #    link_args.append('-DMS_WIN64')
 #    comp_args.append('-DMS_WIN64')
-#    define_macros.append(('_FILE_OFFSET_BITS', 64))
-#    define_macros.append(('_LARGEFILE64_SOURCE', 1))
-'''
+    define_macros.append(('_FILE_OFFSET_BITS', 64))
+    define_macros.append(('_LARGEFILE64_SOURCE', 1))
+
 
 extension = Extension('pyfastx',
     sources = sources,
