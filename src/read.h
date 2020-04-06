@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "zran.h"
 #include "kseq.h"
+#include "fastq.h"
 #include "sqlite3.h"
 
 typedef struct {
@@ -25,19 +26,22 @@ typedef struct {
 	int64_t qual_offset;
 
 	//gzip index read handle
-	gzFile gzfd;
+	//gzFile gzfd;
 
 	//file handle
-	FILE* fd;
+	//FILE* fd;
 
 	//gzip index
-	zran_index_t* gzip_index;
+	//zran_index_t* gzip_index;
 
 	//gzip format
-	uint16_t gzip_format;
+	//uint16_t gzip_format;
 
 	//phred
-	uint16_t phred;
+	//uint16_t phred;
+
+	//parent fastq
+	pyfastx_Fastq *fastq;
 
 	//seq and quality content
 	char *seq;

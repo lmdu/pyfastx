@@ -320,8 +320,14 @@ void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char*
 	FILE* fd;
 	uint32_t fsize;
 	char *buff;
+	int ret;
 
-	zran_build_index(gzip_index, 0, 0);
+	ret = zran_build_index(gzip_index, 0, 0);
+
+	if (ret != 0) {
+		PyErr_SetString(PyExc_RuntimeError, "Failed to build gzip index");
+		return;
+	}
 
 	//create temp gzip index file
 	temp_index = (char *)malloc(strlen(index_file) + 5);
@@ -332,6 +338,7 @@ void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char*
 	
 	if(zran_export_index(gzip_index, fd) != ZRAN_EXPORT_OK){
 		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
+		return;
 	}
 	
 	fsize = ftell(fd);

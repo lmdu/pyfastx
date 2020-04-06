@@ -1,5 +1,6 @@
 #include "read.h"
 #include "util.h"
+#include "time.h"
 #include "structmember.h"
 
 void pyfastx_read_dealloc(pyfastx_Read *self) {
@@ -19,6 +20,44 @@ int pyfastx_read_length(pyfastx_Read *self) {
     return self->read_len;
 }
 
+//read content from buff or file
+void pyfastx_read_reader(pyfastx_Read *self, char *buff, int64_t offset, int32_t bytes) {
+    int slice_offset;
+    int32_t buff_size = 1048576;
+
+    if (bytes > buff_size) {
+        buff_size = bytes;
+    }
+
+    //read from cache buffer
+    if (self->fastq->cache_buff != NULL && offset >= self->fastq->cache_soff && (offset + bytes) <= self->fastq->cache_eoff) {
+        slice_offset = offset - self->fastq->cache_soff;
+    } else {
+        if (self->fastq->cache_buff == NULL) {
+            self->fastq->cache_buff = (char *)malloc(buff_size);
+        }
+
+        if (self->fastq->gzip_format) {
+            zran_seek(self->fastq->gzip_index, offset, SEEK_SET, NULL);
+            zran_read(self->fastq->gzip_index, self->fastq->cache_buff, buff_size);
+            self->fastq->cache_eoff = zran_tell(self->fastq->gzip_index);
+        } else {
+            FSEEK(self->fastq->fd, offset, SEEK_SET);
+            if (fread(self->fastq->cache_buff, buff_size, 1, self->fastq->fd) != 1) {
+                if (!feof(self->fastq->fd)) {
+                    PyErr_SetString(PyExc_RuntimeError, "Error occurred when read from file");
+                    return;
+                }
+            }
+            self->fastq->cache_eoff = FTELL(self->fastq->fd);
+        }
+        self->fastq->cache_soff = offset;
+        slice_offset = 0;
+    }
+
+    memcpy(buff, self->fastq->cache_buff+slice_offset, bytes);
+}
+
 PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
     int64_t new_offset;
     int64_t new_bytelen;
@@ -29,9 +68,9 @@ PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
 
     buff = (char *)malloc(new_bytelen + 2);
 
-    if (self->gzip_format) {
-        zran_seek(self->gzip_index, new_offset, SEEK_SET, NULL);
-        zran_read(self->gzip_index, buff, new_bytelen);
+    /*if (self->fastq->gzip_format) {
+        zran_seek(self->fastq->gzip_index, new_offset, SEEK_SET, NULL);
+        zran_read(self->fastq->gzip_index, buff, new_bytelen);
     } else {
         //gzseek(self->gzfd, new_offset, SEEK_SET);
         //gzread(self->gzfd, buff, new_bytelen);
@@ -42,7 +81,8 @@ PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
                 return NULL;
             }
         }
-    }
+    }*/
+    pyfastx_read_reader(self, buff, new_offset, new_bytelen);
 
     if (buff[new_bytelen-1] == '\r') {
         buff[new_bytelen] = '\n';
@@ -58,7 +98,7 @@ PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
     if (self->seq == NULL) {
         self->seq = (char *)malloc(self->read_len + 1);
 
-        if (self->gzip_format) {
+        /*if (self->gzip_format) {
             zran_seek(self->gzip_index, self->seq_offset, SEEK_SET, NULL);
             zran_read(self->gzip_index, self->seq, self->read_len);
         } else {
@@ -71,7 +111,8 @@ PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
                     return NULL;
                 }
             }
-        }
+        }*/
+        pyfastx_read_reader(self, self->seq, self->seq_offset, self->read_len);
         self->seq[self->read_len] = '\0';
     }
 
@@ -89,7 +130,7 @@ PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
     new_offset = self->seq_offset - self->desc_len - 1;
     buff = (char *)malloc(self->desc_len + 1);
 
-    if (self->gzip_format) {
+    /*if (self->gzip_format) {
         zran_seek(self->gzip_index, new_offset, SEEK_SET, NULL);
         zran_read(self->gzip_index, buff, self->desc_len);
     } else {
@@ -102,7 +143,9 @@ PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
                 return NULL;
             }
         }  
-    }
+    }*/
+
+    pyfastx_read_reader(self, buff, new_offset, self->desc_len);
 
     if (buff[self->desc_len-1] == '\r') {
         buff[self->desc_len-1] = '\0';
@@ -116,12 +159,11 @@ PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
 PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
     if (self->qual == NULL) {
         self->qual = (char *)malloc(self->read_len + 1);
-        if (self->gzip_format) {
+        
+        /*if (self->gzip_format) {
             zran_seek(self->gzip_index, self->qual_offset, SEEK_SET, NULL);
             zran_read(self->gzip_index, self->qual, self->read_len);
         } else {
-            //gzseek(self->gzfd, self->qual_offset, SEEK_SET);
-            //gzread(self->gzfd, self->qual, self->read_len);
             FSEEK(self->fd, self->qual_offset, SEEK_SET);
             if (fread(self->qual, self->read_len, 1, self->fd) != 1) {
                 if (!feof(self->fd)) {
@@ -129,7 +171,8 @@ PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
                     return NULL;
                 }
             }
-        }
+        }*/
+        pyfastx_read_reader(self, self->qual, self->qual_offset, self->read_len);
         self->qual[self->read_len] = '\0';
     }
 
@@ -147,7 +190,7 @@ PyObject* pyfastx_read_quali(pyfastx_Read *self, void* closure) {
         pyfastx_read_qual(self, NULL);
     }
 
-    phred = self->phred ? self->phred : 33;
+    phred = self->fastq->phred ? self->fastq->phred : 33;
 
     if (self->qual != NULL) {
         PyObject *quals = PyList_New(0);

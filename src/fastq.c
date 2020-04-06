@@ -274,7 +274,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	obj->has_index = build_index;
 
-	//inital phred
+	//initialize phred
 	obj->phred = phred;
 	obj->gc_content = 0;
 
@@ -293,6 +293,11 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	if (build_index && composition) {
 		pyfastx_fastq_calc_composition(obj);
 	}
+
+	//initialize cache buffer
+	obj->cache_buff = NULL;
+	obj->cache_soff = 0;
+	obj->cache_eoff = 0;
 
 	return (PyObject *)obj;
 }
@@ -342,11 +347,12 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 		//sqlite3_finalize(stmt);
 	);
 	
-	read->gzfd = self->gzfd;
-	read->fd = self->fd;
-	read->gzip_index = self->gzip_index;
-	read->gzip_format = self->gzip_format;
-	read->phred = self->phred;
+	//read->gzfd = self->gzfd;
+	//read->fd = self->fd;
+	//read->gzip_index = self->gzip_index;
+	//read->gzip_format = self->gzip_format;
+	//read->phred = self->phred;
+	read->fastq = self;
 	read->seq = NULL;
 	read->qual = NULL;
 

@@ -5,6 +5,7 @@
 #include "sqlite3.h"
 #include "zran.h"
 #include "zlib.h"
+#include "time.h"
 
 uint16_t file_exists(char *file_name);
 void remove_space(char *str);
@@ -46,11 +47,17 @@ ssize_t get_line(char **buf, FILE *fp);
 #define PYFASTX_SQLITE_CALL(x) \
   do { Py_BEGIN_ALLOW_THREADS { x; } Py_END_ALLOW_THREADS ; } while(0)
 
+#define test_time(x) \
+  do { clock_t s, e; s=clock(); x; e=clock(); printf("used time: %f\n", (double)(e-s)/CLOCKS_PER_SEC); } while(0)
+
+
 //support large fseek offset
 #ifdef _WIN32
-#define FSEEK _fseeki64
+	#define FSEEK _fseeki64
+	#define FTELL _ftelli64
 #else
-#define FSEEK fseeko
+	#define FSEEK fseeko
+	#define FTELL ftello
 #endif
 
 #endif

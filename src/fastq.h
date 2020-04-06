@@ -61,6 +61,14 @@ typedef struct {
 	//gzip index
 	zran_index_t* gzip_index;
 
+	//buffer cache
+	char* cache_buff;
+
+	//cache start offset
+	int64_t cache_soff;
+
+	//cache end offset
+	int32_t cache_eoff;
 
 } pyfastx_Fastq;
 
