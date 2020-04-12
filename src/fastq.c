@@ -223,13 +223,13 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	int file_len;
 	int phred = 0;
 	int build_index = 1;
-	int composition = 0;
+	int full_index = 0;
 
-	static char* keywords[] = {"file_name", "phred", "build_index", "composition", NULL};
+	static char* keywords[] = {"file_name", "phred", "build_index", "full_index", NULL};
 
 	pyfastx_Fastq *obj;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iii", keywords, &file_name, &file_len, &phred, &build_index, &composition)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iii", keywords, &file_name, &file_len, &phred, &build_index, &full_index)) {
 		return NULL;
 	}
 
@@ -290,7 +290,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		pyfastx_fastq_create_index(obj);
 	}
 
-	if (build_index && composition) {
+	if (build_index && full_index) {
 		pyfastx_fastq_calc_composition(obj);
 	}
 

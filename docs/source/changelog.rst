@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 0.6.9 (2020-04-12)
+--------------------------
+
+- Added buffreader to improve speed for reading from gzipped file
+- Added extract subcommand to extract sequences from fasta/q file
+- Added build subcommand to just build index
+- Changed info subcommand output to a tab seperated table
+- Changed Fastq object composition parameter to full_index
+
 Version 0.6.8 (2020-03-14)
 --------------------------
 

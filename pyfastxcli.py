@@ -8,9 +8,8 @@ import pyfastx
 import argparse
 
 def fastx_format_check(infile):
-	if (pyfastx.gzip_check(infile)):
+	if pyfastx.gzip_check(infile):
 		fp = gzip.open(infile, 'rt')
-
 	else:
 		fp = open(infile)
 	
@@ -43,47 +42,63 @@ def is_glob(pattern):
 		return False
 
 def print_table(table):
-	width = [0] * len(table[0])
+	long_cols = [0] * len(table[0])
 
 	for row in table:
-		for i, col in enumerate(row):
+		for idx, col in enumerate(row):
 			l = len(str(col))
-
-			if l > width[i]:
-				width[i] = l
-
-	format_row = "\t".join(['{:%s}' % j for j in width])
+			if l > long_cols[idx]:
+				long_cols[idx] = l
 
 	for row in table:
-		print(format_row.format(row))
+		row = ['{:<{}}'.format(col, long_cols[idx]) if idx==0 else
+		'{:>{}}'.format(col, long_cols[idx]) for idx, col in enumerate(row)]
+
+		print("\t".join(row))
+
+def fastx_build(args):
+	for infile in args.fastx:
+		if infile.endswith('.fxi'):
+			continue
+
+		fastx_type = fastx_format_check(infile)
+		
+		if fastx_type == 'fasta':
+			fa = pyfastx.Fasta(infile, full_index=args.full)
+
+		elif fastx_type == 'fastq':
+			fq = pyfastx.Fastq(infile, full_index=args.full)
 
 def fastx_info(args):
-	fastx_type = fastx_format_check(args.fastx)
+	farows = [["fileName", "seqType", "seqCounts", "totalBases", "GC%",
+				"meanLen", "medianLen", "maxLen", "minLen", "N50", "L50"]]
+	fqrows = [["fileName", "readCounts", "totalBases", "GC%", "qualityEncodingSystem"]]
+	
+	for infile in args.fastx:
+		if infile.endswith('.fxi'):
+			continue
 
-	if fastx_type == 'fasta':
-		fa = pyfastx.Fasta(args.fastx)
-		comp = fa.composition
-		print("Sequence counts: {}".format(len(fa)))
-		print("Total bases: {}".format(fa.size))
-		print("GC content: {:.2f}%".format(fa.gc_content))
-		for b in comp:
-			print("{} counts: {}".format(b, comp[b]))
-		print("Mean length: {:.2f}".format(fa.mean))
-		print("Median length: {:.2f}".format(fa.median))
-		print("Max length: {}".format(len(fa.longest)))
-		print("Min length: {}".format(len(fa.shortest)))
-		print("N50, L50: {}, {}".format(*fa.nl()))
-		print("length >= 1000: {}".format(fa.count(1000)))
+		fastx_type = fastx_format_check(infile)
 
-	elif fastx_type == 'fastq':
-		fq = pyfastx.Fastq(args.fastx)
-		comp = fq.composition
-		print("Read counts: {}".format(len(fq)))
-		print("Total bases: {}".format(fq.size))
-		print("GC content: {:.2f}%".format(fq.gc_content))
-		for b in comp:
-			print("{} counts: {}".format(b, comp[b]))
-		print("Quality encoding system maybe: {}".format(", ".join(fq.encoding_type)))
+		if fastx_type == 'fasta':
+			fa = pyfastx.Fasta(infile, full_index=True)
+			row = [os.path.basename(infile), fa.type, len(fa), fa.size, round(fa.gc_content, 3),
+				round(fa.mean,2), round(fa.median,2), len(fa.longest), len(fa.shortest)]
+			row.extend(fa.nl())
+			farows.append(row)
+
+		elif fastx_type == 'fastq':
+			fq = pyfastx.Fastq(infile, full_index=True)
+			row = [os.path.basename(infile), len(fq), fq.size, round(fq.gc_content,3), ",".join(fq.encoding_type)]
+			fqrows.append(row)
+
+	if len(farows) > 1:
+		print_table(farows)
+
+	if len(fqrows) > 1:
+		if len(farows) > 1:
+			print()
+		print_table(fqrows)
 
 def fasta_split(args):
 	fa = pyfastx.Fasta(args.fastx)
@@ -315,6 +330,80 @@ def fastx_sample(args):
 	elif fastx_type == 'fastq':
 		fastq_sample(args)
 
+def fasta_extract(args, ids):
+	fa = pyfastx.Fasta(args.fastx)
+
+	if args.outfile:
+		fw = open(args.outfile, 'w')
+	else:
+		fw = sys.stdout
+
+	for _id in ids:
+		fw.write(fa[_id].raw)
+
+	if args.outfile:
+		fw.close()
+	else:
+		fw.flush()
+
+def fastq_extract(args, ids):
+	fq = pyfastx.Fastq(args.fastx)
+	
+	if args.outfile:
+		fw = open(args.outfile, 'w')
+	else:
+		fw = sys.stdout
+
+	if args.outfa:
+		for _id in ids:
+			r = fq[_id]
+			fw.write("{}\n{}\n".format(r.name, r.seq))
+
+	else:
+		for _id in ids:
+			fw.write(fq[_id].raw)
+
+	if args.outfile:
+		fw.close()
+	else:
+		fw.flush()
+
+def fastx_extract(args):
+	fastx_type = fastx_format_check(args.fastx)
+
+	ids = None
+
+	if args.ids:
+		if re.match(r'\d+\-\d+', args.ids):
+			start, end = args.ids.split('-')
+			ids = range(int(start-1), int(end))
+
+		elif re.math(r'\d+,\d+', args.ids):
+			ids = map(int, args.ids.split(','))
+
+		else:
+			ids = [int(args.ids)]
+
+	elif args.names:
+		if os.path.isfile(args.names):
+			with open(args.names) as fh:
+				ids = [line.strip() for line in fh]
+
+		elif ',' in args.names:
+			ids = args.names.split(',')
+
+		else:
+			ids = [args.ids]
+
+	if not ids:
+		raise Exception("no ids or names input")
+
+	if fastx_type == 'fasta':
+		fasta_extract(args, ids)
+
+	elif fastx_type == 'fastq':
+		fastq_extract(args, ids)
+
 def main():
 	parser = argparse.ArgumentParser(
 		prog = 'pyfastx',
@@ -334,13 +423,28 @@ def main():
 		metavar = ''
 	)
 
+	#build index command
+	parser_build = subparsers.add_parser('build',
+		help = "build index for FASTA or FASTQ file"
+	)
+	parser_build.set_defaults(func=fastx_build)
+	parser_build.add_argument('-f', '--full',
+		help = "build full index, base composition will be calculated",
+		action = 'store_true'
+	)
+	parser_build.add_argument('fastx',
+		help = "fasta or fastq file, gzip support",
+		nargs = '+'
+	)
+
 	#statistics command
 	parser_info = subparsers.add_parser('info',
 		help = "show detailed statistics information of FASTA/Q file"
 	)
 	parser_info.set_defaults(func=fastx_info)
 	parser_info.add_argument('fastx',
-		help = "fasta or fastq file, gzip support"
+		help = "fasta or fastq file, gzip support",
+		nargs = '+'
 	)
 
 	#split command
@@ -374,7 +478,7 @@ def main():
 
 	#convert fastq to fasta command
 	parser_fq2fa = subparsers.add_parser('fq2fa',
-		help = "Convert fastq file to fasta file"
+		help = "convert fastq file to fasta file"
 	)
 	parser_fq2fa.set_defaults(func=fastx_fq2fa)
 	parser_fq2fa.add_argument('-o', '--outfile',
@@ -389,7 +493,7 @@ def main():
 
 	#get subseq from fasta
 	parser_subseq = subparsers.add_parser('subseq',
-		help = "Get subseqence from fasta file by id or name with region"
+		help = "get subseqence from fasta file by id or name with region"
 	)
 	parser_subseq.set_defaults(func=fastx_subseq)
 
@@ -438,6 +542,37 @@ def main():
 		help = "output file, default: output to stdout"
 	)
 	parser_sample.add_argument('fastx',
+		help = "fasta or fastq file, gzip support"
+	)
+
+	#extract sequences
+	parser_extract = subparsers.add_parser('extract',
+		help = "extract sequences or reads from fasta or fastq file"
+	)
+	parser_extract.set_defaults(func=fastx_extract)
+	extract_group = parser_extract.add_mutually_exclusive_group(
+		required = True
+	)
+	extract_group.add_argument('--ids',
+		metavar = 'int or str',
+		help = ("extract sequences by id number, the value can be one integer to get one sequence, "
+				"a range (e.g. 5-10) or a comma seperated list (e.g. 3,5,8) to get multiple sequences")
+	)
+	extract_group.add_argument('--names',
+		metavar = 'str',
+		help = ("extract sequences by name, the value can be one name to get one sequence, "
+				"a comma seperated list (e.g. seq1,seq5,seq9) or a file contains names "
+				"(one name per line) to get multiple sequences")
+	)
+	parser_extract.add_argument('--outfas',
+		help = "output fasta format when input file is fastq format, default output fastq format",
+		action = 'store_true'
+	)
+	parser_extract.add_argument('-o', '--outfile',
+		metavar = 'str',
+		help = "output file, default: output to stdout"
+	)
+	parser_extract.add_argument('fastx',
 		help = "fasta or fastq file, gzip support"
 	)
 
