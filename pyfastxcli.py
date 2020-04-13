@@ -64,10 +64,10 @@ def fastx_build(args):
 		fastx_type = fastx_format_check(infile)
 		
 		if fastx_type == 'fasta':
-			fa = pyfastx.Fasta(infile, full_index=args.full)
+			_ = pyfastx.Fasta(infile, full_index=args.full)
 
 		elif fastx_type == 'fastq':
-			fq = pyfastx.Fastq(infile, full_index=args.full)
+			_ = pyfastx.Fastq(infile, full_index=args.full)
 
 def fastx_info(args):
 	farows = [["fileName", "seqType", "seqCounts", "totalBases", "GC%",
@@ -376,13 +376,13 @@ def fastx_extract(args):
 	if args.ids:
 		if re.match(r'\d+\-\d+', args.ids):
 			start, end = args.ids.split('-')
-			ids = range(int(start-1), int(end))
+			ids = range(int(start)-1, int(end))
 
-		elif re.math(r'\d+,\d+', args.ids):
-			ids = map(int, args.ids.split(','))
+		elif re.match(r'\d+,\d+', args.ids):
+			ids = map(lambda x: int(x)-1, args.ids.split(','))
 
 		else:
-			ids = [int(args.ids)]
+			ids = [int(args.ids)-1]
 
 	elif args.names:
 		if os.path.isfile(args.names):
@@ -393,7 +393,7 @@ def fastx_extract(args):
 			ids = args.names.split(',')
 
 		else:
-			ids = [args.ids]
+			ids = [args.names]
 
 	if not ids:
 		raise Exception("no ids or names input")
