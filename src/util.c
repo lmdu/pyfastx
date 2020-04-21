@@ -272,7 +272,7 @@ int is_gzip_format(char* file_name){
 
 // read line from file
 // extracted from https://github.com/lattera/freebsd/blob/master/contrib/file/getline.c
-ssize_t get_until_delim(char **buf, int delimiter, FILE *fp) {
+/*ssize_t get_until_delim(char **buf, int delimiter, FILE *fp) {
 	char *ptr, *eptr;
 
 	size_t bufsiz = 100;
@@ -311,7 +311,7 @@ ssize_t get_until_delim(char **buf, int delimiter, FILE *fp) {
 
 ssize_t get_line(char **buf, FILE *fp) {
 	return get_until_delim(buf, '\n', fp);
-}
+}*/
 
 
 void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db, char* index_file) {

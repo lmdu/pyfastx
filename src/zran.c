@@ -2104,7 +2104,7 @@ eof:
 }
 
 /* Return the current seek position in the uncompressed data stream. */
-long zran_tell(zran_index_t *index) {
+uint64_t zran_tell(zran_index_t *index) {
 
     return index->uncmp_seek_offset;
 }
@@ -2217,6 +2217,7 @@ int64_t zran_read(zran_index_t *index,
     uncmp_offset    = start->uncmp_offset;
     first_inflate   = 1;
     total_discarded = 0;
+
     while (uncmp_offset < index->uncmp_seek_offset) {
 
         /*

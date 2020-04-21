@@ -12,11 +12,10 @@ typedef struct {
 	//read order id
 	uint64_t id;
 
-	//read name
-	char* name;
-
+	//read length
 	int read_len;
 
+	//description length
 	int desc_len;
 
 	//seq start offset
@@ -25,27 +24,23 @@ typedef struct {
 	//quality start offset
 	int64_t qual_offset;
 
-	//gzip index read handle
-	//gzFile gzfd;
-
-	//file handle
-	//FILE* fd;
-
-	//gzip index
-	//zran_index_t* gzip_index;
-
-	//gzip format
-	//uint16_t gzip_format;
-
-	//phred
-	//uint16_t phred;
-
 	//parent fastq
 	pyfastx_Fastq *fastq;
 
-	//seq and quality content
+	//read name
+	char *name;
+
+	//sequence
 	char *seq;
+
+	//quality
 	char *qual;
+
+	//raw string with name quality
+	char *raw;
+
+	//description
+	char *desc;
 
 } pyfastx_Read;
 

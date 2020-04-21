@@ -43,7 +43,7 @@ typedef struct {
 	char* cache_seq;
 
 	//key function
-	PyObject* key_func;	
+	PyObject* key_func;
 
 } pyfastx_Index;
 

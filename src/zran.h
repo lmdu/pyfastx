@@ -270,7 +270,7 @@ int zran_seek(
  * Returns the current seek location in the uncompressed data stream
  * (just returns zran_index_t.uncmp_seek_offset).
  */
-long zran_tell(
+uint64_t zran_tell(
   zran_index_t *index /* The index */
 );
 

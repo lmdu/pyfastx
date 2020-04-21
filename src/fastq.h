@@ -61,6 +61,17 @@ typedef struct {
 	//gzip index
 	zran_index_t* gzip_index;
 
+	//average length
+	float avg_length;
+
+	//min max length
+	uint32_t maxlen;
+	uint32_t minlen;
+
+	//min and max quality score
+	int maxqual;
+	int minqual;
+
 	//buffer cache
 	char* cache_buff;
 
@@ -68,7 +79,7 @@ typedef struct {
 	int64_t cache_soff;
 
 	//cache end offset
-	int32_t cache_eoff;
+	int64_t cache_eoff;
 
 } pyfastx_Fastq;
 

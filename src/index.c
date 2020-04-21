@@ -436,6 +436,13 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	//index
 	seq->index = self;
 
+	//buff
+	seq->line_cache = NULL;
+	seq->cache_pos = NULL;
+	seq->line.l = 0;
+	seq->line.m = 0;
+	seq->line.s = NULL;
+
 	//Py_INCREF(seq);
 	return (PyObject *)seq;
 }
@@ -496,10 +503,9 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	int64_t offset;
 	uint32_t bytes;
 	int ret;
-	//char *buff;
 
 	//select sql statement, chrom indicates seq or chromomsome id
-	const char* sql = "SELECT boff,blen,slen FROM seq WHERE ID=? LIMIT 1;";
+	const char *sql = "SELECT boff,blen,slen FROM seq WHERE ID=? LIMIT 1;";
 	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
@@ -507,7 +513,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 		ret = sqlite3_step(stmt);
 	);
 
-	if(ret != SQLITE_ROW){
+	if (ret != SQLITE_ROW) {
 		PyErr_SetString(PyExc_KeyError, "Can not found sequence");
 		return NULL;
 	}
@@ -524,20 +530,18 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	}
 
 	//Py_BEGIN_ALLOW_THREADS
-
+	if (self->cache_chrom) {
+		free(self->cache_seq);
+	}
+	
 	self->cache_seq = (char *)malloc(bytes + 1);
 	
 	if (self->gzip_format) {
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, self->cache_seq, bytes);
 	} else {
-		FSEEK(self->fd, offset, SEEK_SET);
-		if (fread(self->cache_seq, bytes, 1, self->fd) != 1) {
-			if (!feof(self->fd)) {
-				PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
-				return NULL;
-			}
-		}
+		gzseek(self->gzfd, offset, SEEK_SET);
+		gzread(self->gzfd, self->cache_seq, bytes);
 	}
 
 	self->cache_seq[bytes] = '\0';
@@ -558,9 +562,9 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 }
 
 //clear index cached sequence
-void pyfastx_index_cache_clear(pyfastx_Index *self) {
+/*void pyfastx_index_cache_clear(pyfastx_Index *self) {
 	self->cache_chrom = 0;
 	self->cache_start = 0;
 	self->cache_end = 0;
 	self->cache_seq = NULL;
-}
+}*/

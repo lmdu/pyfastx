@@ -15,6 +15,7 @@ sources = glob.glob('src/*.c')
 if os.name == 'nt' and '64' in platform.architecture()[0]:
     link_args.append('-DMS_WIN64')
     comp_args.append('-DMS_WIN64')
+    comp_args.append('-D_FILE_OFFSET_BITS=64')
 
 extension = Extension('pyfastx',
     sources = sources,

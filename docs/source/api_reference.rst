@@ -240,7 +240,7 @@ pyfastx.Fastq
 
 New in ``pyfastx`` 0.4.0
 
-.. py:class:: pyfastx.Fastq(file_name, phred=0, build_index=True, composition=False)
+.. py:class:: pyfastx.Fastq(file_name, phred=0, build_index=True, full_index=False)
 
 	Read and parse fastq file
 
@@ -248,7 +248,7 @@ New in ``pyfastx`` 0.4.0
 
 	:param bool build_index: build index for random access to FASTQ reads, default: ``True``. If build_index is False, iteration will return a tuple (name, seq, qual); If build_index is True, iteration will return a read object
 
-	:param bool composition: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
+	:param bool full_index: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
 
 	:param int phred: phred was used to convert quality ascii to quality int value, usually is 33 or 64, default ``33``
 
@@ -271,6 +271,36 @@ New in ``pyfastx`` 0.4.0
 	.. py:attribute:: gc_content
 
 		GC content of whole FASTQ file
+
+	.. py:attribute:: avglen
+
+		New in ``pyfastx`` 0.6.10
+
+		get average length of reads
+
+	.. py:attribute:: maxlen
+
+		New in ``pyfastx`` 0.6.10
+
+		get maximum length of reads
+
+	.. py:attribute:: minlen
+
+		New in ``pyfastx`` 0.6.10
+
+		get minimum length of reads
+
+	.. py:attribute:: maxqual
+
+		New in ``pyfastx`` 0.6.10
+
+		get maximum quality score of bases
+
+	.. py:attribute:: minqual
+
+		New in ``pyfastx`` 0.6.10
+
+		get minimum quality score of bases
 
 	.. py:attribute:: composition
 

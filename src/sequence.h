@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "stdint.h"
 #include "index.h"
+#include "kseq.h"
 #include "util.h"
 
 //make sequence class
@@ -14,6 +15,12 @@ typedef struct {
 	
 	//sequence name
 	char* name;
+
+	//sequence description
+	char* desc;
+
+	//iter line
+	kstring_t line;
 
 	//start position
 	uint32_t start;
@@ -45,8 +52,11 @@ typedef struct {
 	//standard fasta format with same line length
 	uint16_t normal;
 
-	//for iteration
-	//kstream_t *ks;
+	//line iteration cache
+	char* line_cache;
+
+	//current cache position
+	char* cache_pos;
 
 } pyfastx_Sequence;
 

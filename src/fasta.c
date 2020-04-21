@@ -134,12 +134,6 @@ PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self){
 
 PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 	if (self->has_index) {
-		//++self->iter_id;
-
-		//if (self->iter_id <= self->seq_counts) {
-		//	return pyfastx_index_get_seq_by_id(self->index, self->iter_id);
-		//}
-
 		int ret;
 		PYFASTX_SQLITE_CALL(ret = sqlite3_step(self->iter_stmt));
 		if (ret == SQLITE_ROW) {

@@ -2,9 +2,6 @@
 #include "structmember.h"
 
 char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
-	//uint32_t seq_len;
-	
-	//seq_len = self->end - self->start + 1;
 	if (!self->normal || (self->parent_len == self->end && self->start == 1)) {
 		pyfastx_index_get_full_seq(self->index, self->id);
 	}
@@ -20,21 +17,18 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 		return buff;
 	}
 	
+	if (self->index->cache_chrom) {
+		free(self->index->cache_seq);
+	}
 	self->index->cache_seq = (char *)malloc(self->byte_len + 1);
 
 	//Py_BEGIN_ALLOW_THREADS
-
 	if (self->index->gzip_format) {
 		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
 		zran_read(self->index->gzip_index, self->index->cache_seq, self->byte_len);
 	} else {
-		FSEEK(self->index->fd, self->offset, SEEK_SET);
-		if (fread(self->index->cache_seq, self->byte_len, 1, self->index->fd) != 1) {
-			if (!feof(self->index->fd)) {
-				PyErr_SetString(PyExc_RuntimeError, "reading sequence error");
-				return NULL;
-			}
-		}
+		gzseek(self->index->gzfd, self->offset, SEEK_SET);
+		gzread(self->index->gzfd, self->index->cache_seq, self->byte_len);
 	}
 
 	self->index->cache_seq[self->byte_len] = '\0';
@@ -46,7 +40,6 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	}
 
 	//Py_END_ALLOW_THREADS
-
 	self->index->cache_chrom = self->id;
 	self->index->cache_start = self->start;
 	self->index->cache_end = self->end;
@@ -61,9 +54,20 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 }*/
 
 void pyfastx_sequence_dealloc(pyfastx_Sequence* self) {
-	//if (self->ks != NULL) {
-	//	ks_destroy(self->ks);
-	//}
+	free(self->name);
+
+	if (self->desc) {
+		free(self->desc);
+	}
+
+	if (self->line.l > 0) {
+		free(self->line.s);
+	}
+
+	if (self->line_cache) {
+		free(self->line_cache);
+	}
+
 	Py_TYPE(self)->tp_free(self);
 }
 
@@ -76,7 +80,19 @@ PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
 	if (self->index->gzip_format){
 		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
 	} else {
-		FSEEK(self->index->fd, self->offset, SEEK_SET);
+		gzseek(self->index->gzfd, self->offset, SEEK_SET);
+	}
+
+	if (!self->line_cache) {
+		self->line_cache = (char *)malloc(1048576 + 1);
+	}
+
+	self->cache_pos = NULL;
+
+	if (!self->line.m) {
+		self->line.m = 1;
+		self->line.l = 0;
+		self->line.s = (char *)malloc(1);
 	}
 
 	Py_INCREF(self);
@@ -84,68 +100,72 @@ PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
 }
 
 PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
-	if (self->index->gzip_format) {
-		int64_t ret;
-		int64_t startpos;
-		char *lend;
-		char *buff; 
-		int64_t max_offset = self->offset + self->byte_len;
+	uint32_t rlen, len;
+	char *ret;
+	
+	if (self->line.l > 0) {
+		self->line.l = 0;
+	}
 
-		startpos = zran_tell(self->index->gzip_index);
-		
-		if (startpos > max_offset) {
-			return NULL;
-		}
-		
-		buff = (char*)malloc(self->line_len + 1);
-		ret = zran_read(self->index->gzip_index, buff, self->line_len);
-		if (ret == ZRAN_READ_EOF) {
-			return NULL;
-		}
+	while (1) {
+		if (!self->cache_pos) {
+			if (self->index->gzip_format) {
+				rlen = zran_read(self->index->gzip_index, self->line_cache, 1048576);
+			} else {
+				rlen = gzread(self->index->gzfd, self->line_cache, 1048576);
+			}
 
-		buff[self->line_len] = '\0';
-
-		if (buff[0] == '>') {
-			return NULL;
-		}
-
-		lend = strchr(buff, '\n');
-		if (lend != NULL) {
-			*lend = '\0';
-		} else {
-			buff[ret] = '\0';
-		}
-
-		if (!self->normal) {
-			zran_seek(self->index->gzip_index, startpos+strlen(buff)+1, SEEK_SET, NULL);
-		}
-
-		
-		if (self->index->uppercase) {
-			remove_space_uppercase(buff);
-		} else {
-			remove_space(buff);
-		}
-
-		return Py_BuildValue("s", buff);
-
-	} else {
-		char *seq = NULL;
-		if (get_line(&seq, self->index->fd) != -1) {
-			if (seq[0] == '>') {
+			if (rlen <= 0) {
+				if (self->line.l > 0) {
+					return Py_BuildValue("s", self->line.s);
+				}
 				return NULL;
 			}
 
-			if(self->index->uppercase){
-				remove_space_uppercase(seq);
-			} else {
-				remove_space(seq);
+			self->line_cache[rlen] = '\0';
+			self->cache_pos = self->line_cache;
+		}
+
+		ret = strchr(self->cache_pos, '\n');
+
+		if (ret) {
+			len = ret - self->cache_pos + 1;
+		} else {
+			len = self->line_cache + strlen(self->line_cache) - self->cache_pos;
+		}
+
+		if (len + self->line.l > self->line.m) {
+			self->line.m = len + self->line.l + 1;
+			self->line.s = (char *)realloc(self->line.s, self->line.m);
+		}
+
+		memcpy(self->line.s+self->line.l, self->cache_pos, len);
+		self->line.l += len;
+		self->line.s[self->line.l] = '\0';
+
+		if (self->line.s[0] == '>') {
+			free(self->line_cache);
+			self->line_cache = NULL;
+			return NULL;
+		}
+
+		if (ret) {
+			self->cache_pos = ret + 1;
+
+			if (*self->cache_pos == '\0') {
+				self->cache_pos = NULL;
 			}
 
-			return Py_BuildValue("s", seq);
+			self->line.s[self->line.l-self->end_len] = '\0';
+			
+			return Py_BuildValue("s", self->line.s);
+		} else {
+			self->cache_pos = NULL;
 		}
 	}
-	
+
+	free(self->line_cache);
+	self->line_cache = NULL;
 	return NULL;
 }
 
@@ -182,53 +202,60 @@ PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
 PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	sqlite3_stmt *stmt;
 	int nbytes;
-	char *descr;
 	int ret;
 	int64_t new_offset;
 
-	const char *sql = "SELECT dlen FROM seq WHERE ID=? LIMIT 1";
-	
-	PYFASTX_SQLITE_CALL(
-		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-		sqlite3_bind_int(stmt, 1, self->id);
-		ret = sqlite3_step(stmt);
-	);
+	if (!self->desc) {
+		const char *sql = "SELECT dlen FROM seq WHERE ID=? LIMIT 1";
+		
+		PYFASTX_SQLITE_CALL(
+			sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+			sqlite3_bind_int(stmt, 1, self->id);
+			ret = sqlite3_step(stmt);
+		);
 
-	if (ret != SQLITE_ROW) {
-		PyErr_SetString(PyExc_RuntimeError, "can not get sequence description");
-		return NULL;
-	}
-
-	PYFASTX_SQLITE_CALL(
-		nbytes = sqlite3_column_int(stmt, 0);
-		sqlite3_finalize(stmt);
-	);
-
-	descr = (char *)malloc(nbytes + 1);
-	new_offset = self->offset - nbytes - self->end_len;
-	
-	if (self->index->gzip_format) {
-		zran_seek(self->index->gzip_index, new_offset, SEEK_SET, NULL);
-		zran_read(self->index->gzip_index, descr, nbytes);
-	} else {
-		FSEEK(self->index->fd, new_offset, SEEK_SET);
-		if (fread(descr, nbytes, 1, self->index->fd) != 1) {
-			PyErr_SetString(PyExc_RuntimeError, "reading raw sequence error");
+		if (ret != SQLITE_ROW) {
+			PyErr_SetString(PyExc_RuntimeError, "can not get sequence description");
 			return NULL;
 		}
-	}
 
-	descr[nbytes] = '\0';
-	return Py_BuildValue("s", descr);
+		PYFASTX_SQLITE_CALL(
+			nbytes = sqlite3_column_int(stmt, 0);
+			sqlite3_finalize(stmt);
+		);
+
+		self->desc = (char *)malloc(nbytes + 1);
+		new_offset = self->offset - nbytes - self->end_len;
+		
+		if (self->index->gzip_format) {
+			zran_seek(self->index->gzip_index, new_offset, SEEK_SET, NULL);
+			zran_read(self->index->gzip_index, self->desc, nbytes);
+		} else {
+			gzseek(self->index->gzfd, new_offset, SEEK_SET);
+			gzread(self->index->gzfd, self->desc, nbytes);
+		}
+
+		self->desc[nbytes] = '\0';
+	}
+	return Py_BuildValue("s", self->desc);
 }
 
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
-	char *seq = pyfastx_sequence_get_subseq(self);
+	char *ret;
+	char *seq;
+
+	seq = pyfastx_sequence_get_subseq(self);
 	
-	//clear cache to reduce memory
-	pyfastx_index_cache_clear(self->index);
+	ret = (char *)malloc(self->seq_len + 1);
+	strcpy(ret, seq);
 	
-	return seq;
+	if ((self->id == self->index->cache_chrom) && (self->start>=self->index->cache_start) && (self->end<=self->index->cache_end)){
+		if (!(self->start==self->index->cache_start && self->end<=self->index->cache_end)) {
+			free(seq);
+		}
+	}
+	
+	return ret;
 }
 
 PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
@@ -238,6 +265,7 @@ PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
 	int64_t new_bytelen;
 	char *buff;
 	int ret;
+	PyObject* retval;
 
 	const char *sql = "SELECT dlen FROM seq WHERE ID=? LIMIT 1";
 	sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
@@ -263,45 +291,73 @@ PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
 			zran_seek(self->index->gzip_index, new_offset, SEEK_SET, NULL);
 			zran_read(self->index->gzip_index, buff, new_bytelen);
 		} else {
-			FSEEK(self->index->fd, new_offset, SEEK_SET);
-			if (fread(buff, new_bytelen, 1, self->index->fd) != 1) {
-				if (!feof(self->index->fd)) {
-					PyErr_SetString(PyExc_RuntimeError, "reading raw sequence error");
-					return NULL;
-				}
-			}
+			gzseek(self->index->gzfd, new_offset, SEEK_SET);
+			gzread(self->index->gzfd, buff, new_bytelen);
 		}
-
 		buff[new_bytelen] = '\0';
-		return Py_BuildValue("s", buff);
+		retval = Py_BuildValue("s", buff);
 	} else {
 		buff = pyfastx_sequence_get_subseq(self);
-		return PyUnicode_FromFormat(">%s:%ld-%ld\n%s\n", self->name, self->start, self->end, buff);
+		retval = PyUnicode_FromFormat(">%s:%ld-%ld\n%s\n", self->name, self->start, self->end, buff);
 	}
+
+	free(buff);
+	return retval;
 }
 
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
-	char *seq = pyfastx_sequence_get_subseq(self);
-	return Py_BuildValue("s", seq);
+	char *seq;
+	PyObject *ret;
+	seq = pyfastx_sequence_get_subseq(self);
+	ret = Py_BuildValue("s", seq);
+
+	if ((self->id == self->index->cache_chrom) && (self->start>=self->index->cache_start) && (self->end<=self->index->cache_end)){
+		if (!(self->start==self->index->cache_start && self->end<=self->index->cache_end)) {
+			free(seq);
+		}
+	}
+
+	return ret;
 }
 
 PyObject *pyfastx_sequence_reverse(pyfastx_Sequence* self, void* closure){
-	char *seq = pyfastx_sequence_acquire(self);
+	char *seq;
+	PyObject *ret;
+
+	seq = pyfastx_sequence_acquire(self);
 	reverse_seq(seq);
-	return Py_BuildValue("s", seq);
+	
+	ret = Py_BuildValue("s", seq);
+	free(seq);
+
+	return ret;
 }
 
 PyObject *pyfastx_sequence_complement(pyfastx_Sequence* self, void* closure){
-	char *seq = pyfastx_sequence_acquire(self);
+	char *seq;
+	PyObject *ret;
+
+	seq = pyfastx_sequence_acquire(self);
 	complement_seq(seq);
-	return Py_BuildValue("s", seq);
+
+	ret = Py_BuildValue("s", seq);
+	free(seq);
+
+	return ret;
 }
 
 //complement reverse sequence
 PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure){
-	char *seq = pyfastx_sequence_acquire(self);
+	char *seq;
+	PyObject *ret;
+
+	seq = pyfastx_sequence_acquire(self);
 	reverse_complement_seq(seq);
-	return Py_BuildValue("s", seq);
+
+	ret = Py_BuildValue("s", seq);
+	free(seq);
+
+	return ret;
 }
 
 PyObject *pyfastx_sequence_repr(pyfastx_Sequence* self){
@@ -336,14 +392,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 	
 	} else if (PySlice_Check(item)) {
 		Py_ssize_t slice_start, slice_stop, slice_step, slice_len;
-
 		pyfastx_Sequence *seq;
-
-		/*if(PySlice_Unpack(item, &slice_start, &slice_stop, &slice_step) < 0) {
-			return NULL;
-		}
-
-		slice_len = PySlice_AdjustIndices(self->seq_len, &slice_start, &slice_stop, slice_step);*/
 
 		if (PySlice_GetIndicesEx(item, self->seq_len, &slice_start, &slice_stop, &slice_step, &slice_len) < 0) {
 			return NULL;
@@ -362,16 +411,16 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		}
 
 		//create a new sequence
-		//seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);
 		seq = (pyfastx_Sequence *)PyObject_CallObject((PyObject *)&pyfastx_SequenceType, NULL);
-		if(!seq){
+		if (!seq) {
 			return NULL;
 		}
 		
 		seq->start = slice_start + self->start;
 		seq->end = slice_stop + self->start - 1;
 		seq->id = self->id;
-		seq->name = self->name;
+		seq->name = (char *)malloc(strlen(self->name) + 1);
+		strcpy(seq->name, self->name);
 		seq->seq_len = slice_stop - slice_start;
 		seq->parent_len = self->parent_len;
 		seq->line_len = self->line_len;
@@ -380,6 +429,11 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		seq->offset = self->offset;
 		seq->byte_len = self->byte_len;
 		seq->index = self->index;
+		seq->line_cache = NULL;
+		seq->cache_pos = NULL;
+		seq->line.s = NULL;
+		seq->line.l = 0;
+		seq->line.m = 0;
 
 		if (self->normal) {
 			//number of the lines before slice start

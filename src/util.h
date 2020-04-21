@@ -37,27 +37,26 @@ int fasta_validator(gzFile fd);
 int fastq_validator(gzFile fd);
 
 //read line
-ssize_t get_until_delim(char **buf, int delimiter, FILE *fp);
-ssize_t get_line(char **buf, FILE *fp);
+/*ssize_t get_until_delim(char **buf, int delimiter, FILE *fp);
+ssize_t get_line(char **buf, FILE *fp);*/
 
 //sqlite3 compatable with python GIL
 //extracted from apsw project
 //https://github.com/rogerbinns/apsw/blob/07571365b6fbb25e2691071998526c351b04a04d/src/util.c
 /* call where no error is returned */
 #define PYFASTX_SQLITE_CALL(x) \
-  do { Py_BEGIN_ALLOW_THREADS { x; } Py_END_ALLOW_THREADS ; } while(0)
+	do { Py_BEGIN_ALLOW_THREADS { x; } Py_END_ALLOW_THREADS ; } while(0)
 
 #define test_time(x) \
-  do { clock_t s, e; s=clock(); x; e=clock(); printf("used time: %f\n", (double)(e-s)/CLOCKS_PER_SEC); } while(0)
-
+	do { clock_t s, e; s=clock(); x; e=clock(); fprintf(stderr, "fread time: %.12f\n", (double)(e-s)/CLOCKS_PER_SEC); } while(0)
 
 //support large fseek offset
-#ifdef _WIN32
+/*#ifdef _WIN32
 	#define FSEEK _fseeki64
 	#define FTELL _ftelli64
 #else
 	#define FSEEK fseeko
 	#define FTELL ftello
-#endif
+#endif*/
 
 #endif

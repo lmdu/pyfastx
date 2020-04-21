@@ -71,8 +71,9 @@ def fastx_build(args):
 
 def fastx_info(args):
 	farows = [["fileName", "seqType", "seqCounts", "totalBases", "GC%",
-				"meanLen", "medianLen", "maxLen", "minLen", "N50", "L50"]]
-	fqrows = [["fileName", "readCounts", "totalBases", "GC%", "qualityEncodingSystem"]]
+				"avgLen", "medianLen", "maxLen", "minLen", "N50", "L50"]]
+	fqrows = [["fileName", "readCounts", "totalBases", "GC%", "avgLen", "maxLen",
+				"minLen", "maxQual", "minQual", "qualEncodingSystem"]]
 	
 	for infile in args.fastx:
 		if infile.endswith('.fxi'):
@@ -82,14 +83,20 @@ def fastx_info(args):
 
 		if fastx_type == 'fasta':
 			fa = pyfastx.Fasta(infile, full_index=True)
-			row = [os.path.basename(infile), fa.type, len(fa), fa.size, round(fa.gc_content, 3),
-				round(fa.mean,2), round(fa.median,2), len(fa.longest), len(fa.shortest)]
+			if fa.type in ['DNA', 'RNA']:
+				gc = round(fa.gc_content, 3)
+			else:
+				gc = '-'
+
+			row = [os.path.basename(infile), fa.type, len(fa), fa.size, gc, round(fa.mean,3),
+					round(fa.median,3), len(fa.longest), len(fa.shortest)]
 			row.extend(fa.nl())
 			farows.append(row)
 
 		elif fastx_type == 'fastq':
 			fq = pyfastx.Fastq(infile, full_index=True)
-			row = [os.path.basename(infile), len(fq), fq.size, round(fq.gc_content,3), ",".join(fq.encoding_type)]
+			row = [os.path.basename(infile), len(fq), fq.size, round(fq.gc_content,3), round(fq.avglen,3),
+					fq.maxlen, fq.minlen, fq.maxqual, fq.minqual, ",".join(fq.encoding_type)]
 			fqrows.append(row)
 
 	if len(farows) > 1:
@@ -209,15 +216,15 @@ def fastx_split(args):
 		fastq_split(args)
 
 def fastx_fq2fa(args):
-	fq = pyfastx.Fastq(args.fastx)
+	fq = pyfastx.Fastq(args.fastx, build_index=False)
 
 	if args.outfile:
 		fh = open(args.outfile, 'w')
 	else:
 		fh = sys.stdout
 
-	for read in fq:
-		fh.write(">{}\n{}\n".format(read.name, read.seq))
+	for name, seq, _ in fq:
+		fh.write(">{}\n{}\n".format(name, seq))
 
 	if args.outfile:
 		fh.close()
@@ -424,7 +431,7 @@ def main():
 	)
 
 	#build index command
-	parser_build = subparsers.add_parser('build',
+	parser_build = subparsers.add_parser('index',
 		help = "build index for FASTA or FASTQ file"
 	)
 	parser_build.set_defaults(func=fastx_build)

@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.6.10 (2020-04-21)
+---------------------------
+
+- Improved sequence reading speed
+- Added avglen, minlen, maxlen, minqual and maxqual to Fastq object
+- Fixed read retrieval error
+- Fixed some memory leaks
+
 Version 0.6.9 (2020-04-12)
 --------------------------
 
@@ -33,21 +41,24 @@ Version 0.6.6 (2020-02-15)
 - Fixed seq,identifier,read object memory dealloc
 - Changed description text into description length in index file
 
+Older versions
+--------------
+
 Version 0.6.5 (2020-01-31)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Reduced memory usage when building index for large fasta
 - Removed rebuild_index method from Fasta object due to segmentation fault
 - Optimized compatibility between sqlite3 and python GIL
 
 Version 0.6.4 (2020-01-14)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed last sequence fetching error caused by missing \n
 - Improved fasta/q object key error message to make it more human
 
 Version 0.6.3 (2020-01-08)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Added .raw attribute to sequence object to get seq raw string
 - Added .raw attribute to read object to get read raw string
@@ -57,13 +68,10 @@ Version 0.6.3 (2020-01-08)
 - Changed FASTA class parameter composition to full_index
 
 Version 0.6.2 (2020-01-04)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed sample sequence index error
 - Fixed ci deploy error
-
-Older versions
---------------
 
 Version 0.6.1 (2020-01-03)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

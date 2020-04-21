@@ -184,6 +184,5 @@ class FastaTest(unittest.TestCase):
 			for line in self.fastx[0][10:20]:
 				print(line)
 
-
 if __name__ == '__main__':
 	unittest.main()
