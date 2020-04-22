@@ -2434,15 +2434,6 @@ int zran_export_index(zran_index_t *index,
     zran_point_t *point;
     zran_point_t *list_end;
 
-    /*
-     * compressed_size and uncompressed_size are defined as size_t in
-     * zran_index_t. They are stored in fixed-length 64-bit variables to be
-     * exported portably. Other fields in zran_index_t are defined with
-     * fixed-length types, so they are exported directly from index.
-     */
-    uint64_t compressed_size   = index->compressed_size;
-    uint64_t uncompressed_size = index->uncompressed_size;
-
     zran_log("zran_export_index: (%lu, %lu, %u, %u, %u)\n",
              index->compressed_size,
              index->uncompressed_size,
@@ -2457,13 +2448,15 @@ int zran_export_index(zran_index_t *index,
     if (f_ret != 1) goto fail;
 
     /* Write compressed size, and check for errors. */
-    f_ret = fwrite(&compressed_size, sizeof(compressed_size), 1, fd);
+    f_ret = fwrite(&index->compressed_size,
+                   sizeof(index->compressed_size), 1, fd);
 
     if (ferror(fd)) goto fail;
     if (f_ret != 1) goto fail;
 
     /* Write uncompressed size, and check for errors. */
-    f_ret = fwrite(&uncompressed_size, sizeof(uncompressed_size), 1, fd);
+    f_ret = fwrite(&index->uncompressed_size,
+                   sizeof(index->uncompressed_size), 1, fd);
 
     if (ferror(fd)) goto fail;
     if (f_ret != 1) goto fail;
@@ -2640,13 +2633,10 @@ int zran_import_index(zran_index_t *index,
     if (f_ret != 1) goto read_error;
 
     /*
-     * Make sanity checks for compressed size. Since compressed_size is of type
-     * size_t, and the value encoded in the export file is 64-bit, it can
-     * overflow. It is also compared to the existing size in the current index
-     * (set in zran_init), if they don't match this means this index file is
-     * not created for this compressed file.
+     * Compare compressed_size in the index file  to the existing size in
+     * the current index (set in zran_init), if they don't match this means
+     * this index file is not created for this compressed file.
      */
-    if (compressed_size >= SIZE_MAX)               goto overflow;
     if (compressed_size != index->compressed_size) goto inconsistent;
 
     /* Read uncompressed size, and check for file errors and EOF. */
@@ -2657,12 +2647,9 @@ int zran_import_index(zran_index_t *index,
     if (f_ret != 1) goto read_error;
 
     /*
-     * Make sanity checks for uncompressed size. Similar to compressed_size,
-     * the value is checked against overflow. Uncompressed size may not be set
-     * in either current index or exported file, or both. Therefore, they are
-     * compared only if it's set in both.
+     * Uncompressed size may not be set in either current index or exported
+     * file, or both. Therefore, they are compared only if it's set in both.
      */
-    if (uncompressed_size >= SIZE_MAX) goto overflow;
     if (uncompressed_size        != 0 &&
         index->uncompressed_size != 0 &&
         index->uncompressed_size != uncompressed_size) goto inconsistent;
@@ -2869,10 +2856,6 @@ eof:
 
 read_error:
     fail_ret = ZRAN_IMPORT_READ_ERROR;
-    goto cleanup;
-
-overflow:
-    fail_ret = ZRAN_IMPORT_OVERFLOW;
     goto cleanup;
 
 inconsistent:

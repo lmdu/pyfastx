@@ -46,13 +46,13 @@ struct _zran_index {
      * Size of the compressed file. This
      * is calculated in zran_init.
      */
-    size_t        compressed_size;
+    uint64_t      compressed_size;
 
     /*
      * Size of the uncompressed data. This is
      * only updated when it becomes known.
      */
-    size_t        uncompressed_size;
+    uint64_t      uncompressed_size;
 
     /*
      * Spacing size in bytes, relative to the
@@ -367,10 +367,9 @@ enum {
     ZRAN_IMPORT_FAIL           = -1,
     ZRAN_IMPORT_EOF            = -2,
     ZRAN_IMPORT_READ_ERROR     = -3,
-    ZRAN_IMPORT_OVERFLOW       = -4,
-    ZRAN_IMPORT_INCONSISTENT   = -5,
-    ZRAN_IMPORT_MEMORY_ERROR   = -6,
-    ZRAN_IMPORT_UNKNOWN_FORMAT = -7
+    ZRAN_IMPORT_INCONSISTENT   = -4,
+    ZRAN_IMPORT_MEMORY_ERROR   = -5,
+    ZRAN_IMPORT_UNKNOWN_FORMAT = -6
 };
 
 /*

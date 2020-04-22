@@ -19,7 +19,7 @@ PyObject *pyfastx_version(PyObject *self, PyObject *args, PyObject *kwargs)	{
 	}
 
 	if (debug) {
-		return PyUnicode_FromFormat("pyfastx: %s; zlib: %s; sqlite: %s; zran: 0.8.10", PYFASTX_VERSION, ZLIB_VERSION, SQLITE_VERSION);
+		return PyUnicode_FromFormat("pyfastx: %s; zlib: %s; sqlite: %s; zran: %s", PYFASTX_VERSION, ZLIB_VERSION, SQLITE_VERSION, ZRAN_VERSION);
 	}
 
 	return Py_BuildValue("s", PYFASTX_VERSION);
