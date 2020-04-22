@@ -528,6 +528,27 @@ Get FASTQ information
     >>> fq.composition
     {'A': 20501, 'C': 39705, 'G': 39704, 'T': 20089, 'N': 1}
 
+    >>> # New in pyfastx 0.6.10
+    >>> # get average length of reads
+    >>> fq.avglen
+    150.0
+
+    >>> # get maximum lenth of reads
+    >>> fq.maxlen
+    150
+
+    >>> # get minimum length of reas
+    >>> fq.minlen
+    150
+
+    >>> # get maximum quality score
+    >>> fq.maxqual
+    70
+
+    >>> # get minimum quality score
+    >>> fq.minqual
+    35
+
     >>> # get phred which affects the quality score conversion
     >>> fq.phred
     33
@@ -721,7 +742,7 @@ New in ``pyfastx`` 0.5.0
 .. code:: bash
 
     $ pyfastx -h
-
+    
     usage: pyfastx COMMAND [OPTIONS]
 
     A command line tool for FASTA/Q file manipulation
@@ -732,11 +753,31 @@ New in ``pyfastx`` 0.5.0
 
     Commands:
 
+        index        build index for FASTA or FASTQ file
         info         show detailed statistics information of FASTA/Q file
         split        split fasta file into multiple files
-        fq2fa        Convert fastq file to fasta file
-        subseq       Get subseqence from fasta file by id or name with region
+        fq2fa        convert fastq file to fasta file
+        subseq       get subseqence from fasta file by id or name with region
         sample       randomly sample sequences from fasta or fastq file
+        extract      extract sequences or reads from fasta or fastq file
+
+Build index
+-----------
+
+New in ``pyfastx`` 0.6.10
+
+.. code:: bash
+
+    $ pyfastx index -h
+
+    usage: pyfastx index [-h] [-f] fastx [fastx ...]
+
+    positional arguments:
+      fastx       fasta or fastq file, gzip support
+
+    optional arguments:
+      -h, --help  show this help message and exit
+      -f, --full  build full index, base composition will be calculated
 
 Show statistics information
 ---------------------------
@@ -823,6 +864,37 @@ Sample sequences
       -h, --help            show this help message and exit
       -n int                number of sequences to be sampled
       -p float              proportion of sequences to be sampled, 0~1
+      -o str, --outfile str
+                            output file, default: output to stdout
+
+Extract sequences
+-----------------
+
+New in ``pyfastx`` 0.6.10
+
+.. code:: bash
+
+    $ pyfastx extract -h
+
+    usage: pyfastx extract [-h] (--ids int or str | --names str) [--outfas]
+                           [-o str]
+                           fastx
+
+    positional arguments:
+      fastx                 fasta or fastq file, gzip support
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --ids int or str      extract sequences by id number, the value can be one
+                            integer to get one sequence, a range (e.g. 5-10) or a
+                            comma seperated list (e.g. 3,5,8) to get multiple
+                            sequences
+      --names str           extract sequences by name, the value can be one name
+                            to get one sequence, a comma seperated list (e.g.
+                            seq1,seq5,seq9) or a file contains names (one name per
+                            line) to get multiple sequences
+      --outfas              output fasta format when input file is fastq format,
+                            default output fastq format
       -o str, --outfile str
                             output file, default: output to stdout
 

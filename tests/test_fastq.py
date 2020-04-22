@@ -87,6 +87,15 @@ class FastaTest(unittest.TestCase):
 		# test phred
 		self.assertEqual(self.fastq.phred, 33)
 
+		#test length
+		self.assertEqual(self.fastq.avglen, 150)
+		self.assertEqual(self.fastq.minlen, 150)
+		self.assertEqual(self.fastq.maxlen, 150)
+
+		#test quality
+		self.assertEqual(self.fastq.maxqual, 70)
+		self.assertEqual(self.fastq.minqual, 35)
+
 	def test_negative(self):
 		read = self.fastq[-1]
 		self.assertEqual(read.name, self.reads[len(self.reads)-1][0])

@@ -28,6 +28,8 @@ New in ``pyfastx`` 0.5.0
 Build index
 -----------
 
+New in ``pyfastx`` 0.6.10
+
 .. code:: bash
 
     $ pyfastx index -h
@@ -157,6 +159,8 @@ Sample sequences
 
 Extract sequences
 -----------------
+
+New in ``pyfastx`` 0.6.10
 
 .. code:: bash
 
