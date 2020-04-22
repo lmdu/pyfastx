@@ -355,7 +355,7 @@ def fasta_extract(args, ids):
 
 def fastq_extract(args, ids):
 	fq = pyfastx.Fastq(args.fastx)
-	
+
 	if args.outfile:
 		fw = open(args.outfile, 'w')
 	else:

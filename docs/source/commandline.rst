@@ -74,7 +74,7 @@ For example:
 
 seqType: sequence type (DNA, RNA, or protein); seqCounts: total sequence counts; totalBases: total number of bases; GC%: GC content; avgLen: average sequence length; medianLen: median sequence length; maxLen: maximum sequence length; minLen: minimum sequence length; N50: N50 length; L50: L50 sequence counts.
 
-..code:: bash
+.. code:: bash
 
     $ pyfastx info tests/data/*.fq*
 

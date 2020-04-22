@@ -4,13 +4,14 @@
 
 All tools support for random access were used to perform benchmark. Python 3.6.6 was used to test tools that was developed as Python package.
 
-| Tools    | Version  | Language  | URL                                       |
-|----------|----------|-----------|-------------------------------------------|
-| samtools | v1.9     | C         | http://www.htslib.org/                    |
-| pysam    | v0.15.3  | C, Python | https://github.com/pysam-developers/pysam |
-| seqkit   | v0.11.0  | Go        | https://bioinf.shenwei.me/seqkit/         |
-| pyfasta  | v0.5.2   | Python    | https://github.com/brentp/pyfasta         |
-| pyfaidx  | v0.5.5.2 | Python    | https://github.com/mdshw5/pyfaidx         |
+| Tools    | Version  | Language  | URL                                         |
+|----------|----------|-----------|---------------------------------------------|
+| pyfastx  | v0.6.10  | C, Python | <http://github.com/lmdu/pyfastx>            |
+| samtools | v1.9     | C         | <http://www.htslib.org/>                    |
+| pysam    | v0.15.3  | C, Python | <https://github.com/pysam-developers/pysam> |
+| seqkit   | v0.11.0  | Go        | <https://bioinf.shenwei.me/seqkit>          |
+| pyfasta  | v0.5.2   | Python    | <https://github.com/brentp/pyfasta>         |
+| pyfaidx  | v0.5.5.2 | Python    | <https://github.com/mdshw5/pyfaidx>         |
 
 ## Test data
 
