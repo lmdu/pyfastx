@@ -1,13 +1,15 @@
 Changelog
 =========
 
-Version 0.6.10 (2020-04-21)
+Version 0.6.10 (2020-04-22)
 ---------------------------
 
-- Improved sequence reading speed
+- Improved the speed of sequence reading 
+- Improved the speed of sequence line iteration
 - Added avglen, minlen, maxlen, minqual and maxqual to Fastq object
 - Fixed read retrieval error
-- Fixed some memory leaks
+- Fixed some hidden memory leaks
+- Changed fastq index file structure to save more information
 
 Version 0.6.9 (2020-04-12)
 --------------------------
