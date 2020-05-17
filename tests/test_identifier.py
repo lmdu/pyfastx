@@ -18,6 +18,10 @@ class FastaTest(unittest.TestCase):
 		self.count = len(self.fastx)
 
 	def tearDown(self):
+		del self.fastx
+		del self.fasta
+		del self.faidx
+
 		if os.path.exists('{}.fxi'.format(gzip_fasta)):
 			os.remove('{}.fxi'.format(gzip_fasta))
 

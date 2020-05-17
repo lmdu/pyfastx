@@ -20,15 +20,31 @@ void pyfastx_identifier_dealloc(pyfastx_Identifier *self){
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
+void create_temp_query_set(pyfastx_Identifier *self) {
+	char *sql;
+	PYFASTX_SQLITE_CALL(sqlite3_exec(self->index_db, "DROP TABLE tmp", NULL, NULL, NULL));
+	if (self->filter) {
+		sql = sqlite3_mprintf("CREATE TEMP TABLE tmp AS SELECT chrom FROM seq WHERE %s ORDER BY %s %s",
+			self->filter, SORTS[self->sort], ORDERS[self->order]);
+	} else {
+		sql = sqlite3_mprintf("CREATE TEMP TABLE tmp AS SELECT chrom FROM seq ORDER BY %s %s",
+			SORTS[self->sort], ORDERS[self->order]);
+	}
+	PYFASTX_SQLITE_CALL(sqlite3_exec(self->index_db, sql, NULL, NULL, NULL));
+	sqlite3_free(sql);
+	self->update = 0;
+}
+
 PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self) {
 	char *sql;
 
-	if (self->filter) {
-		sql = sqlite3_mprintf("SELECT chrom FROM seq WHERE %s ORDER BY %s %s",
-			self->filter, SORTS[self->sort], ORDERS[self->order]);
+	if (!self->filter && !self->sort && !self->order) {
+		sql = sqlite3_mprintf("SELECT chrom FROM seq");
 	} else {
-		sql = sqlite3_mprintf("SELECT chrom FROM seq ORDER BY %s %s",
-			SORTS[self->sort], ORDERS[self->order]);
+		if (self->update) {
+			create_temp_query_set(self);
+		}
+		sql = sqlite3_mprintf("SELECT chrom FROM tmp");
 	}
 
 	if (self->stmt) {
@@ -50,19 +66,19 @@ PyObject *pyfastx_identifier_next(pyfastx_Identifier *self){
 
 	PYFASTX_SQLITE_CALL(ret=sqlite3_step(self->stmt));
 
-	if (ret != SQLITE_ROW){
-		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->stmt));
-		self->stmt = NULL;
-		return NULL;
+	if (ret == SQLITE_ROW){
+		PYFASTX_SQLITE_CALL(
+			nbytes = sqlite3_column_bytes(self->stmt, 0);
+			name = (char *)malloc(nbytes + 1);
+			memcpy(name, (char *)sqlite3_column_text(self->stmt, 0), nbytes);
+		);
+		name[nbytes] = '\0';
+		return Py_BuildValue("s", name);
 	}
 
-	PYFASTX_SQLITE_CALL(
-		nbytes = sqlite3_column_bytes(self->stmt, 0);
-		name = (char *)malloc(nbytes + 1);
-		memcpy(name, (char *)sqlite3_column_text(self->stmt, 0), nbytes);
-	);
-	name[nbytes] = '\0';
-	return Py_BuildValue("s", name);
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->stmt));
+	self->stmt = NULL;
+	return NULL;
 }
 
 int pyfastx_identifier_length(pyfastx_Identifier *self){
@@ -89,18 +105,22 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 		return NULL;
 	}
 
-	if (self->filter) {
-		sql = sqlite3_mprintf("SELECT chrom FROM seq WHERE %s ORDER BY %s %s LIMIT 1 OFFSET %ld",
-			self->filter, SORTS[self->sort], ORDERS[self->order], i);
+	if (!self->filter && !self->sort && !self->order) {
+		sql = sqlite3_mprintf("SELECT chrom FROM seq WHERE rowid=?");
 	} else {
-		sql = sqlite3_mprintf("SELECT chrom FROM seq ORDER BY %s %s LIMIT 1 OFFSET %ld",
-			SORTS[self->sort], ORDERS[self->order], i);
+		if (self->update) {
+			create_temp_query_set(self);
+		}
+		sql = sqlite3_mprintf("SELECT chrom FROM tmp WHERE rowid=?");
 	}
 	
 	PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL));
 	sqlite3_free(sql);
 
-	PYFASTX_SQLITE_CALL(ret = sqlite3_step(stmt));
+	PYFASTX_SQLITE_CALL(
+		sqlite3_bind_int(stmt, 1, i+1);
+		ret = sqlite3_step(stmt);
+	);
 
 	if (ret == SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(nbytes = sqlite3_column_bytes(stmt, 0));
@@ -110,6 +130,7 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		return Py_BuildValue("s", name);
 	} else {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_ValueError, "get item error");
 		return NULL;
 	}
@@ -118,7 +139,7 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 	char *name;
 	sqlite3_stmt *stmt;
-	const char *sql;
+	char *sql;
 	int ret;
 
 	if(!PyUnicode_CheckExact(key)){
@@ -127,9 +148,18 @@ int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 
 	name = (char *)PyUnicode_AsUTF8(key);
 
-	sql = "SELECT * FROM seq WHERE chrom=? LIMIT 1;";
+	if (!self->filter && !self->sort && !self->order) {
+		sql = sqlite3_mprintf("SELECT * FROM seq WHERE chrom=?");
+	} else {
+		if (self->update) {
+			create_temp_query_set(self);
+		}
+		sql = sqlite3_mprintf("SELECT * FROM tmp WHERE chrom=?");
+	}
+
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
+		sqlite3_free(sql);
 		sqlite3_bind_text(stmt, 1, name, -1, NULL);
 		ret = sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
@@ -163,6 +193,9 @@ PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyOb
 
 	//set sort order
 	self->order = reverse;
+
+	//need to update
+	self->update = 1;
 
 	Py_INCREF(self);
 	return (PyObject *)self;
@@ -261,6 +294,9 @@ PyObject *pyfastx_identifier_filter(pyfastx_Identifier *self, PyObject *args) {
 
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 
+	//need to update
+	self->update = 1;
+
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
@@ -281,6 +317,9 @@ PyObject *pyfastx_identifier_reset(pyfastx_Identifier *self) {
 		free(self->temp_filter);
 		self->temp_filter = NULL;
 	}
+
+	PYFASTX_SQLITE_CALL(sqlite3_exec(self->index_db, "DROP TABLE tmp", NULL, NULL, NULL));
+	self->update = 0;
 	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index_db, "SELECT seqnum FROM stat", -1, &stmt, NULL);
@@ -293,6 +332,7 @@ PyObject *pyfastx_identifier_reset(pyfastx_Identifier *self) {
 			sqlite3_finalize(stmt);
 		);
 	} else {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "get sequence counts error");
 		return NULL;
 	}

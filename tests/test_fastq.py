@@ -43,6 +43,9 @@ class FastaTest(unittest.TestCase):
 					self.reads[c][2] = line.strip()
 
 	def tearDown(self):
+		del self.fastq
+		del self.flatq
+
 		if os.path.exists('{}.fxi'.format(gzip_fastq)):
 			os.remove('{}.fxi'.format(gzip_fastq))
 
@@ -53,14 +56,15 @@ class FastaTest(unittest.TestCase):
 		return random.randint(0, len(self.fastq)-1)
 
 	def test_build(self):
-		self.fastx = None
+		del self.fastq
 
 		if os.path.exists('{}.fxi'.format(gzip_fastq)):
 			os.remove('{}.fxi'.format(gzip_fastq))
 
 		fq = pyfastx.Fastq(gzip_fastq, build_index=False)
 		fq.build_index()
-		fq = pyfastx.Fastq(gzip_fastq)
+		
+		self.fastq = pyfastx.Fastq(gzip_fastq)
 
 	def test_fastq(self):
 		# test gzip format

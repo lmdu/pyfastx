@@ -108,6 +108,10 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 }
 
 void pyfastx_fasta_dealloc(pyfastx_Fasta *self){
+	if (self->iter_stmt) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+	}
+
 	pyfastx_index_free(self->index);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -145,6 +149,7 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 	}
 
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+	self->iter_stmt = NULL;
 
 	return NULL;
 }
@@ -220,6 +225,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		PYFASTX_SQLITE_CALL(chrom = sqlite3_column_int(stmt, 0));
 	} else {
 		PyErr_Format(PyExc_NameError, "Sequence %s does not exists", name);
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		return NULL;
 	}
 
@@ -294,6 +300,7 @@ PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self) {
 	ids->seq_counts = self->seq_counts;
 	ids->sort = 0;
 	ids->order = 0;
+	ids->update = 0;
 	ids->filter = NULL;
 	ids->temp_filter = NULL;
 
@@ -444,7 +451,7 @@ PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
 
 		return pyfastx_index_get_seq_by_id(self->index, chrom);
 	}
-	
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 	PyErr_SetString(PyExc_RuntimeError, "not found longest sequence");
 	return NULL;
 }
@@ -469,7 +476,7 @@ PyObject *pyfastx_fasta_shortest(pyfastx_Fasta *self, void* closure){
 
 		return pyfastx_index_get_seq_by_id(self->index, chrom);
 	}
-
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 	PyErr_SetString(PyExc_RuntimeError, "not found shortest sequence");
 	return NULL;
 }
@@ -493,7 +500,7 @@ PyObject *pyfastx_fasta_mean(pyfastx_Fasta *self, void* closure){
 		);
 		return Py_BuildValue("d", len);
 	}
-
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 	PyErr_SetString(PyExc_RuntimeError, "can not calculate average length");
 	return NULL;
 }
@@ -523,7 +530,7 @@ PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 		);
 		return Py_BuildValue("d", m);
 	}
-
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 	PyErr_SetString(PyExc_RuntimeError, "can not calculate median length");
 	return NULL;
 }
@@ -654,6 +661,7 @@ PyObject *pyfastx_fasta_gc_content(pyfastx_Fasta *self, void* closure) {
 		return Py_BuildValue("f", (float)(g+c)/(a+c+g+t)*100);
 	
 	} else {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "can not calculate gc content");
 		return NULL;
 	}
@@ -680,6 +688,7 @@ PyObject *pyfastx_fasta_gc_skew(pyfastx_Fasta *self, void* closure) {
 		);
 		return Py_BuildValue("f", (float)(g-c)/(g+c));
 	} else {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "can not calculate gc skew");
 		return NULL;
 	}
@@ -714,6 +723,7 @@ PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
 		return d;
 		
 	} else {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "can not get composition");
 		return NULL;
 	}
@@ -739,6 +749,7 @@ PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 	);
 
 	if (ret != SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "can not get sequence type");
 		return NULL;
 	}

@@ -366,6 +366,7 @@ void pyfastx_load_index(pyfastx_Index *self){
 	);
 
 	if (ret != SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_Format(PyExc_RuntimeError, "the index file %s was damaged", self->index_file);
 		return;
 	}
@@ -390,6 +391,7 @@ void pyfastx_index_free(pyfastx_Index *self){
 
 	if (self->index_db) {
 		PYFASTX_SQLITE_CALL(sqlite3_close(self->index_db));
+		self->index_db = NULL;
 	}
 
 	if (self->cache_seq) {
@@ -463,6 +465,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
 	);
 	
 	if (ret != SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_Format(PyExc_KeyError, "%s does not exist in fasta file", name);
 		return NULL;
 	}
@@ -487,6 +490,7 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 	);
 	
 	if (ret != SQLITE_ROW){
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_IndexError, "Index Error");
 		return NULL;
 	}
@@ -514,6 +518,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	);
 
 	if (ret != SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_KeyError, "Can not found sequence");
 		return NULL;
 	}

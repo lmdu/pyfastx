@@ -215,6 +215,7 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 		);
 
 		if (ret != SQLITE_ROW) {
+			PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 			PyErr_SetString(PyExc_RuntimeError, "can not get sequence description");
 			return NULL;
 		}
@@ -275,6 +276,7 @@ PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
 	if (ret == SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(nbytes = sqlite3_column_int(stmt, 0));
 	} else {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "get sequence description length error");
 		return NULL;
 	}

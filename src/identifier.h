@@ -25,6 +25,9 @@ typedef struct {
 	//oder 0: asc, 1: desc
 	uint16_t order;
 
+	//need to update results
+	uint8_t update;
+
 	//filter string
 	char *temp_filter;
 	char *filter;

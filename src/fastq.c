@@ -188,6 +188,7 @@ void pyfastx_fastq_load_index(pyfastx_Fastq *self) {
 			sqlite3_finalize(stmt);
 		);
 	} else {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_Format(PyExc_RuntimeError, "the index file %s was damaged", self->index_file);
 		return;
 	}
@@ -312,6 +313,10 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 }
 
 void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
+	if (self->iter_stmt) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+	}
+
 	if (self->index_db) {
 		PYFASTX_SQLITE_CALL(sqlite3_close(self->index_db));
 	}
@@ -383,6 +388,7 @@ PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint64_t read_id) {
 	);
 
 	if (ret != SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_IndexError, "Index Error");
 		return NULL;
 	}
@@ -408,6 +414,7 @@ PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, char* name) {
 	);
 
 	if (ret != SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_Format(PyExc_KeyError, "%s does not exist in fastq file", name);
 		return NULL;
 	}
@@ -503,6 +510,7 @@ PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
 	}
 
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+	self->iter_stmt = NULL;
 
 	return NULL;
 }
@@ -539,19 +547,18 @@ void pyfastx_fastq_calc_composition(pyfastx_Fastq *self) {
 				self->maxqual = sqlite3_column_int(stmt, 3);
 			if (!self->phred)
 				self->phred = sqlite3_column_int(stmt, 4);
-		);	
+		);
+
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+		return;
 	}
 
-	sqlite3_finalize(stmt);
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 	stmt = NULL;
-	
-	if (ret == SQLITE_ROW)
-		return;
 
 	gzrewind(self->gzfd);
 	ks_rewind(self->ks);
 
-	Py_BEGIN_ALLOW_THREADS
 	while (ks_getuntil(self->ks, '\n', &line, 0) >= 0) {
 		++line_num;
 
@@ -593,14 +600,16 @@ void pyfastx_fastq_calc_composition(pyfastx_Fastq *self) {
 	}
 
 	sql = "INSERT INTO base VALUES (?,?,?,?,?);";
-	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_int64(stmt, 1, a);
-	sqlite3_bind_int64(stmt, 2, c);
-	sqlite3_bind_int64(stmt, 3, g);
-	sqlite3_bind_int64(stmt, 4, t);
-	sqlite3_bind_int64(stmt, 5, n);
-	sqlite3_step(stmt);
-	sqlite3_finalize(stmt);
+	PYFASTX_SQLITE_CALL(
+		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
+		sqlite3_bind_int64(stmt, 1, a);
+		sqlite3_bind_int64(stmt, 2, c);
+		sqlite3_bind_int64(stmt, 3, g);
+		sqlite3_bind_int64(stmt, 4, t);
+		sqlite3_bind_int64(stmt, 5, n);
+		sqlite3_step(stmt);
+		sqlite3_finalize(stmt);
+	);
 	stmt = NULL;
 
 	if (maxqs > 74) {
@@ -613,17 +622,17 @@ void pyfastx_fastq_calc_composition(pyfastx_Fastq *self) {
 
 	//insert platform into index file
 	sql = "INSERT INTO meta VALUES (?,?,?,?,?);";
-	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_int(stmt, 1, maxlen);
-	sqlite3_bind_int(stmt, 2, minlen);
-	sqlite3_bind_int(stmt, 3, minqs);
-	sqlite3_bind_int(stmt, 4, maxqs);
-	sqlite3_bind_int(stmt, 5, phred);
-	sqlite3_step(stmt);
-	sqlite3_finalize(stmt);
+	PYFASTX_SQLITE_CALL(
+		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
+		sqlite3_bind_int(stmt, 1, maxlen);
+		sqlite3_bind_int(stmt, 2, minlen);
+		sqlite3_bind_int(stmt, 3, minqs);
+		sqlite3_bind_int(stmt, 4, maxqs);
+		sqlite3_bind_int(stmt, 5, phred);
+		sqlite3_step(stmt);
+		sqlite3_finalize(stmt);
+	);
 	stmt = NULL;
-
-	Py_END_ALLOW_THREADS
 
 	self->minlen = minlen;
 	self->maxlen = maxlen;
@@ -651,6 +660,7 @@ PyObject* pyfastx_fastq_guess_encoding_type(pyfastx_Fastq* self, void* closure) 
 
 
 	if (ret != SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		return NULL;
 	}
 
@@ -806,6 +816,7 @@ PyObject* pyfastx_fastq_gc_content(pyfastx_Fastq *self, void* closure) {
 	);
 	
 	if (ret != SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "can not calculate gc content");
 		return NULL;
 	}
@@ -839,6 +850,7 @@ PyObject* pyfastx_fastq_composition(pyfastx_Fastq *self, void* closure) {
 	);
 	
 	if (ret != SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "can not get composition");
 		return NULL;
 	}

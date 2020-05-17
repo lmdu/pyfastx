@@ -20,6 +20,10 @@ class FastaTest(unittest.TestCase):
 		self.count = len(self.fastx)
 
 	def tearDown(self):
+		del self.fastx
+		del self.fasta
+		del self.faidx
+
 		if os.path.exists('{}.fxi'.format(gzip_fasta)):
 			os.remove('{}.fxi'.format(gzip_fasta))
 
@@ -50,14 +54,15 @@ class FastaTest(unittest.TestCase):
 		print(pyfastx.version(debug=True))
 	
 	def test_build(self):
-		self.fastx = None
+		del self.fastx
 
 		if os.path.exists('{}.fxi'.format(gzip_fasta)):
 			os.remove('{}.fxi'.format(gzip_fasta))
 
 		fa = pyfastx.Fasta(gzip_fasta, build_index=False)
 		fa.build_index()
-		fa = pyfastx.Fasta(gzip_fasta)
+		
+		self.fastx = pyfastx.Fasta(gzip_fasta)
 
 	def test_fasta(self):
 		#test gzip

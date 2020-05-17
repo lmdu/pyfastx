@@ -43,6 +43,9 @@ class FastaTest(unittest.TestCase):
 					self.reads[c][2] = line.strip()
 
 	def tearDown(self):
+		del self.fastq
+		del self.flatq
+
 		if os.path.exists('{}.fxi'.format(gzip_fastq)):
 			os.remove('{}.fxi'.format(gzip_fastq))
 
