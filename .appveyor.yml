@@ -18,7 +18,8 @@ environment:
       PYTHON_VERSION: 3.7
       PYTHON_ARCH: 32
 
-    - PYTHON: C:\Python38
+    #- PYTHON: C:\Python38
+    - PYTHON: C:\Miniconda38
       PYTHON_VERSION: 3.8
       PYTHON_ARCH: 32
 

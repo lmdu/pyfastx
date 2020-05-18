@@ -63,6 +63,7 @@ script:
       export CPPFLAGS=--coverage;
     fi
   - sqlite3 --version;
+  - python3 -m pip install pyfaidx
   - python3 setup.py test;
 
 after_success:
