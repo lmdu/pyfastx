@@ -864,7 +864,7 @@ PyObject* pyfastx_fastq_composition(pyfastx_Fastq *self, void* closure) {
 		sqlite3_finalize(stmt);
 	);
 
-	return Py_BuildValue("{s:I,s:I,s:I,s:I,s:I}","A",a,"C",c,"G",g,"T",t,"N",n);
+	return Py_BuildValue("{s:L,s:L,s:L,s:L,s:L}","A",a,"C",c,"G",g,"T",t,"N",n);
 }
 
 static PySequenceMethods pyfastx_fastq_as_sequence = {

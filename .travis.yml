@@ -61,9 +61,9 @@ script:
       rm -rf build;
       rm pyfastx.cpython*;
       export CPPFLAGS=--coverage;
-      sqlite3 --version;
-      python3 setup.py test;
     fi
+  - sqlite3 --version;
+  - python3 setup.py test;
 
 after_success:
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then

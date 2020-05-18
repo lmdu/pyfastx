@@ -4,8 +4,9 @@ Changelog
 Version 0.6.11 (2020-05-17)
 ---------------------------
 
-- Fixed iteration error on windows
-- Fixed test error on windows
+- Fixed iteration error on Windows
+- Fixed test error on Windows
+- Fixed fastq composition error on 32bit OS
 - Improved the speed of fasta identifier sort and filter
 
 Version 0.6.10 (2020-04-22)
