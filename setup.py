@@ -1,4 +1,5 @@
 import os
+import sys
 import glob
 import platform
 from setuptools import setup, Extension
