@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 0.6.11 (2020-05-17)
+Version 0.6.11 (2020-05-18)
 ---------------------------
 
 - Fixed iteration error on Windows
