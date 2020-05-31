@@ -51,7 +51,11 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, 
 	index->cache_start = 0;
 	index->cache_end = 0;
 
+	//complete seq or not
+	index->cache_full = 0;
+
 	//cache sequence
+	index->cache_name = NULL;
 	index->cache_seq = NULL;
 
 	return index;
@@ -330,6 +334,8 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_bind_int64(stmt, 2, total_len);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
+	
+	Py_END_ALLOW_THREADS
 
 	ks_destroy(ks);
 	free(line.s);
@@ -340,11 +346,9 @@ void pyfastx_create_index(pyfastx_Index *self){
 		if (strcmp(self->index_file, ":memory:") == 0) {
 			zran_build_index(self->gzip_index, 0, 0);
 		} else {
-			pyfastx_build_gzip_index(self->gzip_index, self->index_db, self->index_file);
+			pyfastx_build_gzip_index(self->gzip_index, self->index_db);
 		}
 	}
-
-	Py_END_ALLOW_THREADS
 }
 
 //load index from index file
@@ -372,7 +376,7 @@ void pyfastx_load_index(pyfastx_Index *self){
 	}
 
 	if (self->gzip_format) {
-		pyfastx_load_gzip_index(self->gzip_index, self->index_db, self->index_file);
+		pyfastx_load_gzip_index(self->gzip_index, self->index_db);
 	}
 }
 
@@ -389,6 +393,10 @@ void pyfastx_index_free(pyfastx_Index *self){
 		zran_free(self->gzip_index);
 	}
 
+	if (self->index_file) {
+		free(self->index_file);
+	}
+
 	if (self->index_db) {
 		PYFASTX_SQLITE_CALL(sqlite3_close(self->index_db));
 		self->index_db = NULL;
@@ -396,6 +404,10 @@ void pyfastx_index_free(pyfastx_Index *self){
 
 	if (self->cache_seq) {
 		free(self->cache_seq);
+	}
+
+	if (self->cache_name) {
+		free(self->cache_name);
 	}
 
 	kseq_destroy(self->kseqs);
@@ -506,10 +518,15 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	uint32_t seq_len;
 	int64_t offset;
 	uint32_t bytes;
+	int nbytes;
 	int ret;
 
+	if ((chrom == self->cache_chrom) && self->cache_full) {
+		return self->cache_seq;
+	}
+
 	//select sql statement, chrom indicates seq or chromomsome id
-	const char *sql = "SELECT boff,blen,slen FROM seq WHERE ID=? LIMIT 1;";
+	const char *sql = "SELECT chrom,boff,blen,slen FROM seq WHERE ID=? LIMIT 1;";
 	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
@@ -523,22 +540,24 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 		return NULL;
 	}
 
+	if (self->cache_chrom) {
+		free(self->cache_name);
+		free(self->cache_seq);
+	}
+
 	PYFASTX_SQLITE_CALL(
-		offset = (int64_t)sqlite3_column_int64(stmt, 0);
-		bytes = sqlite3_column_int(stmt, 1);
-		seq_len = sqlite3_column_int(stmt, 2);
+		//why store cache sequence name? just for accelerating fasta fetch method
+		nbytes = sqlite3_column_bytes(stmt, 0);
+		self->cache_name = (char *)malloc(nbytes + 1);
+		memcpy(self->cache_name, (char *)sqlite3_column_text(stmt, 0), nbytes);
+		self->cache_name[nbytes] = '\0';
+		offset = (int64_t)sqlite3_column_int64(stmt, 1);
+		bytes = sqlite3_column_int(stmt, 2);
+		seq_len = sqlite3_column_int(stmt, 3);
 		sqlite3_finalize(stmt);
 	);
 
-	if((chrom == self->cache_chrom) && (1==self->cache_start) && (seq_len==self->cache_end)){
-		return self->cache_seq;
-	}
-
 	//Py_BEGIN_ALLOW_THREADS
-	if (self->cache_chrom) {
-		free(self->cache_seq);
-	}
-	
 	self->cache_seq = (char *)malloc(bytes + 1);
 	
 	if (self->gzip_format) {
@@ -562,6 +581,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	self->cache_chrom = chrom;
 	self->cache_start = 1;
 	self->cache_end = seq_len;
+	self->cache_full = 1;
 
 	return self->cache_seq;
 }

@@ -31,8 +31,9 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 
 PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 	//fasta file path
+	PyObject *file_obj;
+	Py_ssize_t file_len;
 	char *file_name;
-	int file_len;
 
 	//bool value for uppercase sequence
 	int uppercase = 1;
@@ -54,7 +55,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//paramters for fasta object construction
 	static char* keywords[] = {"file_name", "uppercase", "build_index", "full_index", "memory_index", "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiO", keywords, &file_name, &file_len, &uppercase, &build_index, &full_index, &memory_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iiiiO", keywords, &file_obj, &uppercase, &build_index, &full_index, &memory_index, &key_func)){
 		return NULL;
 	}
 
@@ -64,26 +65,31 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 
 	//check input sequence file is whether exists
+	file_name = (char *)PyUnicode_AsUTF8AndSize(file_obj, &file_len);
+
+	if (!file_name) {
+		PyErr_Format(PyExc_ValueError, "the input file name is not a right string");
+		return NULL;
+	}
+
 	if (!file_exists(file_name)) {
-		PyErr_Format(PyExc_FileExistsError, "input fasta file %s does not exists", file_name);
+		PyErr_Format(PyExc_FileExistsError, "the input fasta file %s does not exists", file_name);
 		return NULL;
 	}
 
 	//create Fasta class
 	obj = (pyfastx_Fasta *)type->tp_alloc(type, 0);
-	if (!obj){
-		return NULL;
-	}
-	
+	if (!obj) return NULL;
+
 	//initial sequence file name
-	obj->file_name = (char *)malloc(file_len + 1);
+	obj->file_name = (char *)malloc((int)file_len + 1);
 	strcpy(obj->file_name, file_name);
 
 	obj->uppercase = uppercase;
 	obj->has_index = build_index;
 
 	//create index
-	obj->index = pyfastx_init_index(obj->file_name, file_len, uppercase, memory_index, key_func);
+	obj->index = pyfastx_init_index(obj->file_name, (int)file_len, uppercase, memory_index, key_func);
 
 	//initial iterator stmt
 	obj->iter_stmt = NULL;
@@ -111,6 +117,8 @@ void pyfastx_fasta_dealloc(pyfastx_Fasta *self){
 	if (self->iter_stmt) {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
 	}
+
+	free(self->file_name);
 
 	pyfastx_index_free(self->index);
 	Py_TYPE(self)->tp_free((PyObject *)self);
@@ -213,25 +221,28 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	size = PyTuple_Size(intervals);
 	
 	//select sql statement, chrom indicates seq name or chromomsome
-	sql = "SELECT ID FROM seq WHERE chrom=? LIMIT 1;";
-
-	PYFASTX_SQLITE_CALL(
-		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-		sqlite3_bind_text(stmt, 1, name, -1, NULL);
-		ret = sqlite3_step(stmt);
-	);
-	
-	if (ret == SQLITE_ROW){
-		PYFASTX_SQLITE_CALL(chrom = sqlite3_column_int(stmt, 0));
+	if (self->index->cache_name && strcmp(self->index->cache_name, name) == 0 && self->index->cache_full) {
+		seq = self->index->cache_seq;
 	} else {
-		PyErr_Format(PyExc_NameError, "Sequence %s does not exists", name);
+		sql = "SELECT ID FROM seq WHERE chrom=? LIMIT 1;";
+
+		PYFASTX_SQLITE_CALL(
+			sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+			sqlite3_bind_text(stmt, 1, name, -1, NULL);
+			ret = sqlite3_step(stmt);
+		);
+		
+		if (ret == SQLITE_ROW){
+			PYFASTX_SQLITE_CALL(chrom = sqlite3_column_int(stmt, 0));
+		} else {
+			PyErr_Format(PyExc_NameError, "Sequence %s does not exists", name);
+			PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+			return NULL;
+		}
+
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-		return NULL;
+		seq = pyfastx_index_get_full_seq(self->index, chrom);
 	}
-
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-
-	seq = pyfastx_index_get_full_seq(self->index, chrom);
 
 	if (PyLong_Check(item)) {
 		if (size != 2) {
@@ -575,7 +586,7 @@ void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
 
 	stmt = NULL;
 
-	PYFASTX_SQLITE_CALL(sqlite3_exec(self->index->index_db, "BEGIN TRANSACTION;", NULL, NULL, NULL));
+	PYFASTX_SQLITE_CALL(sqlite3_exec(self->index->index_db, "PRAGMA synchronous=OFF;BEGIN TRANSACTION;", NULL, NULL, NULL));
 
 	sql = "INSERT INTO comp VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 	PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL));

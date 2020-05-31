@@ -1,6 +1,5 @@
 #ifndef PYFASTX_FASTQ_H
 #define PYFASTX_FASTQ_H
-
 #include "Python.h"
 #include "stdint.h"
 #include "zlib.h"
@@ -22,7 +21,7 @@ typedef struct {
 	uint16_t phred;
 
 	//total read counts
-	uint64_t read_counts;
+	int64_t read_counts;
 
 	//total sequence length;
 	uint64_t seq_length;

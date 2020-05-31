@@ -30,7 +30,7 @@ int pyfastx_read_length(pyfastx_Read *self) {
 }
 
 //read content from buff or file
-void pyfastx_read_reader(pyfastx_Read *self, char *buff, int64_t offset, int32_t bytes) {
+void pyfastx_read_reader(pyfastx_Read *self, char *buff, int64_t offset, uint32_t bytes) {
     uint32_t slice_offset;
     uint32_t slice_length;
     uint32_t buff_size;

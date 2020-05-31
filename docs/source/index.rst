@@ -81,6 +81,7 @@ This project was heavily inspired by `@mdshw5 <https://github.com/mdshw5>`_'s pr
    installation
    usage
    commandline
+   advance
    drawbacks
    changelog
    api_reference

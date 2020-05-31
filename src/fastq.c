@@ -153,12 +153,12 @@ void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
 
 	Py_END_ALLOW_THREADS
 
+	free(line.s);
+
 	//if is gzip build gzip index
 	if (self->gzip_format) {
-		pyfastx_build_gzip_index(self->gzip_index, self->index_db, self->index_file);
+		pyfastx_build_gzip_index(self->gzip_index, self->index_db);
 	}
-
-	free(line.s);
 }
 
 void pyfastx_fastq_load_index(pyfastx_Fastq *self) {
@@ -210,7 +210,7 @@ void pyfastx_fastq_load_index(pyfastx_Fastq *self) {
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 
 	if(self->gzip_format){
-		pyfastx_load_gzip_index(self->gzip_index, self->index_db, self->index_file);
+		pyfastx_load_gzip_index(self->gzip_index, self->index_db);
 	}
 }
 
@@ -225,8 +225,10 @@ PyObject *pyfastx_fastq_build_index(pyfastx_Fastq *self){
 }
 
 PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
+	PyObject *file_obj;
 	char *file_name;
-	int file_len;
+	Py_ssize_t file_len;
+
 	int phred = 0;
 	int build_index = 1;
 	int full_index = 0;
@@ -235,11 +237,18 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	pyfastx_Fastq *obj;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iii", keywords, &file_name, &file_len, &phred, &build_index, &full_index)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iii", keywords, &file_obj, &phred, &build_index, &full_index)) {
 		return NULL;
 	}
 
 	//check input sequence file is whether exists
+	file_name = (char *)PyUnicode_AsUTF8AndSize(file_obj, &file_len);
+	
+	if (!file_name) {
+		PyErr_Format(PyExc_ValueError, "the input file name is not a right string");
+		return NULL;
+	}
+
 	if (!file_exists(file_name)) {
 		PyErr_Format(PyExc_FileExistsError, "input fastq file %s does not exists", file_name);
 		return NULL;
@@ -250,7 +259,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		return NULL;
 	}
 
-	obj->file_name = (char *)malloc(file_len + 1);
+	obj->file_name = (char *)malloc((int)file_len + 1);
 	strcpy(obj->file_name, file_name);
 
 	//check input file is gzip or not
@@ -268,7 +277,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 
 	//create index file
-	obj->index_file = (char *)malloc(file_len + 5);
+	obj->index_file = (char *)malloc((int)file_len + 5);
 	strcpy(obj->index_file, file_name);
 	strcat(obj->index_file, ".fxi");
 

@@ -18,6 +18,8 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	}
 	
 	if (self->index->cache_chrom) {
+		free(self->index->cache_name);
+		self->index->cache_name = NULL;
 		free(self->index->cache_seq);
 	}
 	self->index->cache_seq = (char *)malloc(self->byte_len + 1);
@@ -43,6 +45,7 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	self->index->cache_chrom = self->id;
 	self->index->cache_start = self->start;
 	self->index->cache_end = self->end;
+	self->index->cache_full = 0;
 
 	return self->index->cache_seq;
 }

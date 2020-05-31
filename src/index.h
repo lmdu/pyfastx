@@ -36,10 +36,20 @@ typedef struct {
 	//gzip random access index
 	zran_index_t* gzip_index;
 
-	//cache seq start and end position
+	//cahce seq id
 	uint32_t cache_chrom;
+
+	//cache seq start and end position
 	uint32_t cache_start;
 	uint32_t cache_end;
+
+	//cache seq is complete or not
+	uint8_t cache_full;
+
+	//cache seq name string
+	char* cache_name;
+
+	//cache real seq
 	char* cache_seq;
 
 	//key function

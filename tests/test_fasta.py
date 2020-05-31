@@ -61,7 +61,7 @@ class FastaTest(unittest.TestCase):
 
 		fa = pyfastx.Fasta(gzip_fasta, build_index=False)
 		fa.build_index()
-		
+
 		self.fastx = pyfastx.Fasta(gzip_fasta)
 
 	def test_fasta(self):
