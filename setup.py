@@ -22,6 +22,10 @@ if os.name == 'nt':
         link_args.append('-DMS_WIN64')
         comp_args.append('-DMS_WIN64')
 
+if sys.platform == 'darwin':
+    link_args.append('-fPIC')
+    comp_args.append('-fPIC')
+
 extension = Extension('pyfastx',
     sources = sources,
     libraries = libs,
