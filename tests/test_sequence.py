@@ -14,7 +14,7 @@ class FastaTest(unittest.TestCase):
 		self.fasta = pyfastx.Fasta(flat_fasta)
 
 		self.faidx = pyfaidx.Fasta(flat_fasta, sequence_always_upper=True)
-		
+
 		self.count = len(self.fastx)
 
 	def tearDown(self):

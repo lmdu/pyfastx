@@ -52,7 +52,7 @@ install:
   - python3 setup.py sdist --dist-dir wheelhouse
 
 script:
-  - ls wheelhouse
+  - ls -l wheelhouse
   - if [ "$TRAVIS_TAG" != "" ]; then
       python -m pip install -U twine;
       python -m twine upload --skip-existing wheelhouse/*;

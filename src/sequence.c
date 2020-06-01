@@ -103,7 +103,11 @@ PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
 }
 
 PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
-	uint32_t rlen, len;
+	//read length each time
+	uint32_t rlen;
+
+	//real length
+	uint32_t len;
 	char *ret;
 	
 	if (self->line.l > 0) {
@@ -466,18 +470,22 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 }
 
 PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObject *kwargs){
-	char* keywords[] = {"subseq", "strand", NULL};
-
+	PyObject *subobj;
 	char *subseq;
-	int sublen;
+	Py_ssize_t sublen;
 	char *seq;
 	char *result;
 	uint32_t start;
 	int strand = '+';
+
+	char* keywords[] = {"subseq", "strand", NULL};
+
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|C", keywords, &subseq, &sublen, &strand)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "O|C", keywords, &subobj, &strand)){
 		return NULL;
 	}
+
+	subseq = (char *)PyUnicode_AsUTF8AndSize(subobj, &sublen);
 
 	if (strand == '-') {
 		reverse_complement_seq(subseq);
@@ -486,10 +494,12 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 	seq = pyfastx_sequence_get_subseq(self);
 
 	result = strstr(seq, subseq);
-	if(result == NULL){
+	
+	if (result == NULL) {
 		Py_RETURN_NONE;
 	}
-	if(strand == '-'){
+
+	if (strand == '-') {
 		start = result - seq + sublen;
 	} else {
 		start = result - seq + 1;

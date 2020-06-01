@@ -9,7 +9,7 @@ flat_fastq = 'tests/data/test.fq'
 
 class FastaTest(unittest.TestCase):
 	def setUp(self):
-		
+
 		self.fastq = pyfastx.Fastq(gzip_fastq)
 
 		#reload index
@@ -122,7 +122,6 @@ class FastaTest(unittest.TestCase):
 		idx = self.get_random_read()
 		read = self.fastq[idx]
 
-		i = -1
 		lines = []
 		with gzip.open(gzip_fastq, 'rt') as fh:
 			for line in fh:

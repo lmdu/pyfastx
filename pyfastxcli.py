@@ -203,7 +203,7 @@ def fastq_split(args):
 		if seq_write == seqs_num:
 			fh.close()
 			seq_write = 0
-	
+
 	fh.close()
 
 def fastx_split(args):
