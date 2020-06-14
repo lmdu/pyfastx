@@ -154,6 +154,7 @@ void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
 	Py_END_ALLOW_THREADS
 
 	free(line.s);
+	free(name.s);
 
 	//if is gzip build gzip index
 	if (self->gzip_format) {

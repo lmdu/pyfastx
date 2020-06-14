@@ -550,15 +550,15 @@ New in ``pyfastx`` 0.5.0
 .. code:: python
 
 	>>> # sort identifiers by length with descending order
-	>>> for name in ids.sort(key='length', reverse=True):
+	>>> for name in ids.sort(by='length', reverse=True):
 	>>> 	print(name)
 
 	>>> # sort identifiers by name with ascending order
-	>>> for name in ids.sort(key='name'):
+	>>> for name in ids.sort(by='name'):
 	>>> 	print(name)
 
 	>>> # sort identifiers by id with descending order
-	>>> for name in ids.sort(key='id', reverse=True)
+	>>> for name in ids.sort(by='id', reverse=True)
 	>>> 	print(name)
 
 Filter identifiers

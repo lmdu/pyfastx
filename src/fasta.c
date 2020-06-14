@@ -22,6 +22,7 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 			self->seq_length = sqlite3_column_int64(stmt, 1);
 		);
 	} else {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "get seq count and length error");
 		return;
 	}
@@ -109,7 +110,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 			pyfastx_fasta_calc_composition(obj);
 		}
 	}
-	
+
 	return (PyObject *)obj;
 }
 

@@ -1,10 +1,11 @@
 Changelog
 =========
 
-Version 0.6.12 (2020-06-??)
+Version 0.6.12 (2020-06-14)
 ---------------------------
 
 - Fixed DeprecationWarning on py38 caused by '#' formats args
+- Fixed some memory leak bugs
 - Cached sequence name to speedup fetch method
 - Used random string as gzip index temp file to support multiple processes
 

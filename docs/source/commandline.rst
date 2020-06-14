@@ -6,7 +6,7 @@ New in ``pyfastx`` 0.5.0
 .. code:: bash
 
     $ pyfastx -h
-    
+
     usage: pyfastx COMMAND [OPTIONS]
 
     A command line tool for FASTA/Q file manipulation
@@ -17,13 +17,13 @@ New in ``pyfastx`` 0.5.0
 
     Commands:
 
-        index        build index for FASTA or FASTQ file
-        info         show detailed statistics information of FASTA/Q file
-        split        split fasta file into multiple files
+        index        build index for fasta/q file
+        stat         show detailed statistics information of fasta/q file
+        split        split fasta/q file into multiple files
         fq2fa        convert fastq file to fasta file
-        subseq       get subseqence from fasta file by id or name with region
+        subseq       get subsequences from fasta file by region
         sample       randomly sample sequences from fasta or fastq file
-        extract      extract sequences or reads from fasta or fastq file
+        extract      extract full sequences or reads from fasta/q file
 
 Build index
 -----------
@@ -50,9 +50,9 @@ Show statistics information
 
 .. code:: bash
 
-    $ pyfastx info -h
+    $ pyfastx stat -h
 
-    usage: pyfastx info [-h] fastx [fastx ...]
+    usage: pyfastx stat [-h] fastx [fastx ...]
 
     positional arguments:
       fastx       input fasta or fastq file, gzip support
@@ -101,7 +101,7 @@ Split FASTA/Q file
       -n int                split a fa/q file into N new files with even size
       -c int                split a fa/q file into multiple files with the same
                             sequence counts
-      -o str, --outdir str  output directory, default is current folder
+      -o str, --out-dir str  output directory, default is current folder
 
 Convert FASTQ to FASTA file
 ---------------------------
@@ -117,7 +117,7 @@ Convert FASTQ to FASTA file
 
     optional arguments:
       -h, --help            show this help message and exit
-      -o str, --outfile str
+      -o str, --out-file str
                             output file, default: output to stdout
 
 Get subsequence with region
@@ -127,16 +127,24 @@ Get subsequence with region
 
     $ pyfastx subseq -h
 
-    usage: pyfastx subseq [-h] (--id int | --chr str) [-r str] fastx
+    usage: pyfastx subseq [-h] [-r str | -b str] [-o str]
+                          fastx [region [region ...]]
 
     positional arguments:
       fastx                 input fasta file, gzip support
+      region                format is chr:start-end, start and end position is
+                            1-based, multiple names were separated by space
 
     optional arguments:
       -h, --help            show this help message and exit
-      --id int              sequence id number in fasta file
-      --chr str             sequence name
-      -r str, --region str  one-based slice region, e.g. 10:20
+      -r str, --region-file str
+                            tab-delimited file, one region per line, both start
+                            and end position are 1-based
+      -b str, --bed-file str
+                            tab-delimited BED file, 0-based start position and
+                            1-based end position
+      -o str, --out-file str
+                            output file, default: output to stdout
 
 Sample sequences
 ----------------
@@ -145,7 +153,9 @@ Sample sequences
 
     $ pyfastx sample -h
 
-    usage: pyfastx sample [-h] (-n int | -p float) [-o str] fastx
+    usage: pyfastx sample [-h] (-n int | -p float) [-s int] [--sequential-read]
+                          [-o str]
+                          fastx
 
     positional arguments:
       fastx                 fasta or fastq file, gzip support
@@ -154,7 +164,10 @@ Sample sequences
       -h, --help            show this help message and exit
       -n int                number of sequences to be sampled
       -p float              proportion of sequences to be sampled, 0~1
-      -o str, --outfile str
+      -s int, --seed int    random seed, default is the current system time
+      --sequential-read     start sequential reading, particularly suitable for
+                            sampling large numbers of sequences
+      -o str, --out-file str
                             output file, default: output to stdout
 
 Extract sequences
@@ -166,24 +179,24 @@ New in ``pyfastx`` 0.6.10
 
     $ pyfastx extract -h
 
-    usage: pyfastx extract [-h] (--ids int or str | --names str) [--outfas]
-                           [-o str]
-                           fastx
+    usage: pyfastx extract [-h] [-l str] [--reverse-complement] [--out-fasta]
+                           [-o str] [--sequential-read]
+                           fastx [name [name ...]]
 
     positional arguments:
       fastx                 fasta or fastq file, gzip support
+      name                  sequence name or read name, multiple names were
+                            separated by space
 
     optional arguments:
       -h, --help            show this help message and exit
-      --ids int or str      extract sequences by id number, the value can be one
-                            integer to get one sequence, a range (e.g. 5-10) or a
-                            comma seperated list (e.g. 3,5,8) to get multiple
-                            sequences
-      --names str           extract sequences by name, the value can be one name
-                            to get one sequence, a comma seperated list (e.g.
-                            seq1,seq5,seq9) or a file contains names (one name per
-                            line) to get multiple sequences
-      --outfas              output fasta format when input file is fastq format,
+      -l str, --list-file str
+                            a file containing sequence or read names, one name per
+                            line
+      --reverse-complement  output reverse complement sequence
+      --out-fasta           output fasta format when extract reads from fastq,
                             default output fastq format
-      -o str, --outfile str
+      -o str, --out-file str
                             output file, default: output to stdout
+      --sequential-read     start sequential reading, particularly suitable for
+                            extracting large numbers of sequences
