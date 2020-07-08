@@ -7,7 +7,7 @@ import unittest
 gzip_fasta = 'tests/data/test.fa.gz'
 flat_fasta = 'tests/data/test.fa'
 
-class FastaTest(unittest.TestCase):
+class IdentifierTest(unittest.TestCase):
 	def setUp(self):
 		self.fastx = pyfastx.Fasta(gzip_fasta)
 

@@ -6,7 +6,7 @@ import unittest
 gzip_fastq = 'tests/data/test.fq.gz'
 flat_fastq = 'tests/data/test.fq'
 
-class FastaTest(unittest.TestCase):
+class FastqTest(unittest.TestCase):
 	def setUp(self):
 
 		self.fastq = pyfastx.Fastq(gzip_fastq)

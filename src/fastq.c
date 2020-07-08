@@ -489,6 +489,7 @@ int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
 
 PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 	gzrewind(self->gzfd);
+	rewind(self->fd);
 	
 	if (self->has_index) {
 		PYFASTX_SQLITE_CALL(

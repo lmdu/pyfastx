@@ -159,7 +159,11 @@ void pyfastx_create_index(pyfastx_Index *self){
 		); \
 		CREATE TABLE stat ( \
 			seqnum INTEGER, --total seq counts \n \
-			seqlen INTEGER --total seq length \n \
+			seqlen INTEGER, --total seq length \n \
+			avglen REAL, --average seq length \n \
+			medlen REAL, --median seq length \n \
+			n50 INTEGER, --N50 seq length \n \
+			l50 INTEGER --N50 seq count \n \
 		); \
 		CREATE TABLE comp ( \
 			ID INTEGER PRIMARY KEY, \
@@ -329,7 +333,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
 	sqlite3_exec(self->index_db, "CREATE INDEX chromidx ON seq (chrom);", NULL, NULL, NULL);
 
-	sqlite3_prepare_v2(self->index_db, "INSERT INTO stat VALUES (?,?);", -1, &stmt, NULL);
+	sqlite3_prepare_v2(self->index_db, "INSERT INTO stat (seqnum,seqlen) VALUES (?,?);", -1, &stmt, NULL);
 	sqlite3_bind_int(stmt, 1, total_seq);
 	sqlite3_bind_int64(stmt, 2, total_len);
 	sqlite3_step(stmt);
@@ -513,6 +517,34 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 	return obj;
 }
 
+
+void pyfastx_index_continue_read(pyfastx_Index *self, char *buff, int64_t offset, uint32_t bytes) {
+	int32_t gap;
+	char *temp_buff;
+
+	if (self->gzip_format) {
+		gap = offset - zran_tell(self->gzip_index);
+		if (gap >= 0 && gap <= 1048576) {
+			temp_buff = (char *)malloc(gap);
+			zran_read(self->gzip_index, temp_buff, gap);
+			free(temp_buff);
+		} else {
+			zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
+		}
+		zran_read(self->gzip_index, buff, bytes);
+	} else {
+		gap = offset - gztell(self->gzfd);
+		if (gap >= 0 && gap <= 1048576) {
+			temp_buff = (char *)malloc(gap);
+			gzread(self->gzfd, temp_buff, gap);
+			free(temp_buff);
+		} else {
+			gzseek(self->gzfd, offset, SEEK_SET);
+		}
+		gzread(self->gzfd, buff, bytes);
+	}
+}
+
 char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	sqlite3_stmt *stmt;
 	uint32_t seq_len;
@@ -560,13 +592,14 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	//Py_BEGIN_ALLOW_THREADS
 	self->cache_seq = (char *)malloc(bytes + 1);
 	
-	if (self->gzip_format) {
+	/*if (self->gzip_format) {
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, self->cache_seq, bytes);
 	} else {
 		gzseek(self->gzfd, offset, SEEK_SET);
 		gzread(self->gzfd, self->cache_seq, bytes);
-	}
+	}*/
+	pyfastx_index_continue_read(self, self->cache_seq, offset, bytes);
 
 	self->cache_seq[bytes] = '\0';
 

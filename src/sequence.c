@@ -25,13 +25,14 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	self->index->cache_seq = (char *)malloc(self->byte_len + 1);
 
 	//Py_BEGIN_ALLOW_THREADS
-	if (self->index->gzip_format) {
+	/*if (self->index->gzip_format) {
 		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
 		zran_read(self->index->gzip_index, self->index->cache_seq, self->byte_len);
 	} else {
 		gzseek(self->index->gzfd, self->offset, SEEK_SET);
 		gzread(self->index->gzfd, self->index->cache_seq, self->byte_len);
-	}
+	}*/
+	pyfastx_index_continue_read(self->index, self->index->cache_seq, self->offset, self->byte_len);
 
 	self->index->cache_seq[self->byte_len] = '\0';
 
@@ -235,13 +236,14 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 		self->desc = (char *)malloc(nbytes + 1);
 		new_offset = self->offset - nbytes - self->end_len;
 		
-		if (self->index->gzip_format) {
+		/*if (self->index->gzip_format) {
 			zran_seek(self->index->gzip_index, new_offset, SEEK_SET, NULL);
 			zran_read(self->index->gzip_index, self->desc, nbytes);
 		} else {
 			gzseek(self->index->gzfd, new_offset, SEEK_SET);
 			gzread(self->index->gzfd, self->desc, nbytes);
-		}
+		}*/
+		pyfastx_index_continue_read(self->index, self->desc, new_offset, nbytes);
 
 		self->desc[nbytes] = '\0';
 	}
@@ -296,13 +298,14 @@ PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
 	if (self->parent_len == self->end && self->start == 1) {
 		buff = (char *)malloc(new_bytelen + 1);
 
-		if (self->index->gzip_format) {
+		/*if (self->index->gzip_format) {
 			zran_seek(self->index->gzip_index, new_offset, SEEK_SET, NULL);
 			zran_read(self->index->gzip_index, buff, new_bytelen);
 		} else {
 			gzseek(self->index->gzfd, new_offset, SEEK_SET);
 			gzread(self->index->gzfd, buff, new_bytelen);
-		}
+		}*/
+		pyfastx_index_continue_read(self->index, buff, new_offset, new_bytelen);
 		buff[new_bytelen] = '\0';
 		retval = Py_BuildValue("s", buff);
 	} else {

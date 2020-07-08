@@ -55,11 +55,11 @@ void pyfastx_read_reader(pyfastx_Read *self, char *buff, int64_t offset, uint32_
     } else if (self->fastq->cache_eoff > 0 && offset >= self->fastq->cache_soff && offset <= self->fastq->cache_eoff) {
         slice_offset = offset - self->fastq->cache_soff;
         slice_length = self->fastq->cache_eoff - offset + 1;
-        
+
         memcpy(buff, self->fastq->cache_buff+slice_offset, slice_length);
-        
-        self->fastq->cache_soff = self->fastq->cache_eoff + 1;
-        
+
+        self->fastq->cache_soff = self->fastq->cache_eoff;
+
         if (self->fastq->gzip_format) {
             zran_read(self->fastq->gzip_index, self->fastq->cache_buff, buff_size);
             self->fastq->cache_eoff = zran_tell(self->fastq->gzip_index);
@@ -67,9 +67,9 @@ void pyfastx_read_reader(pyfastx_Read *self, char *buff, int64_t offset, uint32_
             gzread(self->fastq->gzfd, self->fastq->cache_buff, buff_size);
             self->fastq->cache_eoff = gztell(self->fastq->gzfd);
         }
-        
+
         memcpy(buff+slice_length, self->fastq->cache_buff, bytes-slice_length);
-    
+
     } else {
         //alloc cache buffer memory
         if (self->fastq->cache_buff == NULL) {
@@ -77,16 +77,42 @@ void pyfastx_read_reader(pyfastx_Read *self, char *buff, int64_t offset, uint32_
         }
 
         if (self->fastq->gzip_format) {
-            zran_seek(self->fastq->gzip_index, offset, SEEK_SET, NULL);
+            //clear cache buff when current position is not right
+            if (gztell(self->fastq->gzfd) != self->fastq->cache_eoff) {
+                zran_seek(self->fastq->gzip_index, 0, SEEK_SET, NULL);
+                self->fastq->cache_eoff = 0;
+                self->fastq->cache_soff = 0;
+            }
+
+            if (self->fastq->cache_eoff <= offset && offset+bytes <= self->fastq->cache_eoff+buff_size) {
+                self->fastq->cache_soff = self->fastq->cache_eoff;
+            } else {
+                zran_seek(self->fastq->gzip_index, offset, SEEK_SET, NULL);
+                self->fastq->cache_soff = offset;
+            }
+
             zran_read(self->fastq->gzip_index, self->fastq->cache_buff, buff_size);
             self->fastq->cache_eoff = zran_tell(self->fastq->gzip_index);
         } else {
-            gzseek(self->fastq->gzfd, offset, SEEK_SET);
+            //clear cache buff when current position is not right
+            if (gztell(self->fastq->gzfd) != self->fastq->cache_eoff) {
+                gzrewind(self->fastq->gzfd);
+                self->fastq->cache_eoff = 0;
+                self->fastq->cache_soff = 0;
+            }
+
+            if (self->fastq->cache_eoff <= offset && offset+bytes <= self->fastq->cache_eoff+buff_size) {
+                self->fastq->cache_soff = self->fastq->cache_eoff;
+            } else {
+                gzseek(self->fastq->gzfd, offset, SEEK_SET);
+                self->fastq->cache_soff = offset;
+            }
             gzread(self->fastq->gzfd, self->fastq->cache_buff, buff_size);
             self->fastq->cache_eoff = gztell(self->fastq->gzfd);
         }
-        self->fastq->cache_soff = offset;
-        memcpy(buff, self->fastq->cache_buff, bytes);
+
+        slice_offset = offset - self->fastq->cache_soff;
+        memcpy(buff, self->fastq->cache_buff+slice_offset, bytes);
     }
 }
 
@@ -116,9 +142,7 @@ PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
 PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
     if (!self->seq) {
         self->seq = (char *)malloc(self->read_len + 1);
-
         pyfastx_read_reader(self, self->seq, self->seq_offset, self->read_len);
-        
         self->seq[self->read_len] = '\0';
     }
 

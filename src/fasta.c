@@ -421,26 +421,60 @@ PyObject *pyfastx_fasta_nl(pyfastx_Fasta *self, PyObject *args){
 		return NULL;
 	}
 
-	half_size = p/100.0 * self->seq_length;
+	if (p == 50) {
+		sql = "SELECT n50,l50 FROM stat LIMIT 1";
+		PYFASTX_SQLITE_CALL(
+			sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+			ret = sqlite3_step(stmt);
+		);
 
-	sql = "SELECT slen FROM seq ORDER BY slen DESC";
-	PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL));
-	for(;;){
-		PYFASTX_SQLITE_CALL(ret=sqlite3_step(stmt));
 		if (ret == SQLITE_ROW) {
-			PYFASTX_SQLITE_CALL(j = sqlite3_column_int(stmt, 0));
-			i++;
-			temp_size += j;
-			if (temp_size >= half_size)
-				break;
-		} else {
-			break;
+			PYFASTX_SQLITE_CALL(
+				j = sqlite3_column_int(stmt, 0);
+				i = sqlite3_column_int(stmt, 1);
+			);
 		}
+
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+		stmt = NULL;
 	}
 
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+	if (!j) {
+		half_size = p/100.0 * self->seq_length;
 
-	return Py_BuildValue("II", j, i);
+		sql = "SELECT slen FROM seq ORDER BY slen DESC";
+		PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL));
+		for(;;){
+			PYFASTX_SQLITE_CALL(ret=sqlite3_step(stmt));
+			if (ret == SQLITE_ROW) {
+				PYFASTX_SQLITE_CALL(j = sqlite3_column_int(stmt, 0));
+				i++;
+				temp_size += j;
+				if (temp_size >= half_size)
+					break;
+			} else {
+				break;
+			}
+		}
+
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+	}
+
+	if (j) {
+		sql = "UPDATE stat SET n50=?, l50=?";
+		PYFASTX_SQLITE_CALL(
+			sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+			sqlite3_bind_int(stmt, 1, j);
+			sqlite3_bind_int(stmt, 2, i);
+			sqlite3_step(stmt);
+			sqlite3_finalize(stmt);
+		);
+
+		return Py_BuildValue("II", j, i);
+	} else {
+		PyErr_SetString(PyExc_RuntimeError, "can not calculate N50 and L50");
+		return NULL;
+	}
 }
 
 PyObject *pyfastx_fasta_longest(pyfastx_Fasta *self, void* closure){
@@ -499,22 +533,49 @@ PyObject *pyfastx_fasta_mean(pyfastx_Fasta *self, void* closure){
 	double len;
 	const char *sql;
 
-	sql = "SELECT AVG(slen) FROM seq LIMIT 1";
+	sql = "SELECT avglen FROM stat LIMIT 1";
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 		ret = sqlite3_step(stmt);
 	);
 
 	if (ret == SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(len = sqlite3_column_double(stmt, 0));
+	} else {
+		len = 0;
+	}
+
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+	stmt = NULL;
+
+	if (!len) {
+		sql = "SELECT AVG(slen) FROM seq LIMIT 1";
 		PYFASTX_SQLITE_CALL(
-			len = sqlite3_column_double(stmt, 0);
+			sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+			ret = sqlite3_step(stmt);
+		);
+
+		if (ret == SQLITE_ROW) {
+			PYFASTX_SQLITE_CALL(len = sqlite3_column_double(stmt, 0));
+		}
+
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+	}
+
+	if (len) {
+		sql = "UPDATE stat SET avglen=?";
+		PYFASTX_SQLITE_CALL(
+			sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+			sqlite3_bind_double(stmt, 1, len);
+			sqlite3_step(stmt);
 			sqlite3_finalize(stmt);
 		);
+
 		return Py_BuildValue("d", len);
+	} else {
+		PyErr_SetString(PyExc_RuntimeError, "can not calculate average length");
+		return NULL;
 	}
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-	PyErr_SetString(PyExc_RuntimeError, "can not calculate average length");
-	return NULL;
 }
 
 PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
@@ -523,28 +584,55 @@ PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 	double m;
 	const char *sql;
 
-	if (self->seq_counts % 2 == 0) {
-		sql = "SELECT AVG(slen) FROM (SELECT slen FROM seq ORDER BY slen LIMIT ?,2) LIMIT 1";
-	} else {
-		sql = "SELECT slen FROM seq ORDER BY slen LIMIT ?,1";
-	}
-
+	sql = "SELECT medlen FROM stat LIMIT 1";
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-		sqlite3_bind_int(stmt, 1, (self->seq_counts - 1)/2);
 		ret = sqlite3_step(stmt);
 	);
 
-	if (ret == SQLITE_ROW){
+	if (ret == SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(m = sqlite3_column_double(stmt, 0));
+	} else {
+		m = 0;
+	}
+
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+	stmt = NULL;
+
+	if (!m) {
+		if (self->seq_counts % 2 == 0) {
+			sql = "SELECT AVG(slen) FROM (SELECT slen FROM seq ORDER BY slen LIMIT ?,2) LIMIT 1";
+		} else {
+			sql = "SELECT slen FROM seq ORDER BY slen LIMIT ?,1";
+		}
+
 		PYFASTX_SQLITE_CALL(
-			m = sqlite3_column_double(stmt, 0);
+			sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+			sqlite3_bind_int(stmt, 1, (self->seq_counts - 1)/2);
+			ret = sqlite3_step(stmt);
+		);
+
+		if (ret == SQLITE_ROW){
+			PYFASTX_SQLITE_CALL(m = sqlite3_column_double(stmt, 0));
+		}
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+		stmt = NULL;
+	}
+
+	if (m) {
+		sql = "UPDATE stat SET medlen=?";
+		PYFASTX_SQLITE_CALL(
+			sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+			sqlite3_bind_double(stmt, 1, m);
+			sqlite3_step(stmt);
 			sqlite3_finalize(stmt);
 		);
+
 		return Py_BuildValue("d", m);
+	} else {
+		PyErr_SetString(PyExc_RuntimeError, "can not calculate median length");
+		return NULL;
 	}
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-	PyErr_SetString(PyExc_RuntimeError, "can not calculate median length");
-	return NULL;
 }
 
 PyObject *pyfastx_fasta_format(pyfastx_Fasta *self, void* closure) {

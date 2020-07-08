@@ -66,6 +66,7 @@ void pyfastx_build_index(pyfastx_Index *self);
 void pyfastx_rewind_index(pyfastx_Index *index);
 void pyfastx_index_free(pyfastx_Index *self);
 void pyfastx_index_cache_clear(pyfastx_Index *self);
+void pyfastx_index_continue_read(pyfastx_Index *self, char *buff, int64_t offset, uint32_t bytes);
 
 PyObject *pyfastx_get_next_seq(pyfastx_Index *index);
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt);

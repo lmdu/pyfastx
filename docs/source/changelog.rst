@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.6.13 (2020-07-08)
+---------------------------
+
+- Fixed fastq read iteration error
+- Fixed fastq cache buffer reader
+- Added cache for mean, median and N50 length
+- Speedup fasta iteration by reduced seeks
+
 Version 0.6.12 (2020-06-14)
 ---------------------------
 
