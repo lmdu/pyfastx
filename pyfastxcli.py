@@ -498,7 +498,7 @@ def main():
 		help = "input fasta file, gzip support"
 	)
 	parser_subseq.add_argument('regions',
-		help = "format is chr:start-end, start and end position is 1-based, multiple names were separated by space",
+		help = "format is chr:start-end, start and end position is 1-based, multiple regions were separated by space",
 		metavar = 'region',
 		nargs = '*'
 	)

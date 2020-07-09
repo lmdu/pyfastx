@@ -98,10 +98,10 @@ Split FASTA/Q file
 
     optional arguments:
       -h, --help            show this help message and exit
-      -n int                split a fa/q file into N new files with even size
-      -c int                split a fa/q file into multiple files with the same
-                            sequence counts
-      -o str, --out-dir str  output directory, default is current folder
+      -n int                split a fasta/q file into N new files with even size
+      -c int                split a fasta/q file into multiple files containing the same sequence counts
+      -o str, --out-dir str
+                            output directory, default is current folder
 
 Convert FASTQ to FASTA file
 ---------------------------
@@ -133,7 +133,7 @@ Get subsequence with region
     positional arguments:
       fastx                 input fasta file, gzip support
       region                format is chr:start-end, start and end position is
-                            1-based, multiple names were separated by space
+                            1-based, multiple regions were separated by space
 
     optional arguments:
       -h, --help            show this help message and exit
