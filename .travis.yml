@@ -24,7 +24,7 @@ before_install:
       git -C "$(brew --repo)" remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git;
     fi
   - $PIP install cpp-coveralls
-  - $PIP install pyfaidx
+  - $PIP install pyfaidx==0.5.8
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
       wget https://www.sqlite.org/2019/sqlite-autoconf-3290000.tar.gz;
       tar xzf sqlite-autoconf-3290000.tar.gz;
@@ -63,7 +63,7 @@ script:
       export CPPFLAGS=--coverage;
     fi
   - sqlite3 --version;
-  - python3 -m pip install pyfaidx
+  - python3 -m pip install pyfaidx==0.5.8
   - python3 setup.py test;
 
 after_success:

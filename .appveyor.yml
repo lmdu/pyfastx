@@ -51,7 +51,8 @@ install:
   - if [%PYTHON_VERSION%] GTR [3.4] gendef %PYTHON%\vcruntime140.dll
   - if [%PYTHON_VERSION%] GTR [3.4] dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
   - if [%PYTHON_VERSION%] GTR [3.4] python ci\fix_compiler_error.py %PYTHON%
-  - python -m pip install -U pip setuptools wheel twine pyfaidx
+  - python -m pip install -U pip setuptools wheel twine
+  - python -m pip install pyfaidx==0.5.8
 
 build_script:
   - python setup.py build -c mingw32
