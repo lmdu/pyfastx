@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 0.6.13 (2020-07-08)
+Version 0.6.13 (2020-07-09)
 ---------------------------
 
 - Fixed fastq read iteration error

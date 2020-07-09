@@ -1,4 +1,4 @@
-spyfastx
+pyfastx
 #######
 
 .. image:: https://travis-ci.org/lmdu/pyfastx.svg?branch=master
@@ -7,7 +7,7 @@ spyfastx
 
 .. image:: https://ci.appveyor.com/api/projects/status/7qeurb8wcl0bw993?svg=true
    :target: https://ci.appveyor.com/project/lmdu/pyfastx
-   :alt: Appveyor CIs
+   :alt: Appveyor CI
 
 .. image:: https://readthedocs.org/projects/pyfastx/badge/?version=latest
    :target: https://pyfastx.readthedocs.io/en/latest/?badge=latest
