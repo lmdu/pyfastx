@@ -16,6 +16,9 @@ typedef struct {
 	//always output uppercase
 	uint16_t uppercase;
 
+	//full name
+	uint16_t full_name;
+
 	//is gzip compressed file
 	//0 not gzip file
 	//1 is gzip file
@@ -73,7 +76,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt);
 PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name);
 PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id);
 
-pyfastx_Index *pyfastx_init_index(char* file_path, int file_len, int uppercase, int memory_index, PyObject* key_func);
+pyfastx_Index *pyfastx_init_index(char* file_path, int file_len, int uppercase, int full_name, int memory_index, PyObject* key_func);
 //char *pyfastx_index_get_sub_seq(pyfastx_Index *self, pyfastx_Sequence *seq);
 char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom);
 

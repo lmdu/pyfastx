@@ -48,15 +48,18 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//calculate the composition of sequence
 	int full_index = 0;
 
+	//use full name instead of identifier before first whitespace
+	int full_name = 0;
+
 	//key function for seperating name
 	PyObject *key_func = Py_None;
 
 	pyfastx_Fasta *obj;
 
 	//paramters for fasta object construction
-	static char* keywords[] = {"file_name", "uppercase", "build_index", "full_index", "memory_index", "key_func", NULL};
+	static char* keywords[] = {"file_name", "uppercase", "build_index", "full_index", "full_name", "memory_index", "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iiiiO", keywords, &file_obj, &uppercase, &build_index, &full_index, &memory_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iiiiiO", keywords, &file_obj, &uppercase, &build_index, &full_index, &full_name, &memory_index, &key_func)){
 		return NULL;
 	}
 
@@ -90,7 +93,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->has_index = build_index;
 
 	//create index
-	obj->index = pyfastx_init_index(obj->file_name, (int)file_len, uppercase, memory_index, key_func);
+	obj->index = pyfastx_init_index(obj->file_name, (int)file_len, uppercase, full_name, memory_index, key_func);
 
 	//initial iterator stmt
 	obj->iter_stmt = NULL;

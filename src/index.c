@@ -9,7 +9,7 @@ create a index
 @param uppercase, uppercase sequence
 @param uppercase
 */
-pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, int memory_index, PyObject* key_func){
+pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, int full_name, int memory_index, PyObject* key_func){
 	pyfastx_Index* index;
 
 	index = (pyfastx_Index *)malloc(sizeof(pyfastx_Index));
@@ -17,6 +17,9 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, 
 
 	//key function
 	index->key_func = key_func;
+
+	//full name
+	index->full_name = full_name;
 
 	//check input file is gzip or not
 	index->gzip_format = is_gzip_format(file_name);
@@ -71,7 +74,15 @@ PyObject* pyfastx_get_next_seq(pyfastx_Index *self){
 		if (self->uppercase) {
 			upper_string(self->kseqs->seq.s);
 		}
-		return Py_BuildValue("(ss)", self->kseqs->name.s, self->kseqs->seq.s);
+
+		if (self->full_name) {
+			PyObject *fname = PyUnicode_FromFormat("%s %s", self->kseqs->name.s, self->kseqs->comment.s);
+			PyObject *ret = Py_BuildValue("(Os)", fname, self->kseqs->seq.s);
+			Py_DECREF(fname);
+			return ret;
+		} else {
+			return Py_BuildValue("(ss)", self->kseqs->name.s, self->kseqs->seq.s);
+		}
 	}
 	return NULL;
 }
@@ -270,14 +281,20 @@ void pyfastx_create_index(pyfastx_Index *self){
 			header_pos = line.s + 1;
 
 			if (self->key_func == Py_None) {
-				space_pos = strchr(header_pos, ' ');
-				if (space_pos == NULL) {
+				if (self->full_name) {
 					chrom.l = desc_len;
+					memcpy(chrom.s, header_pos, chrom.l);
+					chrom.s[chrom.l] = '\0';
 				} else {
-					chrom.l = space_pos - header_pos;
+					space_pos = strchr(header_pos, ' ');
+					if (space_pos == NULL) {
+						chrom.l = desc_len;
+					} else {
+						chrom.l = space_pos - header_pos;
+					}
+					memcpy(chrom.s, header_pos, chrom.l);
+					chrom.s[chrom.l] = '\0';
 				}
-				memcpy(chrom.s, header_pos, chrom.l);
-				chrom.s[chrom.l] = '\0';
 			} else {
 				PyGILState_STATE state = PyGILState_Ensure();
 				PyObject *result = PyObject_CallFunction(self->key_func, "s", header_pos);
