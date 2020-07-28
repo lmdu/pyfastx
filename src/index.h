@@ -50,10 +50,10 @@ typedef struct {
 	uint8_t cache_full;
 
 	//cache seq name string
-	char* cache_name;
+	kstring_t cache_name;
 
 	//cache real seq
-	char* cache_seq;
+	kstring_t cache_seq;
 
 	//key function
 	PyObject* key_func;
@@ -69,7 +69,7 @@ void pyfastx_build_index(pyfastx_Index *self);
 void pyfastx_rewind_index(pyfastx_Index *index);
 void pyfastx_index_free(pyfastx_Index *self);
 void pyfastx_index_cache_clear(pyfastx_Index *self);
-void pyfastx_index_continue_read(pyfastx_Index *self, char *buff, int64_t offset, uint32_t bytes);
+//void pyfastx_index_continue_read(pyfastx_Index *self, char *buff, int64_t offset, uint32_t bytes);
 
 PyObject *pyfastx_get_next_seq(pyfastx_Index *index);
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt);
@@ -78,6 +78,6 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id);
 
 pyfastx_Index *pyfastx_init_index(char* file_path, int file_len, int uppercase, int full_name, int memory_index, PyObject* key_func);
 //char *pyfastx_index_get_sub_seq(pyfastx_Index *self, pyfastx_Sequence *seq);
-char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom);
+//char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom);
 
 #endif

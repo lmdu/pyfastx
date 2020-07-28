@@ -1,45 +1,94 @@
 #include "sequence.h"
 #include "structmember.h"
 
+char *pyfastx_sequence_get_fullseq(pyfastx_Sequence* self) {
+	if ((self->id == self->index->cache_chrom) && self->index->cache_full) {
+		return self->index->cache_seq.s;
+	}
+
+	if (self->byte_len >= self->index->cache_seq.m) {
+		self->index->cache_seq.m = self->byte_len + 1;
+		self->index->cache_seq.s = (char *)realloc(self->index->cache_seq.s, self->index->cache_seq.m);
+	}
+
+	if (strlen(self->name) >= self->index->cache_name.m) {
+		self->index->cache_name.m = strlen(self->name) + 1;
+		self->index->cache_name.s = (char *)realloc(self->index->cache_name.s, self->index->cache_name.m);
+	}
+
+	strcpy(self->index->cache_name.s, self->name);
+
+	//Py_BEGIN_ALLOW_THREADS
+	//self->index->cache_seq = (char *)malloc(self->byte_len + 1);
+
+	if (self->index->gzip_format) {
+		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
+		zran_read(self->index->gzip_index, self->index->cache_seq.s, self->byte_len);
+	} else {
+		gzseek(self->index->gzfd, self->offset, SEEK_SET);
+		gzread(self->index->gzfd, self->index->cache_seq.s, self->byte_len);
+	}
+	//pyfastx_index_continue_read(self, self->cache_seq, offset, bytes);
+
+	self->index->cache_seq.s[self->byte_len] = '\0';
+
+	if (self->index->uppercase) {
+		remove_space_uppercase(self->index->cache_seq.s, self->byte_len);
+	} else {
+		remove_space(self->index->cache_seq.s, self->byte_len);
+	}
+
+	//Py_END_ALLOW_THREADS
+
+	self->index->cache_chrom = self->id;
+	self->index->cache_start = 1;
+	self->index->cache_end = self->seq_len;
+	self->index->cache_full = 1;
+
+	return self->index->cache_seq.s;
+}
+
 char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
-	if (!self->normal || (self->parent_len == self->end && self->start == 1)) {
-		pyfastx_index_get_full_seq(self->index, self->id);
+	if (!self->normal || (self->parent_len == self->seq_len)) {
+		pyfastx_sequence_get_fullseq(self);
 	}
 	
 	if ((self->id == self->index->cache_chrom) && (self->start==self->index->cache_start) && (self->end==self->index->cache_end)){
-		return self->index->cache_seq;
+		return self->index->cache_seq.s;
 	}
 
 	if ((self->id == self->index->cache_chrom) && (self->start>=self->index->cache_start) && (self->end<=self->index->cache_end)){
 		char *buff = (char *)malloc(self->seq_len + 1);
-		memcpy(buff, self->index->cache_seq + (self->start - self->index->cache_start), self->seq_len);
+		memcpy(buff, self->index->cache_seq.s + (self->start - self->index->cache_start), self->seq_len);
 		buff[self->seq_len] = '\0';
 		return buff;
 	}
+
+	if (self->byte_len >= self->index->cache_seq.m) {
+		self->index->cache_seq.m = self->byte_len + 1;
+		self->index->cache_seq.s = (char *)realloc(self->index->cache_seq.s, self->index->cache_seq.m);
+	}
 	
 	if (self->index->cache_chrom) {
-		free(self->index->cache_name);
-		self->index->cache_name = NULL;
-		free(self->index->cache_seq);
+		free(self->index->cache_name.s);
 	}
-	self->index->cache_seq = (char *)malloc(self->byte_len + 1);
 
 	//Py_BEGIN_ALLOW_THREADS
-	/*if (self->index->gzip_format) {
+	if (self->index->gzip_format) {
 		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
-		zran_read(self->index->gzip_index, self->index->cache_seq, self->byte_len);
+		zran_read(self->index->gzip_index, self->index->cache_seq.s, self->byte_len);
 	} else {
 		gzseek(self->index->gzfd, self->offset, SEEK_SET);
-		gzread(self->index->gzfd, self->index->cache_seq, self->byte_len);
-	}*/
-	pyfastx_index_continue_read(self->index, self->index->cache_seq, self->offset, self->byte_len);
+		gzread(self->index->gzfd, self->index->cache_seq.s, self->byte_len);
+	}
+	//pyfastx_index_continue_read(self->index, self->index->cache_seq, self->offset, self->byte_len);
 
-	self->index->cache_seq[self->byte_len] = '\0';
+	self->index->cache_seq.s[self->byte_len] = '\0';
 
 	if (self->index->uppercase) {
-		remove_space_uppercase(self->index->cache_seq);
+		remove_space_uppercase(self->index->cache_seq.s, self->byte_len);
 	} else {
-		remove_space(self->index->cache_seq);
+		remove_space(self->index->cache_seq.s, self->byte_len);
 	}
 
 	//Py_END_ALLOW_THREADS
@@ -48,7 +97,7 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	self->index->cache_end = self->end;
 	self->index->cache_full = 0;
 
-	return self->index->cache_seq;
+	return self->index->cache_seq.s;
 }
 
 
@@ -73,6 +122,14 @@ void pyfastx_sequence_dealloc(pyfastx_Sequence* self) {
 	}
 
 	Py_TYPE(self)->tp_free(self);
+}
+
+void pyfastx_sequence_free_subseq(pyfastx_Sequence* self, char *seq) {
+	if ((self->id == self->index->cache_chrom) && (self->start>=self->index->cache_start) && (self->end<=self->index->cache_end)){
+		if (!(self->start==self->index->cache_start && self->end==self->index->cache_end)) {
+			free(seq);
+		}
+	}
 }
 
 PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
@@ -184,6 +241,7 @@ uint32_t pyfastx_sequence_length(pyfastx_Sequence* self){
 uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 	char *seq;
 	char *subseq;
+	char *ret;
 
 	if (!PyUnicode_CheckExact(key)) {
 		return 0;
@@ -191,12 +249,10 @@ uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 
 	seq = pyfastx_sequence_get_subseq(self);
 	subseq = (char *)PyUnicode_AsUTF8(key);
-	
-	if(strstr(seq, subseq) != NULL){
-		return 1;
-	}
-	
-	return 0;
+	ret = strstr(seq, subseq);
+	pyfastx_sequence_free_subseq(self, seq);
+
+	return ret != NULL ? 1 : 0;
 }
 
 PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
@@ -236,14 +292,14 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 		self->desc = (char *)malloc(nbytes + 1);
 		new_offset = self->offset - nbytes - self->end_len;
 		
-		/*if (self->index->gzip_format) {
+		if (self->index->gzip_format) {
 			zran_seek(self->index->gzip_index, new_offset, SEEK_SET, NULL);
 			zran_read(self->index->gzip_index, self->desc, nbytes);
 		} else {
 			gzseek(self->index->gzfd, new_offset, SEEK_SET);
 			gzread(self->index->gzfd, self->desc, nbytes);
-		}*/
-		pyfastx_index_continue_read(self->index, self->desc, new_offset, nbytes);
+		}
+		//pyfastx_index_continue_read(self->index, self->desc, new_offset, nbytes);
 
 		self->desc[nbytes] = '\0';
 	}
@@ -259,11 +315,7 @@ char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
 	ret = (char *)malloc(self->seq_len + 1);
 	strcpy(ret, seq);
 	
-	if ((self->id == self->index->cache_chrom) && (self->start>=self->index->cache_start) && (self->end<=self->index->cache_end)){
-		if (!(self->start==self->index->cache_start && self->end<=self->index->cache_end)) {
-			free(seq);
-		}
-	}
+	pyfastx_sequence_free_subseq(self, seq);
 	
 	return ret;
 }
@@ -295,17 +347,17 @@ PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
 	new_offset = self->offset - nbytes - self->end_len - 1;
 	new_bytelen = self->byte_len + nbytes + self->end_len + 1;
 
-	if (self->parent_len == self->end && self->start == 1) {
+	if (self->parent_len == self->seq_len) {
 		buff = (char *)malloc(new_bytelen + 1);
 
-		/*if (self->index->gzip_format) {
+		if (self->index->gzip_format) {
 			zran_seek(self->index->gzip_index, new_offset, SEEK_SET, NULL);
 			zran_read(self->index->gzip_index, buff, new_bytelen);
 		} else {
 			gzseek(self->index->gzfd, new_offset, SEEK_SET);
 			gzread(self->index->gzfd, buff, new_bytelen);
-		}*/
-		pyfastx_index_continue_read(self->index, buff, new_offset, new_bytelen);
+		}
+		//pyfastx_index_continue_read(self->index, buff, new_offset, new_bytelen);
 		buff[new_bytelen] = '\0';
 		retval = Py_BuildValue("s", buff);
 	} else {
@@ -323,11 +375,7 @@ PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
 	seq = pyfastx_sequence_get_subseq(self);
 	ret = Py_BuildValue("s", seq);
 
-	if ((self->id == self->index->cache_chrom) && (self->start>=self->index->cache_start) && (self->end<=self->index->cache_end)){
-		if (!(self->start==self->index->cache_start && self->end<=self->index->cache_end)) {
-			free(seq);
-		}
-	}
+	pyfastx_sequence_free_subseq(self, seq);
 
 	return ret;
 }
@@ -497,15 +545,19 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 	seq = pyfastx_sequence_get_subseq(self);
 
 	result = strstr(seq, subseq);
+
+	if (result != NULL) {
+		if (strand == '-') {
+			start = result - seq + sublen;
+		} else {
+			start = result - seq + 1;
+		}
+	}
+
+	pyfastx_sequence_free_subseq(self, seq);
 	
 	if (result == NULL) {
 		Py_RETURN_NONE;
-	}
-
-	if (strand == '-') {
-		start = result - seq + sublen;
-	} else {
-		start = result - seq + 1;
 	}
 	
 	return Py_BuildValue("I", start);

@@ -45,7 +45,41 @@ int fastq_validator(gzFile fd) {
 	return 0;
 }
 
-void remove_space(char *str) {
+/*
+remove space using jump table
+Reference:
+https://github.com/lemire/despacer/blob/master/include/despacer.h
+*/
+const uint8_t jump_table[128] = {
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+};
+
+void remove_space(char *str, uint32_t len) {
+	uint32_t i = 0, j = 0;
+	while (i < len) {
+		const char c = str[i++];
+		str[j] = c;
+		j += jump_table[(unsigned char)c];
+	}
+	str[j] = '\0';
+}
+
+void remove_space_uppercase(char *str, uint32_t len) {
+	uint32_t i = 0, j = 0;
+	while (i < len) {
+		const char c = str[i++];
+		str[j] = Py_TOUPPER(Py_CHARMASK(c));
+		j += jump_table[(unsigned char)c];
+	}
+	str[j] = '\0';
+}
+
+/*void remove_space(char *str) {
 	uint32_t i, j = 0;
 	for(i = 0; str[i]; i++){
 		if(!Py_ISSPACE(str[i])){
@@ -63,11 +97,11 @@ void remove_space_uppercase(char *str) {
 		}
 	}
 	str[j] = '\0';
-}
+}*/
 
-void upper_string(char *str) {
+void upper_string(char *str, uint32_t len) {
 	uint32_t i;
-	for(i = 0; str[i]; i++) {
+	for (i = 0; i < len; i++) {
 		str[i] = Py_TOUPPER(Py_CHARMASK(str[i]));
 	}
 }
@@ -94,27 +128,25 @@ N			G,A,T,C		N
 References:
 https://droog.gs.washington.edu/parc/images/iupac.html
 http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html
-complement mapping array was extracted from samtools source code
 https://github.com/samtools/samtools/blob/f6bd3b22ea4c9e4897cda455e786180fe650e494/faidx.c
 */
-unsigned char comp_map[128] = {
-  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
- 16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
- 32, '!', '"', '#', '$', '%', '&', '\'','(', ')', '*', '+', ',', '-', '.', '/',
-'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
-'@', 'T', 'V', 'G', 'H', 'E', 'F', 'C', 'D', 'I', 'J', 'M', 'L', 'K', 'N', 'O',
-'P', 'Q', 'Y', 'S', 'A', 'A', 'B', 'W', 'X', 'R', 'Z', '[', '\\',']', '^', '_',
-'`', 't', 'v', 'g', 'h', 'e', 'f', 'c', 'd', 'i', 'j', 'm', 'l', 'k', 'n', 'o',
-'p', 'q', 'y', 's', 'a', 'a', 'b', 'w', 'x', 'r', 'z', '{', '|', '}', '~', 127,
+const uint8_t comp_map[128] = {
+	  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
+	 16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
+	 32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,
+	 48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,
+	 64,  84,  86,  71,  72,  69,  70,  67,  68,  73,  74,  77,  76,  75,  78,  79,
+	 80,  81,  89,  83,  65,  65,  66,  87,  88,  82,  90,  91,  92,  93,  94,  95,
+	 96, 116, 118, 103, 104, 101, 102,  99, 100, 105, 106, 109, 108, 107, 110, 111,
+	112, 113, 121, 115,  97,  97,  98, 119, 120, 114, 122, 123, 124, 125, 126, 127,
 };
 
 void reverse_complement_seq(char *seq) {
 	char *p1 = seq;
 	char *p2 = seq + strlen(seq) - 1;
-	int c;
 
 	while (p1 <= p2) {
-		c = comp_map[Py_CHARMASK(*p1)];
+		const char c = comp_map[Py_CHARMASK(*p1)];
 		*p1++ = comp_map[Py_CHARMASK(*p2)];
 		*p2-- = c;
 	}

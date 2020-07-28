@@ -207,6 +207,8 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	uint32_t seq_len;
 	char* sub_seq;
 	int ret;
+	int64_t offset;
+	uint32_t bytes;
 	
 	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|C", keywords, &name, &intervals, &strand)){
 		return NULL;
@@ -225,10 +227,10 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	size = PyTuple_Size(intervals);
 	
 	//select sql statement, chrom indicates seq name or chromomsome
-	if (self->index->cache_name && strcmp(self->index->cache_name, name) == 0 && self->index->cache_full) {
-		seq = self->index->cache_seq;
+	if (self->index->cache_name.s && strcmp(self->index->cache_name.s, name) == 0 && self->index->cache_full) {
+		seq = self->index->cache_seq.s;
 	} else {
-		sql = "SELECT ID FROM seq WHERE chrom=? LIMIT 1;";
+		sql = "SELECT ID,boff,blen FROM seq WHERE chrom=? LIMIT 1;";
 
 		PYFASTX_SQLITE_CALL(
 			sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
@@ -237,15 +239,49 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		);
 		
 		if (ret == SQLITE_ROW){
-			PYFASTX_SQLITE_CALL(chrom = sqlite3_column_int(stmt, 0));
+			PYFASTX_SQLITE_CALL(
+				chrom = sqlite3_column_int(stmt, 0);
+				offset = sqlite3_column_int64(stmt, 1);
+				bytes = sqlite3_column_int(stmt, 2);
+				sqlite3_finalize(stmt);
+			);
 		} else {
 			PyErr_Format(PyExc_NameError, "Sequence %s does not exists", name);
 			PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 			return NULL;
 		}
 
-		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-		seq = pyfastx_index_get_full_seq(self->index, chrom);
+		if (bytes >= self->index->cache_seq.m) {
+			self->index->cache_seq.m = bytes + 1;
+			self->index->cache_seq.s = (char *)realloc(self->index->cache_seq.s, self->index->cache_seq.m);
+		}
+
+		if (strlen(name) >= self->index->cache_name.m) {
+			self->index->cache_name.m = strlen(name) + 1;
+			self->index->cache_name.s = (char *)realloc(self->index->cache_name.s, self->index->cache_name.m);
+		}
+
+		self->index->cache_full = 1;
+		self->index->cache_chrom = chrom;
+		strcpy(self->index->cache_name.s, name);
+
+		if (self->index->gzip_format) {
+			zran_seek(self->index->gzip_index, offset, SEEK_SET, NULL);
+			zran_read(self->index->gzip_index, self->index->cache_seq.s, bytes);
+		} else {
+			gzseek(self->index->gzfd, offset, SEEK_SET);
+			gzread(self->index->gzfd, self->index->cache_seq.s, bytes);
+		}
+
+		self->index->cache_seq.s[bytes] = '\0';
+
+		if (self->index->uppercase) {
+			remove_space_uppercase(self->index->cache_seq.s, bytes);
+		} else {
+			remove_space(self->index->cache_seq.s, bytes);
+		}
+
+		seq = self->index->cache_seq.s;
 	}
 
 	if (PyLong_Check(item)) {

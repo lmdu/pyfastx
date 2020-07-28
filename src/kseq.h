@@ -18,6 +18,9 @@
 
 #define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
 
+//kstring_t init
+#define kstring_init(ks) ((ks).l = (ks).m = 0, (ks).s = NULL)
+
 typedef struct __kstream_t {
 	unsigned char *buf;
 	int64_t begin, end, is_eof;

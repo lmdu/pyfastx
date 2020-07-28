@@ -58,8 +58,10 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, 
 	index->cache_full = 0;
 
 	//cache sequence
-	index->cache_name = NULL;
-	index->cache_seq = NULL;
+	//index->cache_name = {0,0,0};
+	//index->cache_seq = {0,0,0};
+	kstring_init(index->cache_name);
+	kstring_init(index->cache_seq);
 
 	return index;
 }
@@ -72,7 +74,7 @@ void pyfastx_rewind_index(pyfastx_Index *self){
 PyObject* pyfastx_get_next_seq(pyfastx_Index *self){
 	if (kseq_read(self->kseqs) >= 0) {
 		if (self->uppercase) {
-			upper_string(self->kseqs->seq.s);
+			upper_string(self->kseqs->seq.s, self->kseqs->seq.l);
 		}
 
 		if (self->full_name) {
@@ -423,12 +425,12 @@ void pyfastx_index_free(pyfastx_Index *self){
 		self->index_db = NULL;
 	}
 
-	if (self->cache_seq) {
-		free(self->cache_seq);
+	if (self->cache_seq.m) {
+		free(self->cache_seq.s);
 	}
 
-	if (self->cache_name) {
-		free(self->cache_name);
+	if (self->cache_name.m) {
+		free(self->cache_name.s);
 	}
 
 	kseq_destroy(self->kseqs);
@@ -474,9 +476,13 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	//buff
 	seq->line_cache = NULL;
 	seq->cache_pos = NULL;
-	seq->line.l = 0;
-	seq->line.m = 0;
-	seq->line.s = NULL;
+
+	//line string init
+	kstring_init(seq->line);
+
+	//seq->line.l = 0;
+	//seq->line.m = 0;
+	//seq->line.s = NULL;
 
 	//Py_INCREF(seq);
 	return (PyObject *)seq;
@@ -535,7 +541,7 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 }
 
 
-void pyfastx_index_continue_read(pyfastx_Index *self, char *buff, int64_t offset, uint32_t bytes) {
+/*void pyfastx_index_continue_read(pyfastx_Index *self, char *buff, int64_t offset, uint32_t bytes) {
 	int32_t gap;
 	char *temp_buff;
 
@@ -560,9 +566,9 @@ void pyfastx_index_continue_read(pyfastx_Index *self, char *buff, int64_t offset
 		}
 		gzread(self->gzfd, buff, bytes);
 	}
-}
+}*/
 
-char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
+/*char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	sqlite3_stmt *stmt;
 	uint32_t seq_len;
 	int64_t offset;
@@ -609,21 +615,21 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	//Py_BEGIN_ALLOW_THREADS
 	self->cache_seq = (char *)malloc(bytes + 1);
 	
-	/*if (self->gzip_format) {
+	if (self->gzip_format) {
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, self->cache_seq, bytes);
 	} else {
 		gzseek(self->gzfd, offset, SEEK_SET);
 		gzread(self->gzfd, self->cache_seq, bytes);
-	}*/
-	pyfastx_index_continue_read(self, self->cache_seq, offset, bytes);
+	}
+	//pyfastx_index_continue_read(self, self->cache_seq, offset, bytes);
 
 	self->cache_seq[bytes] = '\0';
 
 	if (self->uppercase) {
-		remove_space_uppercase(self->cache_seq);
+		remove_space_uppercase(self->cache_seq, bytes);
 	} else {
-		remove_space(self->cache_seq);
+		remove_space(self->cache_seq, bytes);
 	}
 
 	//Py_END_ALLOW_THREADS
@@ -634,7 +640,7 @@ char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom){
 	self->cache_full = 1;
 
 	return self->cache_seq;
-}
+}*/
 
 //clear index cached sequence
 /*void pyfastx_index_cache_clear(pyfastx_Index *self) {

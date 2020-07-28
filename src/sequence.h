@@ -47,10 +47,10 @@ typedef struct {
 	uint32_t line_len;
 
 	//line end length, \n or \r\n
-	uint16_t end_len;
+	uint8_t end_len;
 
 	//standard fasta format with same line length
-	uint16_t normal;
+	uint8_t normal;
 
 	//line iteration cache
 	char* line_cache;
@@ -67,6 +67,7 @@ char *pyfastx_sequence_acquire(pyfastx_Sequence* self);
 uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key);
 
 char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self);
+char *pyfastx_sequence_get_fullseq(pyfastx_Sequence* self);
 
 PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure);
 PyObject *pyfastx_sequence_reverse(pyfastx_Sequence* self, void* closure);
