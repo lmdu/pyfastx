@@ -32,7 +32,7 @@ typedef struct {
 	uint32_t seq_len;
 
 	//subsequence parent length
-	uint32_t parent_len;
+	//uint32_t parent_len;
 
 	//fasta index
 	pyfastx_Index* index;
@@ -51,6 +51,9 @@ typedef struct {
 
 	//standard fasta format with same line length
 	uint8_t normal;
+
+	//complete sequence or subsequence
+	uint8_t complete;
 
 	//line iteration cache
 	char* line_cache;

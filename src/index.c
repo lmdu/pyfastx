@@ -44,7 +44,7 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, 
 	if(index->gzip_format){
 		index->gzip_index = (zran_index_t *)malloc(sizeof(zran_index_t));
 		//initial zran index
-		zran_init(index->gzip_index, index->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
+		zran_init(index->gzip_index, index->fd, 4194304, 32768, 16384, ZRAN_AUTO_BUILD);
 	}
 
 	//cache name
@@ -62,6 +62,9 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, 
 	//index->cache_seq = {0,0,0};
 	kstring_init(index->cache_name);
 	kstring_init(index->cache_seq);
+
+	//iteration mode
+	index->iterating = 0;
 
 	return index;
 }
@@ -464,7 +467,8 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 		//sqlite3_finalize(stmt);
 	);
 	
-	seq->parent_len = seq->seq_len;
+	//is full sequence
+	seq->complete = 1;
 
 	//position
 	seq->start = 1;

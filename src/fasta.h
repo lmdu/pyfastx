@@ -16,7 +16,7 @@ typedef struct {
 	char* file_name;
 
 	//always output uppercase sequence
-	uint16_t uppercase;
+	uint8_t uppercase;
 
 	//total sequence counts
 	uint32_t seq_counts;
@@ -25,7 +25,7 @@ typedef struct {
 	uint64_t seq_length;
 
 	//if build_index is True means has index
-	uint16_t has_index;
+	uint8_t has_index;
 
 	//current iter sequence id
 	//uint32_t iter_id;

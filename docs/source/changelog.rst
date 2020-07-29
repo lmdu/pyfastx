@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.6.14 (2020-07-30)
+---------------------------
+
+- Added support for using full header as identifier
+- Improved the speed of fasta sequence iteration
+
 Version 0.6.13 (2020-07-09)
 ---------------------------
 

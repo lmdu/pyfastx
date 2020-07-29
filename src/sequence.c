@@ -22,8 +22,13 @@ char *pyfastx_sequence_get_fullseq(pyfastx_Sequence* self) {
 	//self->index->cache_seq = (char *)malloc(self->byte_len + 1);
 
 	if (self->index->gzip_format) {
-		zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
-		zran_read(self->index->gzip_index, self->index->cache_seq.s, self->byte_len);
+		if (self->index->iterating) {
+			gzseek(self->index->gzfd, self->offset, SEEK_SET);
+			gzread(self->index->gzfd, self->index->cache_seq.s, self->byte_len);
+		} else {
+			zran_seek(self->index->gzip_index, self->offset, SEEK_SET, NULL);
+			zran_read(self->index->gzip_index, self->index->cache_seq.s, self->byte_len);
+		}
 	} else {
 		gzseek(self->index->gzfd, self->offset, SEEK_SET);
 		gzread(self->index->gzfd, self->index->cache_seq.s, self->byte_len);
@@ -49,7 +54,7 @@ char *pyfastx_sequence_get_fullseq(pyfastx_Sequence* self) {
 }
 
 char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
-	if (!self->normal || (self->parent_len == self->seq_len)) {
+	if (self->complete || !self->normal) {
 		pyfastx_sequence_get_fullseq(self);
 	}
 	
@@ -133,7 +138,7 @@ void pyfastx_sequence_free_subseq(pyfastx_Sequence* self, char *seq) {
 }
 
 PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
-	if (self->start != 1 || self->end != self->parent_len) {
+	if (!self->complete) {
 		PyErr_SetString(PyExc_RuntimeError, "sliced sequence cannot be read line by line");
 		return NULL;
 	}
@@ -256,7 +261,7 @@ uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 }
 
 PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){
-	if(self->start == 1 && self->end == self->parent_len){
+	if(self->complete){
 		return Py_BuildValue("s", self->name);
 	} else {
 		return PyUnicode_FromFormat("%s:%d-%d", self->name, self->start, self->end);
@@ -347,7 +352,7 @@ PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
 	new_offset = self->offset - nbytes - self->end_len - 1;
 	new_bytelen = self->byte_len + nbytes + self->end_len + 1;
 
-	if (self->parent_len == self->seq_len) {
+	if (self->complete) {
 		buff = (char *)malloc(new_bytelen + 1);
 
 		if (self->index->gzip_format) {
@@ -421,7 +426,7 @@ PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure){
 }
 
 PyObject *pyfastx_sequence_repr(pyfastx_Sequence* self){
-	if(self->start == 1 && self->end == self->parent_len){
+	if(self->complete){
 		return PyUnicode_FromFormat("<Sequence> %s with length of %d", self->name, self->seq_len);
 	} else {
 		return PyUnicode_FromFormat("<Sequence> %s from %d to %d", self->name, self->start, self->end);
@@ -432,7 +437,7 @@ PyObject *pyfastx_sequence_str(pyfastx_Sequence* self){
 	return pyfastx_sequence_seq(self, NULL);
 }
 
-PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
+PyObject *pyfastx_sequence_subscript(pyfastx_Sequence* self, PyObject* item){
 	if (PyIndex_Check(item)) {
 		Py_ssize_t i;
 		char *sub_seq;
@@ -482,7 +487,7 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		seq->name = (char *)malloc(strlen(self->name) + 1);
 		strcpy(seq->name, self->name);
 		seq->seq_len = slice_stop - slice_start;
-		seq->parent_len = self->parent_len;
+		//seq->parent_len = self->parent_len;
 		seq->line_len = self->line_len;
 		seq->end_len = self->end_len;
 		seq->normal = self->normal;
@@ -491,9 +496,14 @@ PyObject *pyfastx_seqeunce_subscript(pyfastx_Sequence* self, PyObject* item){
 		seq->index = self->index;
 		seq->line_cache = NULL;
 		seq->cache_pos = NULL;
-		seq->line.s = NULL;
-		seq->line.l = 0;
-		seq->line.m = 0;
+		kstring_init(seq->line);
+
+		//check sequence is complete or not
+		if (self->complete && seq->seq_len == self->seq_len) {
+			seq->complete = 1;
+		} else {
+			seq->complete = 0;
+		}
 
 		if (self->normal) {
 			//number of the lines before slice start
@@ -684,7 +694,7 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 
 static PyMappingMethods pyfastx_sequence_as_mapping = {
 	(lenfunc)pyfastx_sequence_length,
-	(binaryfunc)pyfastx_seqeunce_subscript,
+	(binaryfunc)pyfastx_sequence_subscript,
 	0
 };
 

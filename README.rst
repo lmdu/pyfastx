@@ -21,10 +21,6 @@ pyfastx
    :target: https://coveralls.io/github/lmdu/pyfastx?branch=master
    :alt: Coveralls
 
-.. image:: https://scan.coverity.com/projects/19696/badge.svg
-   :target: https://scan.coverity.com/projects/lmdu-pyfastx
-   :alt: Coverity
-
 .. image:: https://img.shields.io/pypi/v/pyfastx.svg
    :target: https://pypi.org/project/pyfastx
    :alt: PyPI

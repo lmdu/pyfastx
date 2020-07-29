@@ -140,6 +140,10 @@ PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){
 		);
 	}
 
+	if (self->index->gzip_format) {
+		self->index->iterating = 1;
+	}
+
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
@@ -155,7 +159,6 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 		if (ret == SQLITE_ROW) {
 			return pyfastx_index_make_seq(self->index, self->iter_stmt);
 		}
-
 	} else {
 		return pyfastx_get_next_seq(self->index);
 	}
@@ -360,7 +363,9 @@ PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self) {
 }
 
 PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
-	
+	//close interation mode
+	self->index->iterating = 0;
+
 	if (PyIndex_Check(item)) {
 		Py_ssize_t i;
 		i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -375,9 +380,8 @@ PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
 		}
 
 		return pyfastx_index_get_seq_by_id(self->index, i+1);
-		
-	} else if (PyUnicode_CheckExact(item)) {
-		
+
+	} else if (PyUnicode_CheckExact(item)) {	
 		return pyfastx_index_get_seq_by_name(self->index, (char *)PyUnicode_AsUTF8(item));
 
 	} else {

@@ -48,7 +48,7 @@ ssize_t get_line(char **buf, FILE *fp);*/
 	do { Py_BEGIN_ALLOW_THREADS { x; } Py_END_ALLOW_THREADS ; } while(0)
 
 #define test_time(x) \
-	do { clock_t s, e; s=clock(); x; e=clock(); fprintf(stderr, "fread time: %.12f\n", (double)(e-s)/CLOCKS_PER_SEC); } while(0)
+	do { clock_t s, e; s=clock(); x; e=clock(); fprintf(stderr, "time: %.12f\n", (double)(e-s)/CLOCKS_PER_SEC); } while(0)
 
 //support large fseek offset
 /*#ifdef _WIN32
