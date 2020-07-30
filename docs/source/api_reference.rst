@@ -41,11 +41,11 @@ pyfastx.Fasta
 
 	:param bool full_index: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
 
-	:param bool full_name: use the full header line instead of the part before first whitespace as the identifier of sequence. New in 0.6.14.
+	:param bool full_name: use the full header line instead of the part before first whitespace as the identifier of sequence. New in 0.6.14, default: ``False``
 
 	:param bool memory_index: if memory_index is True, the fasta index will be kept in memory and do not generate a index file, default: ``False``
 
-	:param function key_func: new in 0.5.1, key function is generally a lambda expression to split header and obtain a shortened identifer, default: None
+	:param function key_func: new in 0.5.1, key function is generally a lambda expression to split header and obtain a shortened identifer, default: ``None``
 
 	:return: Fasta object
 
