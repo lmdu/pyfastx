@@ -5,7 +5,7 @@ env:
     - CIBW_SKIP="cp27-* pp27-*"
     #- CIBW_BEFORE_BUILD_LINUX="yum install -y zlib-devel sqlite-devel"
     - CIBW_BEFORE_BUILD_LINUX="sqlite3 --version; curl -O http://zlib.net/zlib-1.2.11.tar.gz;tar xzf zlib-1.2.11.tar.gz;cd zlib-1.2.11;./configure;make;make install;"
-    - CIBW_BEFORE_BUILD_MACOS="sqlite3 --version; brew install zlib"
+    - CIBW_BEFORE_BUILD_MACOS="sqlite3 --version; curl -O http://zlib.net/zlib-1.2.11.tar.gz;tar xzf zlib-1.2.11.tar.gz;cd zlib-1.2.11;./configure;make;make install;"
     - PIP=pip3
     - TWINE_REPOSITORY=pypi
     - TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
@@ -20,9 +20,9 @@ matrix:
       language: generic
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      git -C "$(brew --repo)" remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git;
-    fi
+  #- if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+  #    git -C "$(brew --repo)" remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git;
+  #  fi
   - $PIP install cpp-coveralls
   - $PIP install pyfaidx==0.5.8
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then

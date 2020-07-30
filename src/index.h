@@ -61,6 +61,9 @@ typedef struct {
 	//enter in for or while iteration
 	uint8_t iterating;
 
+	//current iter sequence id
+	uint32_t iter_id;
+
 } pyfastx_Index;
 
 

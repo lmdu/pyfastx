@@ -33,7 +33,7 @@ typedef struct {
 	//PyObject* composition;
 
 	//is gzip file
-	uint16_t gzip_format;
+	uint8_t gzip_format;
 
 	//sqlite3 connection to index file
 	sqlite3* index_db;
@@ -55,7 +55,7 @@ typedef struct {
 	sqlite3_stmt *iter_stmt;
 
 	//if build_index is True means has index
-	uint16_t has_index;
+	uint8_t has_index;
 
 	//gzip index
 	zran_index_t* gzip_index;
@@ -79,6 +79,9 @@ typedef struct {
 
 	//cache end offset
 	int64_t cache_eoff;
+
+	//iteration mode
+	uint8_t iterating;
 
 } pyfastx_Fastq;
 

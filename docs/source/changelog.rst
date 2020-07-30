@@ -6,6 +6,8 @@ Version 0.6.14 (2020-07-30)
 
 - Added support for using full header as identifier
 - Improved the speed of fasta sequence iteration
+- Improved the speed of gzip fastq read iteration
+- Fixed a bug in fastq read reader
 
 Version 0.6.13 (2020-07-09)
 ---------------------------
@@ -41,8 +43,11 @@ Version 0.6.10 (2020-04-22)
 - Fixed some hidden memory leaks
 - Changed fastq index file structure to save more information
 
+Older versions
+--------------
+
 Version 0.6.9 (2020-04-12)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Added buffreader to improve speed for reading from gzipped file
 - Added extract subcommand to extract sequences from fasta/q file
@@ -51,7 +56,7 @@ Version 0.6.9 (2020-04-12)
 - Changed Fastq object composition parameter to full_index
 
 Version 0.6.8 (2020-03-14)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed large offset seek error on windows
 - Fixed PyUnicode_AsUTF8 const char type warning
@@ -59,7 +64,7 @@ Version 0.6.8 (2020-03-14)
 - Changed gzread to fread for fastq information
 
 Version 0.6.7 (2020-03-03)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Added check for fasta/q format when open file
 - Added benchmark scripts for evaluating performance
@@ -67,14 +72,11 @@ Version 0.6.7 (2020-03-03)
 - Optimzed str length warning caused by strlen
 
 Version 0.6.6 (2020-02-15)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed incorrect sliced sequence name
 - Fixed seq,identifier,read object memory dealloc
 - Changed description text into description length in index file
-
-Older versions
---------------
 
 Version 0.6.5 (2020-01-31)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

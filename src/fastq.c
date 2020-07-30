@@ -436,6 +436,8 @@ PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, char* name) {
 }
 
 PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
+	self->iterating = 0;
+
 	if (PyIndex_Check(item)) {
 		Py_ssize_t i;
 		i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -492,6 +494,8 @@ PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 	rewind(self->fd);
 	
 	if (self->has_index) {
+		self->iterating = 1;
+
 		PYFASTX_SQLITE_CALL(
 			sqlite3_finalize(self->iter_stmt);
 			self->iter_stmt = NULL;
@@ -522,7 +526,7 @@ PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
 
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
 	self->iter_stmt = NULL;
-
+	self->iterating = 0;
 	return NULL;
 }
 

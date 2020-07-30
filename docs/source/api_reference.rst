@@ -29,7 +29,7 @@ pyfastx.version
 pyfastx.Fasta
 -------------
 
-.. py:class:: pyfastx.Fasta(file_name, uppercase=True, build_index=True, full_index=False, memory_index=False, key_func=None)
+.. py:class:: pyfastx.Fasta(file_name, uppercase=True, build_index=True, full_index=False, full_name=False, memory_index=False, key_func=None)
 
 	Read and parse fasta files. Fasta can be used as dict or list, you can use index or sequence name to get a sequence object, e.g. ``fasta[0]``, ``fasta['seq1']``
 
@@ -40,6 +40,8 @@ pyfastx.Fasta
 	:param bool build_index: build index for random access to FASTA sequence, default: ``True``. If build_index is False, iteration will return a tuple (name, seq); If build_index is True, iteration will return a sequence object.
 
 	:param bool full_index: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
+
+	:param bool full_name: use the full header line instead of the part before first whitespace as the identifier of sequence. New in 0.6.14.
 
 	:param bool memory_index: if memory_index is True, the fasta index will be kept in memory and do not generate a index file, default: ``False``
 

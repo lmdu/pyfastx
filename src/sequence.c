@@ -22,7 +22,7 @@ char *pyfastx_sequence_get_fullseq(pyfastx_Sequence* self) {
 	//self->index->cache_seq = (char *)malloc(self->byte_len + 1);
 
 	if (self->index->gzip_format) {
-		if (self->index->iterating) {
+		if (self->index->iterating && self->index->iter_id == self->id) {
 			gzseek(self->index->gzfd, self->offset, SEEK_SET);
 			gzread(self->index->gzfd, self->index->cache_seq.s, self->byte_len);
 		} else {
