@@ -4,9 +4,9 @@ Changelog
 Version 0.6.14 (2020-07-30)
 ---------------------------
 
-- Added support for using full header as identifier
+- Added support for using full header as identifier without building index
 - Improved the speed of fasta sequence iteration
-- Improved the speed of gzip fastq read iteration
+- Improved the speed of gzipped fastq read iteration
 - Fixed a bug in fastq read reader
 
 Version 0.6.13 (2020-07-09)
