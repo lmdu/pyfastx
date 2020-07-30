@@ -41,7 +41,7 @@ pyfastx.Fasta
 
 	:param bool full_index: calculate character (e.g. A, T, G, C) composition when building index, this will improve the speed of GC content extracting. However, it will take more time to build index, default: ``False``
 
-	:param bool full_name: use the full header line instead of the part before first whitespace as the identifier of sequence. New in 0.6.14, default: ``False``
+	:param bool full_name: use the full header line instead of the part before first whitespace as the identifier of sequence, even in mode without building index. New in 0.6.14, default: ``False``
 
 	:param bool memory_index: if memory_index is True, the fasta index will be kept in memory and do not generate a index file, default: ``False``
 
@@ -109,7 +109,7 @@ pyfastx.Fasta
 
 	.. py:method:: fetch(name, intervals, strand='+')
 
-		truncate subsequences from a given sequence by a start and end coordinate or a list of coordinates
+		truncate subsequences from a given sequence by a start and end coordinate or a list of coordinates. This function will cache the full sequence into memory, and is suitable for extracting large numbers of subsequences from specified sequence.
 
 		:param str name: sequence name
 
