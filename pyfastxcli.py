@@ -3,12 +3,9 @@ import re
 import sys
 import gzip
 import math
-import shutil
 import random
 import pyfastx
 import argparse
-import traceback
-import multiprocessing
 
 def fastx_format_check(infile):
 	if pyfastx.gzip_check(infile):

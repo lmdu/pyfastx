@@ -24,7 +24,7 @@ class FastqTest(unittest.TestCase):
 		with open(flat_fastq) as fh:
 			for line in fh:
 				i += 1
-				
+
 				if i % 4 == 1:
 					c += 1
 					self.reads[c] = [line[1:].strip().split()[0], 0, 0]
