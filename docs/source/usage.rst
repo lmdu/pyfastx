@@ -27,6 +27,14 @@ The fastest way to iterate plain or gzipped FASTA file without building index, t
 	>>> for name, seq in pyfastx.Fasta('test/data/test.fa.gz', build_index=False):
 	>>> 	print(name, seq)
 
+If you want to used full header line as sequence identifier without building index, you can do like this:
+
+.. code:: python
+
+	>>> import pyfastx
+	>>> for name, seq in pyfastx.Fasta('test/data/test.fa', build_index=False, full_name=True):
+	>>> 	print(name, seq)
+
 You can also iterate sequence object from FASTA object like this:
 
 .. code:: python
@@ -37,7 +45,7 @@ You can also iterate sequence object from FASTA object like this:
 	>>> 	print(seq.seq)
 	>>> 	print(seq.description)
 
-Iteration with ``build_index=True`` (default) return sequence object which allows you to access attributions of sequence. New in pyfastx 0.6.3.
+Iteration with ``build_index=True`` (default) return sequence object which allows you to access attributes of sequence. New in pyfastx 0.6.3.
 
 Get FASTA information
 ---------------------
@@ -590,10 +598,6 @@ New in ``pyfastx`` 0.5.10
 	>>> ids.filter(ids % 'JZ8226', ids>550)
 	<Identifier> contains 17 identifiers
 
-	>>> # clear sort order and filters
-	>>> ids.reset()
-	<Identifier> contains 211 identifiers
-
 	>>> # list a filtered result
 	>>> ids.filter(ids % 'JZ8226', ids>730)
 	>>> list(ids)
@@ -607,3 +611,12 @@ New in ``pyfastx`` 0.5.10
 	>>> ids.filter(ids % 'JZ8226', ids>730).sort('name', reverse=True)
 	>>> list(ids)
 	['JZ822699.1', 'JZ822664.1', 'JZ822650.1', 'JZ822609.1']
+
+Clear filter and sort order
+---------------------------
+
+.. code:: python
+
+	>>> # clear sort order and filters
+	>>> ids.reset()
+	<Identifier> contains 211 identifiers
