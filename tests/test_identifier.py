@@ -53,7 +53,7 @@ class IdentifierTest(unittest.TestCase):
 		self.assertEqual(fikeys[idx], keyobj[idx])
 
 		#negative index
-		self.assertEqual(fikeys[len(fikeys)-idx], keyobj[len(fikeys)-idx])
+		self.assertEqual(fikeys[idx-len(fikeys)], keyobj[idx-len(fikeys)])
 		self.assertEqual(fikeys[-1], keyobj[-1])
 
 		#check contains
