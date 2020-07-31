@@ -27,7 +27,7 @@ The fastest way to iterate plain or gzipped FASTA file without building index, t
 	>>> for name, seq in pyfastx.Fasta('test/data/test.fa.gz', build_index=False):
 	>>> 	print(name, seq)
 
-If you want to used full header line as sequence identifier without building index, you can do like this:
+If you want to use full header line as sequence identifier without building index, you can do like this:
 
 .. code:: python
 
@@ -434,6 +434,26 @@ Get FASTQ information
 	>>> # get phred which affects the quality score conversion
 	>>> fq.phred
 	33
+
+	>>> # get the average length of reads
+	>>> fq.avglen
+	150.0
+
+	>>> # get the maximum length of reads
+	>>> fq.maxlen
+	150
+
+	>>> # get the minimum length of reads
+	>>> fq.minlen
+	150
+
+	>>> # get the maximum quality score of bases
+	>>> fq.maxqual
+	70
+
+	>>> # get the minimum quality score of bases
+	>>> fq.minqual
+	35
 
 	>>> # Guess fastq quality encoding system
 	>>> # New in pyfastx 0.4.1

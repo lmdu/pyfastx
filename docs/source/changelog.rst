@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 0.6.14 (2020-07-30)
+Version 0.6.14 (2020-07-31)
 ---------------------------
 
 - Added support for using full header as identifier without building index
