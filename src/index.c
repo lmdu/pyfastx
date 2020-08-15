@@ -80,7 +80,7 @@ PyObject* pyfastx_get_next_seq(pyfastx_Index *self){
 			upper_string(self->kseqs->seq.s, self->kseqs->seq.l);
 		}
 
-		if (self->full_name) {
+		if (self->full_name && self->kseqs->comment.s) {
 			PyObject *fname = PyUnicode_FromFormat("%s %s", self->kseqs->name.s, self->kseqs->comment.s);
 			PyObject *ret = Py_BuildValue("(Os)", fname, self->kseqs->seq.s);
 			Py_DECREF(fname);

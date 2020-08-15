@@ -14,7 +14,7 @@ Read plain or gzipped FASTA file and build index, support for random access to F
 	<Fasta> test/data/test.fa.gz contains 211 seqs
 
 .. note::
-	Building index may take some times. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file. The index file can be reused to save time when you read sequences from FASTA file next time.
+	Building index may take some time. The time required to build index depends on the size of FASTA file. If index built, you can randomly access to any sequences in FASTA file. The index file can be reused to save time when you read sequences from FASTA file next time.
 
 FASTA records iteration
 -----------------------
@@ -168,7 +168,7 @@ Get counts of sequences whose length >= specified length
 Get subsequences
 ----------------
 
-Subseuqneces can be retrieved from FASTA file by using a list of [start, end] coordinates
+Subsequences can be retrieved from FASTA file by using a list of [start, end] coordinates
 
 .. code:: python
 
@@ -191,7 +191,10 @@ Key function
 
 New in ``pyfastx`` 0.5.1
 
-Sometimes your fasta will have a long header which contains multiple identifiers and description, for example, ">JZ822577.1 contig1 cDNA library of flower petals in tree peony by suppression subtractive hybridization Paeonia suffruticosa cDNA, mRNA sequence". In this case, both "JZ822577.1" and "contig1" can be used as identifer. you can specify the key function to select one as identifier.
+Sometimes your fasta will have a long header which contains multiple identifiers and description, for example,
+">JZ822577.1 contig1 cDNA library of flower petals in tree peony by suppression subtractive hybridization Paeonia suffruticosa cDNA, mRNA sequence".
+In this case, either "JZ822577.1" or "contig1" could be used as the identifier.
+You can specify the key function to select one as identifier.
 
 .. code:: python
 
@@ -357,17 +360,17 @@ Search for subsequence from given sequence and get one-based start position of t
 
 .. code:: python
 
-    >>> # search subsequence in sense strand
-    >>> fa[0].search('GCTTCAATACA')
-    262
+	>>> # search subsequence in sense strand
+	>>> fa[0].search('GCTTCAATACA')
+	262
 
-    >>> # check subsequence weather in sequence
-    >>> 'GCTTCAATACA' in fa[0]
-    True
+	>>> # check subsequence weather in sequence
+	>>> 'GCTTCAATACA' in fa[0]
+	True
 
-    >>> # search subsequence in antisense strand
-    >>> fa[0].search('CCTCAAGT', '-')
-    301
+	>>> # search subsequence in antisense strand
+	>>> fa[0].search('CCTCAAGT', '-')
+	301
 
 FASTQ
 =====

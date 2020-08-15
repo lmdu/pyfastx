@@ -3,11 +3,13 @@ import random
 import pyfastx
 import pyfaidx
 import unittest
+from .testing_utils import get_test_data
 
-gzip_fasta = 'tests/data/test.fa.gz'
-flat_fasta = 'tests/data/test.fa'
-rna_fasta = 'tests/data/rna.fa'
-protein_fasta = 'tests/data/protein.fa'
+gzip_fasta = get_test_data('test.fa.gz')
+flat_fasta = get_test_data('test.fa')
+rna_fasta = get_test_data('rna.fa')
+protein_fasta = get_test_data('protein.fa')
+
 
 class FastaTest(unittest.TestCase):
 	def setUp(self):
@@ -141,6 +143,18 @@ class FastaTest(unittest.TestCase):
 			expect = str(self.faidx[name])
 			self.assertEqual(expect, seq)
 
+	def test_iter_full_name(self):
+		fa = pyfastx.Fasta(rna_fasta, build_index=False, full_name=True)
+
+		for name, seq in fa:
+			self.assertTrue(name in {"LOC_Os10g33000", "LOC_Os02g06840"})
+
+	def test_key_func(self):
+		fa = pyfastx.Fasta(gzip_fasta, build_index=True, key_func=lambda x: x.split()[1])
+
+		for seq in fa:  # type: pyfastx.Sequence
+			self.assertTrue(seq.name.startswith("contig"))
+
 	def test_statistics(self):
 		lens = sorted([len(seq) for seq in self.faidx], reverse=True)
 		half = sum(lens)/2
@@ -229,6 +243,7 @@ class FastaTest(unittest.TestCase):
 
 		with self.assertRaises(ValueError):
 			self.fastx.nl(101)
+
 
 if __name__ == '__main__':
 	unittest.main()
