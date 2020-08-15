@@ -4,8 +4,11 @@ import pyfastx
 import pyfaidx
 import unittest
 
-gzip_fasta = 'tests/data/test.fa.gz'
-flat_fasta = 'tests/data/test.fa'
+join = os.path.join
+data_dir = join(os.path.dirname(__file__), 'data')
+
+gzip_fasta = join(data_dir, 'test.fa.gz')
+flat_fasta = join(data_dir, 'test.fa')
 
 class SequenceTest(unittest.TestCase):
 	def setUp(self):

@@ -191,8 +191,10 @@ Key function
 
 New in ``pyfastx`` 0.5.1
 
-Sometimes your fasta will have a long header which contains multiple identifiers and description, for example,
-">JZ822577.1 contig1 cDNA library of flower petals in tree peony by suppression subtractive hybridization Paeonia suffruticosa cDNA, mRNA sequence".
+Sometimes your fasta will have a long header which contains multiple identifiers and description, for example:
+
+``>JZ822577.1 contig1 cDNA library of flower petals in tree peony by suppression subtractive hybridization Paeonia suffruticosa cDNA, mRNA sequence``
+
 In this case, either "JZ822577.1" or "contig1" could be used as the identifier.
 You can specify the key function to select one as identifier.
 
@@ -203,6 +205,9 @@ You can specify the key function to select one as identifier.
 	>>> fa = pyfastx.Fasta('tests/data/test.fa.gz', key_func=lambda x: x.split()[1])
 	>>> fa
 	<Fasta> tests/data/test.fa.gz contains 211 seqs
+
+.. note::
+	If the index file already existed, you should delete the previous index file, and then use key_func to create a new index file
 
 Sequence
 ========

@@ -36,7 +36,7 @@ void pyfastx_read_reader(pyfastx_Read *self, char *buff, int64_t offset, uint32_
     uint32_t buff_size;
 
     //buff_size = self->fastq->gzip_format ? 10485760 : 1048576;
-    buff_size = 1048576;
+    buff_size = 16384;
 
     if (bytes > buff_size) {
         buff_size = bytes * 2;

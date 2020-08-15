@@ -3,12 +3,14 @@ import random
 import pyfastx
 import pyfaidx
 import unittest
-from .testing_utils import get_test_data
 
-gzip_fasta = get_test_data('test.fa.gz')
-flat_fasta = get_test_data('test.fa')
-rna_fasta = get_test_data('rna.fa')
-protein_fasta = get_test_data('protein.fa')
+join = os.path.join
+data_dir = join(os.path.dirname(__file__), 'data')
+
+gzip_fasta = join(data_dir, 'test.fa.gz')
+flat_fasta = join(data_dir, 'test.fa')
+rna_fasta = join(data_dir, 'rna.fa')
+protein_fasta = join(data_dir, 'protein.fa')
 
 
 class FastaTest(unittest.TestCase):
@@ -22,10 +24,6 @@ class FastaTest(unittest.TestCase):
 		self.count = len(self.fastx)
 
 	def tearDown(self):
-		del self.fastx
-		del self.fasta
-		del self.faidx
-
 		if os.path.exists('{}.fxi'.format(gzip_fasta)):
 			os.remove('{}.fxi'.format(gzip_fasta))
 
@@ -144,16 +142,24 @@ class FastaTest(unittest.TestCase):
 			self.assertEqual(expect, seq)
 
 	def test_iter_full_name(self):
-		fa = pyfastx.Fasta(rna_fasta, build_index=False, full_name=True)
+		fa = pyfastx.Fasta(flat_fasta, build_index=False, full_name=True)
 
 		for name, seq in fa:
-			self.assertTrue(name in {"LOC_Os10g33000", "LOC_Os02g06840"})
+			self.assertTrue(name, self.fastx[name.split()[0]].description)
+			break
 
 	def test_key_func(self):
-		fa = pyfastx.Fasta(gzip_fasta, build_index=True, key_func=lambda x: x.split()[1])
+		del self.fastx
+
+		#remove previously created index file
+		if os.path.exists("{}.fxi".format(gzip_fasta)):
+			os.remove("{}.fxi".format(gzip_fasta))
+
+		fa = pyfastx.Fasta(gzip_fasta, key_func=lambda x: x.split()[1])
 
 		for seq in fa:  # type: pyfastx.Sequence
 			self.assertTrue(seq.name.startswith("contig"))
+			break
 
 	def test_statistics(self):
 		lens = sorted([len(seq) for seq in self.faidx], reverse=True)

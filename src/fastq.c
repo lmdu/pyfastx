@@ -301,7 +301,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//is gzip file
 	if (obj->gzip_format) {
 		obj->gzip_index = (zran_index_t *)malloc(sizeof(zran_index_t));
-		zran_init(obj->gzip_index, obj->fd, 4194304, 32768, 1048576, ZRAN_AUTO_BUILD);
+		zran_init(obj->gzip_index, obj->fd, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
 	}
 
 	if (file_exists(obj->index_file)) {

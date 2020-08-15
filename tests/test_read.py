@@ -4,8 +4,11 @@ import random
 import pyfastx
 import unittest
 
-gzip_fastq = 'tests/data/test.fq.gz'
-flat_fastq = 'tests/data/test.fq'
+join = os.path.join
+data_dir = join(os.path.dirname(__file__), 'data')
+
+gzip_fastq = join(data_dir, 'test.fq.gz')
+flat_fastq = join(data_dir, 'test.fq')
 
 class ReadTest(unittest.TestCase):
 	def setUp(self):
