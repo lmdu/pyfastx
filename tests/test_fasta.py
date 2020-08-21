@@ -59,9 +59,7 @@ class FastaTest(unittest.TestCase):
 		print(pyfastx.version(debug=True))
 
 	def test_build(self):
-		print('yes1')
 		self.fastx = pyfastx.Fasta(gzip_fasta, build_index=False)
-		print('yes2')
 
 		if os.path.exists('{}.fxi'.format(gzip_fasta)):
 			os.remove('{}.fxi'.format(gzip_fasta))
