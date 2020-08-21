@@ -19,6 +19,9 @@ typedef struct {
 	//sequence description
 	char* desc;
 
+	//raw string
+	char* raw;
+
 	//iter line
 	kstring_t line;
 
@@ -30,6 +33,9 @@ typedef struct {
 
 	//sequence real length
 	uint32_t seq_len;
+
+	//description length
+	uint32_t desc_len;
 
 	//subsequence parent length
 	//uint32_t parent_len;
@@ -67,7 +73,7 @@ extern PyTypeObject pyfastx_SequenceType;
 
 uint32_t pyfastx_sequence_length(pyfastx_Sequence* self);
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self);
-uint16_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key);
+uint8_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key);
 
 char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self);
 char *pyfastx_sequence_get_fullseq(pyfastx_Sequence* self);

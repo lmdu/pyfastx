@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.6.15 (2020-08-21)
+---------------------------
+
+- Fixed key_func error caused by free operation
+- Fixed full name error when reading sequence without whitespace in names
+- Fixed a hidden bug in fasta/q iteration when reading attributes (not seq)
+
 Version 0.6.14 (2020-07-31)
 ---------------------------
 

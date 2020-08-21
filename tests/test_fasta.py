@@ -52,7 +52,7 @@ class FastaTest(unittest.TestCase):
 			self.assertEqual(version, pyfastx.version())
 
 		print(pyfastx.version(debug=True))
-	
+
 	def test_build(self):
 		del self.fastx
 
@@ -144,7 +144,7 @@ class FastaTest(unittest.TestCase):
 	def test_iter_full_name(self):
 		fa = pyfastx.Fasta(flat_fasta, build_index=False, full_name=True)
 
-		for name, seq in fa:
+		for name, _ in fa:
 			self.assertTrue(name, self.fastx[name.split()[0]].description)
 			break
 
@@ -156,10 +156,8 @@ class FastaTest(unittest.TestCase):
 			os.remove("{}.fxi".format(gzip_fasta))
 
 		fa = pyfastx.Fasta(gzip_fasta, key_func=lambda x: x.split()[1])
-
-		for seq in fa:  # type: pyfastx.Sequence
-			self.assertTrue(seq.name.startswith("contig"))
-			break
+		idx = self.get_random_index()
+		self.assertTrue(fa[idx].name.startswith("contig"))
 
 	def test_statistics(self):
 		lens = sorted([len(seq) for seq in self.faidx], reverse=True)
@@ -245,7 +243,7 @@ class FastaTest(unittest.TestCase):
 			_ = self.fastx[self.count]
 
 		with self.assertRaises(KeyError):
-			self.fastx[int]
+			self.fastx[list()]
 
 		with self.assertRaises(ValueError):
 			self.fastx.nl(101)

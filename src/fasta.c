@@ -132,16 +132,12 @@ PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){
 	pyfastx_rewind_index(self->index);
 
 	if (self->has_index) {
-		self->index->iter_id = 0;
+		self->index->iterating = 1;
 		PYFASTX_SQLITE_CALL(
 			sqlite3_finalize(self->iter_stmt);
 			self->iter_stmt = NULL;
 			sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM seq", -1, &self->iter_stmt, NULL);
 		);
-	}
-
-	if (self->index->gzip_format) {
-		self->index->iterating = 1;
 	}
 
 	Py_INCREF(self);
@@ -157,9 +153,6 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 		int ret;
 		PYFASTX_SQLITE_CALL(ret = sqlite3_step(self->iter_stmt));
 		if (ret == SQLITE_ROW) {
-			if (self->index->gzip_format) {
-				++self->index->iter_id;
-			}
 			return pyfastx_index_make_seq(self->index, self->iter_stmt);
 		}
 	} else {
@@ -167,8 +160,8 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 	}
 
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
-	self->iter_stmt = NULL;
 	self->index->iterating = 0;
+	self->iter_stmt = NULL;
 	return NULL;
 }
 
@@ -366,7 +359,6 @@ PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self) {
 }
 
 PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
-	//close interation mode
 	self->index->iterating = 0;
 
 	if (PyIndex_Check(item)) {

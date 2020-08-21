@@ -57,14 +57,14 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, 
 	//complete seq or not
 	index->cache_full = 0;
 
+	//enter iteration loop
+	index->iterating = 0;
+
 	//cache sequence
 	//index->cache_name = {0,0,0};
 	//index->cache_seq = {0,0,0};
 	kstring_init(index->cache_name);
 	kstring_init(index->cache_seq);
-
-	//iteration mode
-	index->iterating = 0;
 
 	return index;
 }
@@ -447,7 +447,7 @@ void pyfastx_index_free(pyfastx_Index *self){
 		free(self->cache_name.s);
 	}
 
-	Py_XDECREF(self->key_func);
+	//Py_XDECREF(self->key_func);
 
 	kseq_destroy(self->kseqs);
 	fclose(self->fd);
@@ -461,15 +461,11 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	//pyfastx_Sequence *seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);
 	pyfastx_Sequence *seq = (pyfastx_Sequence *)PyObject_CallObject((PyObject *)&pyfastx_SequenceType, NULL);
 
-	if(!seq){
-		return NULL;
-	}
-
 	PYFASTX_SQLITE_CALL(
 		seq->id = sqlite3_column_int(stmt, 0);
 		nbytes = sqlite3_column_bytes(stmt, 1);
 		seq->name = (char *)malloc(nbytes + 1);
-		memcpy(seq->name, (char *)sqlite3_column_text(stmt, 1), nbytes);
+		memcpy(seq->name, sqlite3_column_text(stmt, 1), nbytes);
 		seq->name[nbytes] = '\0';
 		seq->offset = (int64_t)sqlite3_column_int64(stmt, 2);
 		seq->byte_len = sqlite3_column_int(stmt, 3);
@@ -477,6 +473,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 		seq->line_len = sqlite3_column_int(stmt, 5);
 		seq->end_len = sqlite3_column_int(stmt, 6);
 		seq->normal = sqlite3_column_int(stmt, 7);
+		seq->desc_len = sqlite3_column_int(stmt, 8);
 		//sqlite3_finalize(stmt);
 	);
 	
@@ -497,9 +494,8 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	//line string init
 	kstring_init(seq->line);
 
-	//seq->line.l = 0;
-	//seq->line.m = 0;
-	//seq->line.s = NULL;
+	seq->desc = NULL;
+	seq->raw = NULL;
 
 	//Py_INCREF(seq);
 	return (PyObject *)seq;

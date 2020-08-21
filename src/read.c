@@ -30,104 +30,90 @@ int pyfastx_read_length(pyfastx_Read *self) {
 }
 
 //read content from buff or file
-void pyfastx_read_reader(pyfastx_Read *self, char *buff, int64_t offset, uint32_t bytes) {
-    uint32_t slice_offset;
-    uint32_t slice_length;
-    uint32_t buff_size;
+void pyfastx_read_continue_reader(pyfastx_Read *self) {
+    int32_t slice_offset;
+    int32_t slice_length;
+    int32_t residue_len;
+    int32_t read_len;
+    int32_t cache_len;
+    int64_t offset;
 
-    //buff_size = self->fastq->gzip_format ? 10485760 : 1048576;
-    buff_size = 16384;
+    //read raw string offset
+    offset = self->seq_offset - self->desc_len - 1;
 
-    if (bytes > buff_size) {
-        buff_size = bytes * 2;
+    //read raw string length
+    residue_len = self->qual_offset + self->read_len - offset + 1;
+    read_len = 0;
 
-        if (self->fastq->cache_buff != NULL) {
-            self->fastq->cache_buff = (char *)realloc(self->fastq->cache_buff, buff_size);
-            self->fastq->cache_soff = 0;
-            self->fastq->cache_eoff = 0;
+    self->raw = (char *)malloc(residue_len + 2);
+
+    while (residue_len > 0) {
+        if (offset >= self->fastq->cache_soff && offset < self->fastq->cache_eoff) {
+            slice_offset = offset - self->fastq->cache_soff;
+            slice_length = self->fastq->cache_eoff - offset;
+
+            if (slice_length >= residue_len) {
+                cache_len = residue_len;
+            } else {
+                cache_len = self->fastq->cache_eoff - self->fastq->cache_soff;
+            }
+            
+            memcpy(self->raw+read_len, self->fastq->cache_buff+slice_offset, cache_len);
+            read_len += cache_len;
+            residue_len -= cache_len;
+        }
+
+        if (residue_len > 0) {
+            self->fastq->cache_soff = self->fastq->cache_eoff;
+            gzread(self->fastq->gzfd, self->fastq->cache_buff, 1048576);
+            self->fastq->cache_eoff = gztell(self->fastq->gzfd);
         }
     }
 
-    //read from cache buffer
-    if (offset >= self->fastq->cache_soff && (offset + bytes) <= self->fastq->cache_eoff) {
-        slice_offset = offset - self->fastq->cache_soff;
-        memcpy(buff, self->fastq->cache_buff+slice_offset, bytes);
+    self->desc = (char *)malloc(self->desc_len + 1);
+    memcpy(self->desc, self->raw, self->desc_len);
 
-    } else if (self->fastq->cache_eoff > 0 && offset >= self->fastq->cache_soff && offset <= self->fastq->cache_eoff) {
-        slice_offset = offset - self->fastq->cache_soff;
-        slice_length = self->fastq->cache_eoff - offset + 1;
-
-        memcpy(buff, self->fastq->cache_buff+slice_offset, slice_length);
-
-        self->fastq->cache_soff = self->fastq->cache_eoff;
-
-        if (self->fastq->gzip_format && !self->fastq->iterating) {
-            zran_read(self->fastq->gzip_index, self->fastq->cache_buff, buff_size);
-            self->fastq->cache_eoff = zran_tell(self->fastq->gzip_index);
-        } else {
-            gzread(self->fastq->gzfd, self->fastq->cache_buff, buff_size);
-            self->fastq->cache_eoff = gztell(self->fastq->gzfd);
-        }
-
-        memcpy(buff+slice_length, self->fastq->cache_buff, bytes-slice_length);
-
+    if (self->raw[read_len-1] == '\r') {
+        self->raw[read_len] = '\n';
+        self->raw[read_len+1] = '\0';
+        self->desc[self->desc_len-1] = '\0';
     } else {
-        //alloc cache buffer memory
-        if (self->fastq->cache_buff == NULL) {
-            self->fastq->cache_buff = (char *)malloc(buff_size);
-        }
+        self->raw[read_len] = '\0';
+        self->desc[self->desc_len] = '\0';
+    }
 
-        if (self->fastq->gzip_format && !self->fastq->iterating) {
-            //clear cache buff when current position is not right
-            if (zran_tell(self->fastq->gzip_index) != self->fastq->cache_eoff) {
-                zran_seek(self->fastq->gzip_index, 0, SEEK_SET, NULL);
-                self->fastq->cache_eoff = 0;
-                self->fastq->cache_soff = 0;
-            }
+    self->seq = (char *)malloc(self->read_len + 1);
+    memcpy(self->seq, self->raw + self->seq_offset - offset, self->read_len);
+    self->seq[self->read_len] = '\0';
 
-            if (self->fastq->cache_eoff <= offset && offset+bytes <= self->fastq->cache_eoff+buff_size) {
-                self->fastq->cache_soff = self->fastq->cache_eoff;
-            } else {
-                zran_seek(self->fastq->gzip_index, offset, SEEK_SET, NULL);
-                self->fastq->cache_soff = offset;
-            }
+    self->qual = (char *)malloc(self->read_len + 1);
+    memcpy(self->qual, self->raw + self->qual_offset - offset, self->read_len);
+    self->qual[self->read_len] = '\0';
+}
 
-            zran_read(self->fastq->gzip_index, self->fastq->cache_buff, buff_size);
-            self->fastq->cache_eoff = zran_tell(self->fastq->gzip_index);
-        } else {
-            //clear cache buff when current position is not right
-            if (gztell(self->fastq->gzfd) != self->fastq->cache_eoff) {
-                gzrewind(self->fastq->gzfd);
-                self->fastq->cache_eoff = 0;
-                self->fastq->cache_soff = 0;
-            }
-
-            if (self->fastq->cache_eoff <= offset && offset+bytes <= self->fastq->cache_eoff+buff_size) {
-                self->fastq->cache_soff = self->fastq->cache_eoff;
-            } else {
-                gzseek(self->fastq->gzfd, offset, SEEK_SET);
-                self->fastq->cache_soff = offset;
-            }
-            gzread(self->fastq->gzfd, self->fastq->cache_buff, buff_size);
-            self->fastq->cache_eoff = gztell(self->fastq->gzfd);
-        }
-
-        slice_offset = offset - self->fastq->cache_soff;
-        memcpy(buff, self->fastq->cache_buff+slice_offset, bytes);
+void pyfastx_read_random_reader(pyfastx_Read *self, char *buff, int64_t offset, uint32_t bytes) {
+    if (self->fastq->gzip_format) {
+        zran_seek(self->fastq->gzip_index, offset, SEEK_SET, NULL);
+        zran_read(self->fastq->gzip_index, buff, bytes);
+    } else {
+        gzseek(self->fastq->gzfd, offset, SEEK_SET);
+        gzread(self->fastq->gzfd, buff, bytes);
     }
 }
 
 PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
-    int64_t new_offset;
-    int64_t new_bytelen;
-
-    if (!self->raw) {
+    if (self->fastq->iterating) {
+        pyfastx_read_continue_reader(self);
+    }
+    else if (!self->raw) {
+        int64_t new_offset;
+        int64_t new_bytelen;
         new_offset = self->seq_offset - self->desc_len - 1;
         new_bytelen = self->qual_offset + self->read_len - new_offset + 1;
 
         self->raw = (char *)malloc(new_bytelen + 2);
 
-        pyfastx_read_reader(self, self->raw, new_offset, new_bytelen);
+        pyfastx_read_random_reader(self, self->raw, new_offset, new_bytelen);
 
         if (self->raw[new_bytelen-1] == '\r') {
             self->raw[new_bytelen] = '\n';
@@ -141,9 +127,12 @@ PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
 }
 
 PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
-    if (!self->seq) {
+    if (self->fastq->iterating) {
+        pyfastx_read_continue_reader(self);
+    }
+    else if (!self->seq) {
         self->seq = (char *)malloc(self->read_len + 1);
-        pyfastx_read_reader(self, self->seq, self->seq_offset, self->read_len);
+        pyfastx_read_random_reader(self, self->seq, self->seq_offset, self->read_len);
         self->seq[self->read_len] = '\0';
     }
 
@@ -151,13 +140,16 @@ PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
 }
 
 PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
-    int64_t new_offset;
+    if (self->fastq->iterating) {
+        pyfastx_read_continue_reader(self);
+    }
+    else if (!self->desc) {
+        int64_t new_offset;
 
-    if (!self->desc) {
         new_offset = self->seq_offset - self->desc_len - 1;
         self->desc = (char *)malloc(self->desc_len + 1);
 
-        pyfastx_read_reader(self, self->desc, new_offset, self->desc_len);
+        pyfastx_read_random_reader(self, self->desc, new_offset, self->desc_len);
 
         if (self->desc[self->desc_len-1] == '\r') {
             self->desc[self->desc_len-1] = '\0';
@@ -170,11 +162,12 @@ PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
 }
 
 PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
-    if (!self->qual) {
+    if (self->fastq->iterating) {
+        pyfastx_read_continue_reader(self);
+    }
+    else if (!self->qual) {
         self->qual = (char *)malloc(self->read_len + 1);
-        
-        pyfastx_read_reader(self, self->qual, self->qual_offset, self->read_len);
-        
+        pyfastx_read_random_reader(self, self->qual, self->qual_offset, self->read_len);
         self->qual[self->read_len] = '\0';
     }
 

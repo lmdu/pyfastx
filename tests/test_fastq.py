@@ -34,7 +34,7 @@ class FastqTest(unittest.TestCase):
 
 				elif i % 4 == 2:
 					self.reads[c][1] = line.strip()
-					
+
 					self.bases['A'] += line.count('A')
 					self.bases['T'] += line.count('T')
 					self.bases['G'] += line.count('G')

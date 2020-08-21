@@ -104,7 +104,7 @@ class SequenceTest(unittest.TestCase):
 
 		#test gzip subseq
 		self.assertEqual(expect[5:10], result[5:10].seq)
-		
+
 		#test flat subseq
 		self.assertEqual(expect[5:10], flatseq[5:10].seq)
 		self.assertEqual(expect[20:], result[20:].seq)

@@ -352,21 +352,16 @@ int pyfastx_fastq_length(pyfastx_Fastq *self) {
 }
 
 PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
-	//int a, c, g, t, n;
 	int nbytes;
 
 	//pyfastx_Read *read = PyObject_New(pyfastx_Read, &pyfastx_ReadType);
 	pyfastx_Read *read = (pyfastx_Read *)PyObject_CallObject((PyObject *)&pyfastx_ReadType, NULL);
 
-	if (!read) {
-		return NULL;
-	}
-
 	PYFASTX_SQLITE_CALL(
 		read->id = sqlite3_column_int64(stmt, 0);
 		nbytes = sqlite3_column_bytes(stmt, 1);
 		read->name = (char *)malloc(nbytes + 1);
-		memcpy(read->name, (char *)sqlite3_column_text(stmt, 1), nbytes);
+		memcpy(read->name, sqlite3_column_text(stmt, 1), nbytes);
 		read->name[nbytes] = '\0';
 		read->desc_len = sqlite3_column_int(stmt, 2);
 		read->read_len = sqlite3_column_int(stmt, 3);
@@ -496,6 +491,10 @@ PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 	if (self->has_index) {
 		self->iterating = 1;
 
+		if (!self->cache_buff) {
+			self->cache_buff = (char *)malloc(1048576);
+		}
+
 		PYFASTX_SQLITE_CALL(
 			sqlite3_finalize(self->iter_stmt);
 			self->iter_stmt = NULL;
@@ -527,6 +526,12 @@ PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
 	self->iter_stmt = NULL;
 	self->iterating = 0;
+
+	if (self->cache_buff) {
+		free(self->cache_buff);
+		self->cache_buff = NULL;
+	}
+
 	return NULL;
 }
 

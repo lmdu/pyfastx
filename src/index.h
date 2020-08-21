@@ -58,11 +58,8 @@ typedef struct {
 	//key function
 	PyObject* key_func;
 
-	//enter in for or while iteration
+	//enter iterating loop
 	uint8_t iterating;
-
-	//current iter sequence id
-	uint32_t iter_id;
 
 } pyfastx_Index;
 
