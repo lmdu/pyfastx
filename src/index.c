@@ -407,7 +407,6 @@ void pyfastx_load_index(pyfastx_Index *self){
 	);
 
 	if (ret != SQLITE_ROW) {
-		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_Format(PyExc_RuntimeError, "the index file %s was damaged", self->index_file);
 		return;
 	}
@@ -426,7 +425,7 @@ void pyfastx_build_index(pyfastx_Index *self){
 }
 
 void pyfastx_index_free(pyfastx_Index *self){
-	if (self->gzip_format && self->gzip_index != NULL) {
+	if (self->gzip_format && self->gzip_index) {
 		zran_free(self->gzip_index);
 	}
 
@@ -446,8 +445,6 @@ void pyfastx_index_free(pyfastx_Index *self){
 	if (self->cache_name.m) {
 		free(self->cache_name.s);
 	}
-
-	//Py_XDECREF(self->key_func);
 
 	kseq_destroy(self->kseqs);
 	fclose(self->fd);
@@ -474,7 +471,6 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 		seq->end_len = sqlite3_column_int(stmt, 6);
 		seq->normal = sqlite3_column_int(stmt, 7);
 		seq->desc_len = sqlite3_column_int(stmt, 8);
-		//sqlite3_finalize(stmt);
 	);
 	
 	//is full sequence

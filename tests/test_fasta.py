@@ -24,6 +24,11 @@ class FastaTest(unittest.TestCase):
 		self.count = len(self.fastx)
 
 	def tearDown(self):
+		#fix permission error on Windows
+		del self.fastx
+		del self.fasta
+		del self.faidx
+
 		if os.path.exists('{}.fxi'.format(gzip_fasta)):
 			os.remove('{}.fxi'.format(gzip_fasta))
 
@@ -54,15 +59,14 @@ class FastaTest(unittest.TestCase):
 		print(pyfastx.version(debug=True))
 
 	def test_build(self):
-		del self.fastx
+		print('yes1')
+		self.fastx = pyfastx.Fasta(gzip_fasta, build_index=False)
+		print('yes2')
 
 		if os.path.exists('{}.fxi'.format(gzip_fasta)):
 			os.remove('{}.fxi'.format(gzip_fasta))
 
-		fa = pyfastx.Fasta(gzip_fasta, build_index=False)
-		fa.build_index()
-
-		self.fastx = pyfastx.Fasta(gzip_fasta)
+		self.fastx.build_index()
 
 	def test_fasta(self):
 		#test gzip
@@ -155,9 +159,9 @@ class FastaTest(unittest.TestCase):
 		if os.path.exists("{}.fxi".format(gzip_fasta)):
 			os.remove("{}.fxi".format(gzip_fasta))
 
-		fa = pyfastx.Fasta(gzip_fasta, key_func=lambda x: x.split()[1])
+		self.fastx = pyfastx.Fasta(gzip_fasta, key_func=lambda x: x.split()[1])
 		idx = self.get_random_index()
-		self.assertTrue(fa[idx].name.startswith("contig"))
+		self.assertEqual(self.fastx[idx].name, self.fastx[idx].description.split()[1])
 
 	def test_statistics(self):
 		lens = sorted([len(seq) for seq in self.faidx], reverse=True)
@@ -243,11 +247,10 @@ class FastaTest(unittest.TestCase):
 			_ = self.fastx[self.count]
 
 		with self.assertRaises(KeyError):
-			self.fastx[list()]
+			_ = self.fastx[list()]
 
 		with self.assertRaises(ValueError):
 			self.fastx.nl(101)
-
 
 if __name__ == '__main__':
 	unittest.main()

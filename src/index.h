@@ -14,15 +14,15 @@ typedef struct {
 	char* index_file;
 
 	//always output uppercase
-	uint16_t uppercase;
+	uint8_t uppercase;
 
 	//full name
-	uint16_t full_name;
+	uint8_t full_name;
 
 	//is gzip compressed file
 	//0 not gzip file
 	//1 is gzip file
-	uint16_t gzip_format;
+	uint8_t gzip_format;
 
 	//open file handle
 	FILE* fd;
