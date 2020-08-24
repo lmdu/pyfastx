@@ -81,12 +81,12 @@ PyObject *pyfastx_identifier_next(pyfastx_Identifier *self){
 	return NULL;
 }
 
-int pyfastx_identifier_length(pyfastx_Identifier *self){
+uint64_t pyfastx_identifier_length(pyfastx_Identifier *self){
 	return self->seq_counts;
 }
 
 PyObject *pyfastx_identifier_repr(pyfastx_Identifier *self){
-	return PyUnicode_FromFormat("<Identifier> contains %d identifiers", self->seq_counts);
+	return PyUnicode_FromFormat("<Identifier> contains %ld identifiers", self->seq_counts);
 }
 
 PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
@@ -287,7 +287,7 @@ PyObject *pyfastx_identifier_filter(pyfastx_Identifier *self, PyObject *args) {
 	PYFASTX_SQLITE_CALL(ret=sqlite3_step(stmt));
 
 	if (ret == SQLITE_ROW) {
-		PYFASTX_SQLITE_CALL(self->seq_counts = sqlite3_column_int(stmt, 0));
+		PYFASTX_SQLITE_CALL(self->seq_counts = sqlite3_column_int64(stmt, 0));
 	} else {
 		self->seq_counts = 0;
 	}
@@ -328,7 +328,7 @@ PyObject *pyfastx_identifier_reset(pyfastx_Identifier *self) {
 
 	if (ret == SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(
-			self->seq_counts = sqlite3_column_int(stmt, 0);
+			self->seq_counts = sqlite3_column_int64(stmt, 0);
 			sqlite3_finalize(stmt);
 		);
 	} else {

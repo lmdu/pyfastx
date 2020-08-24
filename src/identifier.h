@@ -14,7 +14,7 @@ typedef struct {
 	sqlite3_stmt *stmt;
 
 	//sequence counts
-	uint32_t seq_counts;
+	uint64_t seq_counts;
 
 	//file format 1: fasta, 2: fastq
 	//uint16_t format;
@@ -40,7 +40,7 @@ PyObject *pyfastx_identifier_new(PyTypeObject *type, PyObject *args, PyObject *k
 PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyObject *kwargs);
 PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self);
 PyObject *pyfastx_identifier_next(pyfastx_Identifier *self);
-int pyfastx_identifier_length(pyfastx_Identifier *self);
+uint64_t pyfastx_identifier_length(pyfastx_Identifier *self);
 PyObject *pyfastx_identifier_repr(pyfastx_Identifier *self);
 PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i);
 int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key);

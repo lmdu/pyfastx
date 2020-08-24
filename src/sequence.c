@@ -26,23 +26,25 @@ void pyfastx_index_continue_read(pyfastx_Sequence* self) {
 	offset = self->offset - self->desc_len - self->end_len - 1;
 	bytelen = self->byte_len + self->desc_len + self->end_len + 1;
 
-	self->raw = (char *)malloc(bytelen);
+	self->raw = (char *)malloc(bytelen + 1);
 
-	if (self->index->gzip_format) {
-		current = gztell(self->index->gzfd);
-		gap = offset - current;
+	current = gztell(self->index->gzfd);
+	gap = offset - current;
 
-		if (gap > 1024) {
+	if (gap > 0) {
+		if (self->index->gzip_format) {
 			while (gap > 0) {
 				rlen = gap > bytelen ? bytelen : gap;
 				gzread(self->index->gzfd, self->raw, rlen);
 				gap -= rlen;
 			}
+		} else {
+			gzseek(self->index->gzfd, offset, SEEK_SET);
 		}
 	}
 
-	gzseek(self->index->gzfd, offset, SEEK_SET);
 	gzread(self->index->gzfd, self->raw, bytelen);
+	self->raw[bytelen] = '\0';
 
 	self->desc = (char *)malloc(self->desc_len + 1);
 	memcpy(self->desc, self->raw+1, self->desc_len);
@@ -737,9 +739,9 @@ static PyGetSetDef pyfastx_sequence_getsets[] = {
 
 static PyMemberDef pyfastx_sequence_members[] = {
 	//{"name", T_STRING, offsetof(pyfastx_Sequence, name), READONLY},
-	{"id", T_INT, offsetof(pyfastx_Sequence, id), READONLY},
-	{"start", T_INT, offsetof(pyfastx_Sequence, start), READONLY},
-	{"end", T_INT, offsetof(pyfastx_Sequence, end), READONLY},
+	{"id", T_ULONGLONG, offsetof(pyfastx_Sequence, id), READONLY},
+	{"start", T_ULONG, offsetof(pyfastx_Sequence, start), READONLY},
+	{"end", T_ULONG, offsetof(pyfastx_Sequence, end), READONLY},
 	//{"length", T_INT, offsetof(pyfastx_Sequence, seq_len), READONLY},
 	{NULL}
 };

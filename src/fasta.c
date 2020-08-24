@@ -18,7 +18,7 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 
 	if (ret == SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(
-			self->seq_counts = sqlite3_column_int(stmt, 0);
+			self->seq_counts = sqlite3_column_int64(stmt, 0);
 			self->seq_length = sqlite3_column_int64(stmt, 1);
 		);
 	} else {
@@ -145,7 +145,7 @@ PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){
 }
 
 PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self){
-	return PyUnicode_FromFormat("<Fasta> %s contains %d sequences", self->file_name, self->seq_counts);
+	return PyUnicode_FromFormat("<Fasta> %s contains %ld sequences", self->file_name, self->seq_counts);
 }
 
 PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
@@ -169,6 +169,7 @@ PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self){
 	if (!self->index->index_db) {
 		pyfastx_build_index(self->index);
 		pyfastx_calc_fasta_attrs(self);
+		self->has_index = 1;
 	}
 
 	Py_RETURN_TRUE;
@@ -385,7 +386,7 @@ PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
 	}
 }
 
-int pyfastx_fasta_length(pyfastx_Fasta *self){
+uint64_t pyfastx_fasta_length(pyfastx_Fasta *self){
 	return self->seq_counts;
 }
 
@@ -646,7 +647,7 @@ PyObject *pyfastx_fasta_median(pyfastx_Fasta *self, void* closure){
 
 		PYFASTX_SQLITE_CALL(
 			sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-			sqlite3_bind_int(stmt, 1, (self->seq_counts - 1)/2);
+			sqlite3_bind_int64(stmt, 1, (self->seq_counts - 1)/2);
 			ret = sqlite3_step(stmt);
 		);
 
@@ -931,7 +932,7 @@ static PyGetSetDef pyfastx_fasta_getsets[] = {
 
 static PyMemberDef pyfastx_fasta_members[] = {
 	{"file_name", T_STRING, offsetof(pyfastx_Fasta, file_name), READONLY},
-	{"size", T_LONG, offsetof(pyfastx_Fasta, seq_length), READONLY},
+	{"size", T_ULONGLONG, offsetof(pyfastx_Fasta, seq_length), READONLY},
 	//{"count", T_INT, offsetof(pyfastx_Fasta, seq_counts), READONLY},
 	//{"gc_content", T_FLOAT, offsetof(pyfastx_Fasta, gc_content), READONLY},
 	//{"gc_skew", T_FLOAT, offsetof(pyfastx_Fasta, gc_skew), READONLY},

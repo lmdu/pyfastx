@@ -21,7 +21,7 @@ typedef struct {
 	uint16_t phred;
 
 	//total read counts
-	int64_t read_counts;
+	uint64_t read_counts;
 
 	//total sequence length;
 	uint64_t seq_length;

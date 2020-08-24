@@ -19,7 +19,7 @@ typedef struct {
 	uint8_t uppercase;
 
 	//total sequence counts
-	uint32_t seq_counts;
+	uint64_t seq_counts;
 
 	//total sequence length (bp)
 	uint64_t seq_length;
@@ -43,7 +43,7 @@ extern PyTypeObject pyfastx_FastaType;
 void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self);
 void pyfastx_fasta_calc_composition(pyfastx_Fasta *self);
 void pyfastx_fasta_dealloc(pyfastx_Fasta *self);
-int pyfastx_fasta_length(pyfastx_Fasta *self);
+uint64_t pyfastx_fasta_length(pyfastx_Fasta *self);
 
 
 PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);

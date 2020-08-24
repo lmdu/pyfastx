@@ -11,7 +11,7 @@ typedef struct {
 	PyObject_HEAD
 
 	//sequence order
-	uint32_t id;
+	uint64_t id;
 	
 	//sequence name
 	char* name;

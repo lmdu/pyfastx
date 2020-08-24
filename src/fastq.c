@@ -347,7 +347,7 @@ void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-int pyfastx_fastq_length(pyfastx_Fastq *self) {
+uint64_t pyfastx_fastq_length(pyfastx_Fastq *self) {
 	return self->read_counts;
 }
 
@@ -925,7 +925,7 @@ static PyGetSetDef pyfastx_fastq_getsets[] = {
 
 static PyMemberDef pyfastx_fastq_members[] = {
 	{"file_name", T_STRING, offsetof(pyfastx_Fastq, file_name), READONLY},
-	{"size", T_LONG, offsetof(pyfastx_Fastq, seq_length), READONLY},
+	{"size", T_ULONGLONG, offsetof(pyfastx_Fastq, seq_length), READONLY},
 	{"avglen", T_FLOAT, offsetof(pyfastx_Fastq, avg_length), READONLY},
 	{"is_gzip", T_BOOL, offsetof(pyfastx_Fastq, gzip_format), READONLY},
 	//{"gc_content", T_FLOAT, offsetof(pyfastx_Fastq, gc_content), READONLY},

@@ -128,7 +128,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	uint32_t real_len;
 
 	//total sequence count
-	uint32_t total_seq = 0;
+	uint64_t total_seq = 0;
 
 	//total sequence length
 	uint64_t total_len = 0;
@@ -366,7 +366,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 		sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
 		sqlite3_exec(self->index_db, "CREATE INDEX chromidx ON seq (chrom);", NULL, NULL, NULL);
 		sqlite3_prepare_v2(self->index_db, "INSERT INTO stat (seqnum,seqlen) VALUES (?,?);", -1, &stmt, NULL);
-		sqlite3_bind_int(stmt, 1, total_seq);
+		sqlite3_bind_int64(stmt, 1, total_seq);
 		sqlite3_bind_int64(stmt, 2, total_len);
 		sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
@@ -459,12 +459,12 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	pyfastx_Sequence *seq = (pyfastx_Sequence *)PyObject_CallObject((PyObject *)&pyfastx_SequenceType, NULL);
 
 	PYFASTX_SQLITE_CALL(
-		seq->id = sqlite3_column_int(stmt, 0);
+		seq->id = sqlite3_column_int64(stmt, 0);
 		nbytes = sqlite3_column_bytes(stmt, 1);
 		seq->name = (char *)malloc(nbytes + 1);
 		memcpy(seq->name, sqlite3_column_text(stmt, 1), nbytes);
 		seq->name[nbytes] = '\0';
-		seq->offset = (int64_t)sqlite3_column_int64(stmt, 2);
+		seq->offset = sqlite3_column_int64(stmt, 2);
 		seq->byte_len = sqlite3_column_int(stmt, 3);
 		seq->seq_len = sqlite3_column_int(stmt, 4);
 		seq->line_len = sqlite3_column_int(stmt, 5);

@@ -7,6 +7,9 @@ Version 0.6.15 (2020-08-21)
 - Fixed key_func error caused by free operation
 - Fixed full name error when reading sequence without whitespace in names
 - Fixed a hidden bug in fasta/q iteration when reading attributes (not seq)
+- Fixed fasta/fastq size and sequence count error on Windows when parsing large file
+- Fixed zlib 2gb and 4gb limit on windows x64 to support large file
+- Reduced seek point span size to speedup random access from gzip file
 
 Version 0.6.14 (2020-07-31)
 ---------------------------

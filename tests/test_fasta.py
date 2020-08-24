@@ -148,7 +148,6 @@ class FastaTest(unittest.TestCase):
 
 		for name, _ in fa:
 			self.assertTrue(name, self.fastx[name.split()[0]].description)
-			break
 
 	def test_key_func(self):
 		del self.fastx
