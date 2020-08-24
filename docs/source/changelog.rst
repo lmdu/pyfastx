@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 0.6.15 (2020-08-21)
+Version 0.6.15 (2020-08-25)
 ---------------------------
 
 - Fixed key_func error caused by free operation

@@ -740,8 +740,8 @@ static PyGetSetDef pyfastx_sequence_getsets[] = {
 static PyMemberDef pyfastx_sequence_members[] = {
 	//{"name", T_STRING, offsetof(pyfastx_Sequence, name), READONLY},
 	{"id", T_ULONGLONG, offsetof(pyfastx_Sequence, id), READONLY},
-	{"start", T_ULONG, offsetof(pyfastx_Sequence, start), READONLY},
-	{"end", T_ULONG, offsetof(pyfastx_Sequence, end), READONLY},
+	{"start", T_UINT, offsetof(pyfastx_Sequence, start), READONLY},
+	{"end", T_UINT, offsetof(pyfastx_Sequence, end), READONLY},
 	//{"length", T_INT, offsetof(pyfastx_Sequence, seq_len), READONLY},
 	{NULL}
 };

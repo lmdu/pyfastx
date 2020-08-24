@@ -220,7 +220,7 @@ static PyMappingMethods pyfastx_read_as_mapping = {
 };
 
 static PyMemberDef pyfastx_read_members[] = {
-    {"id", T_LONG, offsetof(pyfastx_Read, id), READONLY},
+    {"id", T_ULONGLONG, offsetof(pyfastx_Read, id), READONLY},
 	{"name", T_STRING, offsetof(pyfastx_Read, name), READONLY},
 	//{"size", T_LONG, offsetof(pyfastx_Read, seq_length), READONLY},
 	//{"gc_content", T_FLOAT, offsetof(pyfastx_Read, gc_content), READONLY},
