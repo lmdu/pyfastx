@@ -712,9 +712,12 @@ void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
 	if (ret == SQLITE_ROW)
 		return;
 
+	printf("%s\n", "yes no index");
+
 	stmt = NULL;
 
-	PYFASTX_SQLITE_CALL(sqlite3_exec(self->index->index_db, "PRAGMA synchronous=OFF;BEGIN TRANSACTION;", NULL, NULL, NULL));
+	sql = "PRAGMA synchronous=OFF;BEGIN TRANSACTION;";
+	PYFASTX_SQLITE_CALL(sqlite3_exec(self->index->index_db, sql, NULL, NULL, NULL));
 
 	sql = "INSERT INTO comp VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 	PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL));
