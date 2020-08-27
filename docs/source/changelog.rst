@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.6.16 (2020-08-27)
+---------------------------
+
+- Increased the buff size of kseq to speedup sequence iteration
+- Removed warning message from fasta.c when building full index
+
 Version 0.6.15 (2020-08-25)
 ---------------------------
 
@@ -35,8 +41,12 @@ Version 0.6.12 (2020-06-14)
 - Cached sequence name to speedup fetch method
 - Used random string as gzip index temp file to support multiple processes
 
+
+Older versions
+--------------
+
 Version 0.6.11 (2020-05-18)
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed iteration error on Windows
 - Fixed test error on Windows
@@ -44,7 +54,7 @@ Version 0.6.11 (2020-05-18)
 - Improved the speed of fasta identifier sort and filter
 
 Version 0.6.10 (2020-04-22)
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Improved the speed of sequence reading 
 - Improved the speed of sequence line iteration
@@ -52,9 +62,6 @@ Version 0.6.10 (2020-04-22)
 - Fixed read retrieval error
 - Fixed some hidden memory leaks
 - Changed fastq index file structure to save more information
-
-Older versions
---------------
 
 Version 0.6.9 (2020-04-12)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

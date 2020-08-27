@@ -10,7 +10,7 @@
 #define KS_SEP_LINE  2 // line separator: "\n" (Unix) or "\r\n" (Windows)
 #define KS_SEP_MAX   2
 
-#define BUF_SIZE     16384
+#define BUF_SIZE     1048576
 
 #define ks_err(ks) ((ks)->end == -1)
 #define ks_eof(ks) ((ks)->is_eof && (ks)->begin >= (ks)->end)

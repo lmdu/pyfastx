@@ -712,8 +712,6 @@ void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
 	if (ret == SQLITE_ROW)
 		return;
 
-	printf("%s\n", "yes no index");
-
 	stmt = NULL;
 
 	sql = "PRAGMA synchronous=OFF;BEGIN TRANSACTION;";
