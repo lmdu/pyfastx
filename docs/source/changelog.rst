@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.6.17 (2020-08-31)
+---------------------------
+
+- Fixed gzip index loading error when no write permission
+
 Version 0.6.16 (2020-08-27)
 ---------------------------
 

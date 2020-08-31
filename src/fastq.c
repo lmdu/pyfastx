@@ -158,7 +158,7 @@ void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
 
 	//if is gzip build gzip index
 	if (self->gzip_format) {
-		pyfastx_build_gzip_index(self->gzip_index, self->index_db);
+		pyfastx_build_gzip_index(self->index_file, self->gzip_index, self->index_db);
 	}
 }
 
@@ -211,7 +211,7 @@ void pyfastx_fastq_load_index(pyfastx_Fastq *self) {
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 
 	if(self->gzip_format){
-		pyfastx_load_gzip_index(self->gzip_index, self->index_db);
+		pyfastx_load_gzip_index(self->index_file, self->gzip_index, self->index_db);
 	}
 }
 

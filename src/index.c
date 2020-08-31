@@ -383,7 +383,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 		if (strcmp(self->index_file, ":memory:") == 0) {
 			zran_build_index(self->gzip_index, 0, 0);
 		} else {
-			pyfastx_build_gzip_index(self->gzip_index, self->index_db);
+			pyfastx_build_gzip_index(self->index_file, self->gzip_index, self->index_db);
 		}
 	}
 }
@@ -412,7 +412,7 @@ void pyfastx_load_index(pyfastx_Index *self){
 	}
 
 	if (self->gzip_format) {
-		pyfastx_load_gzip_index(self->gzip_index, self->index_db);
+		pyfastx_load_gzip_index(self->index_file, self->gzip_index, self->index_db);
 	}
 }
 

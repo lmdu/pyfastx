@@ -216,7 +216,7 @@ PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
 	//real length
 	uint32_t len;
 	char *ret;
-	
+
 	if (self->line.l > 0) {
 		self->line.l = 0;
 	}

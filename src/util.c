@@ -346,20 +346,24 @@ ssize_t get_line(char **buf, FILE *fp) {
 }*/
 
 //generate random file name according to given length
-char *generate_random_name(int len) {
+char *generate_random_name(char* index_file) {
 	int i;
+	int file_len;
+	int suffix = 6;
 	const char *chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	file_len = strlen(index_file);
+	char *result = (char *)malloc(sizeof(char)*(file_len+suffix+1));
+	memcpy(result, index_file, file_len);
 	srand((unsigned int)time(NULL));
-	char *result = (char *)malloc(sizeof(char)*(len+1));
-	for (i = 0; i < len; i++) {
-		result[i] = chars[rand() % 62];
+	for (i = 0; i < suffix; i++) {
+		result[file_len+i] = chars[rand() % 62];
 	}
-	result[len] = '\0';
+	result[file_len+suffix] = '\0';
 	return result;
 }
 
 
-void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db) {
+void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db) {
 	sqlite3_stmt *stmt;
 	char *temp_index;
 	FILE* fd;
@@ -374,14 +378,9 @@ void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db) {
 		return;
 	}
 
-	//create temp gzip index file
-	//temp_index = (char *)malloc(strlen(index_file) + 5);
-	//strcpy(temp_index, index_file);
-	//strcat(temp_index, ".tmp");
-	temp_index = generate_random_name(20);
+	temp_index = generate_random_name(index_file);
 	
 	fd = fopen(temp_index, "wb+");
-	
 	if (zran_export_index(gzip_index, fd) != ZRAN_EXPORT_OK){
 		fclose(fd);
 		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
@@ -395,11 +394,12 @@ void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db) {
 
 	if (fread(buff, fsize, 1, fd) != 1) {
 		free(buff);
+		PyErr_SetString(PyExc_RuntimeError, "Failed to read gzip index.");
 		return;
 	}
 
 	buff[fsize] = '\0';
-	
+
 	fclose(fd);
 	remove(temp_index);
 	free(temp_index);
@@ -414,7 +414,7 @@ void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db) {
 	free(buff);
 }
 
-void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db) {
+void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db) {
 	sqlite3_stmt *stmt;
 	uint32_t bytes = 0;
 	FILE *fh;
@@ -430,14 +430,11 @@ void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db) {
 		PYFASTX_SQLITE_CALL(bytes = sqlite3_column_bytes(stmt, 0));
 	} else {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-		PyErr_SetString(PyExc_RuntimeError, "failed to get bytes of index");
+		PyErr_SetString(PyExc_RuntimeError, "failed to get size of gzip index");
 		return;
 	}
 
-	/*temp_index = (char *)malloc(strlen(index_file) + 5);
-	strcpy(temp_index, index_file);
-	strcat(temp_index, ".tmp");*/
-	temp_index = generate_random_name(20);
+	temp_index = generate_random_name(index_file);
 
 	fh = fopen(temp_index, "wb");
 	PYFASTX_SQLITE_CALL(

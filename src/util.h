@@ -29,8 +29,8 @@ int is_subset(char *seq1, char *seq2);
 //PyObject* sub_seq(PyObject *self, PyObject *args);
 
 //int64_t zran_readline(zran_index_t *index, char *linebuf, uint32_t bufsize);
-void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db);
-void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db);
+void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db);
+void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db);
 
 //a simple fasta/q validator
 int fasta_validator(gzFile fd);
