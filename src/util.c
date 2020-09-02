@@ -59,7 +59,7 @@ const uint8_t jump_table[128] = {
     1, 1, 1, 1, 1, 1, 1, 1,
 };
 
-void remove_space(char *str, uint32_t len) {
+uint32_t remove_space(char *str, uint32_t len) {
 	uint32_t i = 0, j = 0;
 	while (i < len) {
 		const char c = str[i++];
@@ -67,9 +67,10 @@ void remove_space(char *str, uint32_t len) {
 		j += jump_table[(unsigned char)c];
 	}
 	str[j] = '\0';
+	return j;
 }
 
-void remove_space_uppercase(char *str, uint32_t len) {
+uint32_t remove_space_uppercase(char *str, uint32_t len) {
 	uint32_t i = 0, j = 0;
 	while (i < len) {
 		const char c = str[i++];
@@ -77,6 +78,7 @@ void remove_space_uppercase(char *str, uint32_t len) {
 		j += jump_table[(unsigned char)c];
 	}
 	str[j] = '\0';
+	return j;
 }
 
 /*void remove_space(char *str) {

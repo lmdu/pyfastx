@@ -251,11 +251,6 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 			return NULL;
 		}
 
-		if (bytes >= self->index->cache_seq.m) {
-			self->index->cache_seq.m = bytes + 1;
-			self->index->cache_seq.s = (char *)realloc(self->index->cache_seq.s, self->index->cache_seq.m);
-		}
-
 		if (strlen(name) >= self->index->cache_name.m) {
 			self->index->cache_name.m = strlen(name) + 1;
 			self->index->cache_name.s = (char *)realloc(self->index->cache_name.s, self->index->cache_name.m);
@@ -264,21 +259,13 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		self->index->cache_full = 1;
 		self->index->cache_chrom = chrom;
 		strcpy(self->index->cache_name.s, name);
-
-		if (self->index->gzip_format) {
-			zran_seek(self->index->gzip_index, offset, SEEK_SET, NULL);
-			zran_read(self->index->gzip_index, self->index->cache_seq.s, bytes);
-		} else {
-			gzseek(self->index->gzfd, offset, SEEK_SET);
-			gzread(self->index->gzfd, self->index->cache_seq.s, bytes);
-		}
-
-		self->index->cache_seq.s[bytes] = '\0';
+		
+		pyfastx_index_fill_cache(self->index, offset, bytes);
 
 		if (self->index->uppercase) {
-			remove_space_uppercase(self->index->cache_seq.s, bytes);
+			self->index->cache_seq.l = remove_space_uppercase(self->index->cache_seq.s, bytes);
 		} else {
-			remove_space(self->index->cache_seq.s, bytes);
+			self->index->cache_seq.l = remove_space(self->index->cache_seq.s, bytes);
 		}
 
 		seq = self->index->cache_seq.s;

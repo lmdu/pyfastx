@@ -8,9 +8,9 @@
 #include "time.h"
 
 uint16_t file_exists(char *file_name);
-void remove_space(char *str, uint32_t len);
 void upper_string(char *str, uint32_t len);
-void remove_space_uppercase(char *str, uint32_t len);
+uint32_t remove_space(char *str, uint32_t len);
+uint32_t remove_space_uppercase(char *str, uint32_t len);
 void reverse_seq(char *seq);
 void reverse_complement_seq(char *seq);
 

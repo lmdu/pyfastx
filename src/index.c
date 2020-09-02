@@ -659,3 +659,23 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 	self->cache_end = 0;
 	self->cache_seq = NULL;
 }*/
+
+void pyfastx_index_random_read(pyfastx_Index* self, char* buff, int64_t offset, uint32_t bytes) {
+	if (self->gzip_format) {
+		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
+		zran_read(self->gzip_index, buff, bytes);
+	} else {
+		gzseek(self->gzfd, offset, SEEK_SET);
+		gzread(self->gzfd, buff, bytes);
+	}
+	buff[bytes] = '\0';
+}
+
+void pyfastx_index_fill_cache(pyfastx_Index* self, int64_t offset, uint32_t size) {
+	if (size >= self->cache_seq.m ) {
+		self->cache_seq.m = size + 1;
+		self->cache_seq.s = (char *)realloc(self->cache_seq.s, self->cache_seq.m);
+	}
+
+	pyfastx_index_random_read(self, self->cache_seq.s, offset, size);
+}
