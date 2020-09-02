@@ -222,7 +222,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 		return;
 	}
 	
-	sql = "PRAGMA synchronous=OFF;BEGIN TRANSACTION;";
+	sql = "PRAGMA synchronous=OFF; PRAGMA locking_mode=EXCLUSIVE; BEGIN TRANSACTION;";
 	PYFASTX_SQLITE_CALL(ret = sqlite3_exec(self->index_db, sql, NULL, NULL, NULL));
 	if (ret != SQLITE_OK){
 		PyErr_SetString(PyExc_RuntimeError, "Can not begin transaction");
@@ -363,6 +363,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	total_len += seq_len;
 	
 	PYFASTX_SQLITE_CALL(
+		sqlite3_exec(self->index_db, "PRAGMA locking_mode=NORMAL;", NULL, NULL, NULL);
 		sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
 		sqlite3_exec(self->index_db, "CREATE INDEX chromidx ON seq (chrom);", NULL, NULL, NULL);
 		sqlite3_prepare_v2(self->index_db, "INSERT INTO stat (seqnum,seqlen) VALUES (?,?);", -1, &stmt, NULL);

@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.6.18 (2020-09-xx)
+---------------------------
+
+- Reduced memory consumption when building gzip index
+- Improved the speed of random access to reads from fastq
+
 Version 0.6.17 (2020-08-31)
 ---------------------------
 

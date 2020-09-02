@@ -61,7 +61,7 @@ void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
 		return;
 	}
 
-	sql = "PRAGMA synchronous = OFF; BEGIN TRANSACTION;";
+	sql = "PRAGMA synchronous = OFF; PRAGMA locking_mode=EXCLUSIVE; BEGIN TRANSACTION;";
 	PYFASTX_SQLITE_CALL(ret=sqlite3_exec(self->index_db, sql, NULL, NULL, NULL));
 	if(ret != SQLITE_OK){
 		PyErr_SetString(PyExc_RuntimeError, "can not begin transaction");
@@ -74,7 +74,7 @@ void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
 	gzrewind(self->gzfd);
 	ks_rewind(self->ks);
 
-	Py_BEGIN_ALLOW_THREADS
+	//Py_BEGIN_ALLOW_THREADS
 
 	while ((l=ks_getuntil(self->ks, '\n', &line, 0)) >= 0) {
 		++line_num;
@@ -121,37 +121,44 @@ void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
 				qoff = pos;
 
 				//write to sqlite3
-				sqlite3_bind_null(stmt, 1);
-				sqlite3_bind_text(stmt, 2, name.s, name.l, SQLITE_STATIC);
-				sqlite3_bind_int(stmt, 3, dlen);
-				sqlite3_bind_int(stmt, 4, rlen);
-				sqlite3_bind_int64(stmt, 5, soff);
-				sqlite3_bind_int64(stmt, 6, qoff);
-				sqlite3_step(stmt);
-				sqlite3_reset(stmt);
+				PYFASTX_SQLITE_CALL(
+					sqlite3_bind_null(stmt, 1);
+					sqlite3_bind_text(stmt, 2, name.s, name.l, SQLITE_STATIC);
+					sqlite3_bind_int(stmt, 3, dlen);
+					sqlite3_bind_int(stmt, 4, rlen);
+					sqlite3_bind_int64(stmt, 5, soff);
+					sqlite3_bind_int64(stmt, 6, qoff);
+					sqlite3_step(stmt);
+					sqlite3_reset(stmt);
+				);
 				break;
 		}
 		pos += l;
 	}
 
-	sqlite3_finalize(stmt);
+	PYFASTX_SQLITE_CALL(
+		sqlite3_finalize(stmt);
+		sqlite3_exec(self->index_db, "PRAGMA locking_mode=NORMAL;", NULL, NULL, NULL);
+		sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
+		sqlite3_exec(self->index_db, "CREATE UNIQUE INDEX readidx ON read (name);", NULL, NULL, NULL);
+	);
 	stmt = NULL;
-
-	sqlite3_exec(self->index_db, "CREATE INDEX readidx ON read (name);", NULL, NULL, NULL);
-	sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
 
 	self->read_counts = line_num/4;
 	self->seq_length = size;
 	self->avg_length = size*1.0/self->read_counts;
 	sql = "INSERT INTO stat VALUES (?,?,?);";
-	sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
-	sqlite3_bind_int64(stmt, 1, self->read_counts);
-	sqlite3_bind_int64(stmt, 2, self->seq_length);
-	sqlite3_bind_double(stmt, 3, self->avg_length);
-	sqlite3_step(stmt);
-	sqlite3_finalize(stmt);
+	
+	PYFASTX_SQLITE_CALL(
+		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
+		sqlite3_bind_int64(stmt, 1, self->read_counts);
+		sqlite3_bind_int64(stmt, 2, self->seq_length);
+		sqlite3_bind_double(stmt, 3, self->avg_length);
+		sqlite3_step(stmt);
+		sqlite3_finalize(stmt);
+	);
 
-	Py_END_ALLOW_THREADS
+	//Py_END_ALLOW_THREADS
 
 	free(line.s);
 	free(name.s);
