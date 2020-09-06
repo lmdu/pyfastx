@@ -787,7 +787,7 @@ PyObject* pyfastx_fastq_minlen(pyfastx_Fastq *self, void* closure) {
 
 	}
 
-	return Py_BuildValue("i", self->minlen);
+	return Py_BuildValue("I", self->minlen);
 }
 
 PyObject* pyfastx_fastq_maxlen(pyfastx_Fastq *self, void* closure) {
@@ -821,7 +821,7 @@ PyObject* pyfastx_fastq_maxlen(pyfastx_Fastq *self, void* closure) {
 
 	}
 
-	return Py_BuildValue("i", self->maxlen);
+	return Py_BuildValue("I", self->maxlen);
 }
 
 PyObject* pyfastx_fastq_gc_content(pyfastx_Fastq *self, void* closure) {

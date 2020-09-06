@@ -22,3 +22,4 @@ tests/__pycache__/test_fastq.cpython-36.pyc
 tests/__pycache__/test_identifier.cpython-36.pyc
 tests/__pycache__/test_read.cpython-36.pyc
 tests/__pycache__/test_sequence.cpython-36.pyc
+build/lib.linux-x86_64-3.6/pyfastxcli.py

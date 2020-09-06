@@ -39,8 +39,22 @@ PyObject *pyfastx_gzip_check(PyObject *self, PyObject *args) {
 	Py_RETURN_FALSE;
 }
 
+/*PyObject *pyfastx_test(PyObject *self) {
+	PyObject *result;
+	char *hello = "hello, world";
+	result = PyUnicode_New(strlen(hello), 127);
+
+	if (result == NULL)
+		return NULL;
+
+	//Py_USC1 *data = PyUnicode_1BYTE_DATA(result);
+
+	memcpy(PyUnicode_1BYTE_DATA(result), hello, strlen(hello));
+	return result;
+}*/
+
 static PyMethodDef module_methods[] = {
-	//{"test", (PyCFunction)pyfastx_test, METH_VARARGS | METH_KEYWORDS, NULL},
+	//{"test", (PyCFunction)pyfastx_test, METH_NOARGS, NULL},
 	//{"clean_seq", clean_seq, METH_VARARGS, NULL},
 	//{"sub_seq", sub_seq, METH_VARARGS, NULL},
 	{"version", (PyCFunction)pyfastx_version, METH_VARARGS | METH_KEYWORDS, NULL},
