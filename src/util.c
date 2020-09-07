@@ -370,11 +370,13 @@ void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite
 	sqlite3_blob *blob;
 	char *temp_index;
 	FILE* fd;
-	uint32_t fsize;
+	uint64_t remain;
 	uint32_t offset;
+	uint32_t block;
 	int32_t len;
 	void *buff;
 	int ret;
+	int rowid;
 
 	ret = zran_build_index(gzip_index, 0, 0);
 
@@ -392,39 +394,56 @@ void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite
 		return;
 	}
 
-	fsize = ftell(fd);
+	remain = FTELL(fd);
+
 	rewind(fd);
-	offset = 0;
+	
 
 	buff = malloc(1048576);
 
-	PYFASTX_SQLITE_CALL(
-		sqlite3_prepare_v2(index_db, "INSERT INTO gzindex VALUES (?,?)", -1, &stmt, NULL);
-		sqlite3_bind_null(stmt, 1);
-		sqlite3_bind_zeroblob(stmt, 2, fsize);
-		sqlite3_step(stmt);
 
-		sqlite3_blob_open(index_db, "main", "gzindex", "content", 1, 1, &blob);
-		while((len=fread(buff, 1, 1048576, fd)) > 0) {
-			sqlite3_blob_write(blob, buff, len, offset);
-			offset += len;
+	while (remain > 0) {
+		if (remain > 1073741824) {
+			block = 1073741824;
+		} else {
+			block = remain;
 		}
+		offset = 0;
+		PYFASTX_SQLITE_CALL(
+			sqlite3_prepare_v2(index_db, "INSERT INTO gzindex VALUES (?,?)", -1, &stmt, NULL);
+			sqlite3_bind_null(stmt, 1);
+			sqlite3_bind_zeroblob(stmt, 2, block);
+			sqlite3_step(stmt);
+			rowid = sqlite3_last_insert_rowid(index_db);
+			sqlite3_blob_open(index_db, "main", "gzindex", "content", rowid, 1, &blob);
 
-		sqlite3_blob_close(blob);
-		sqlite3_finalize(stmt);
-	);
+			while (offset < block) {
+				if ((len=fread(buff, 1, 1048576, fd)) <= 0) {
+					break;
+				}
+				sqlite3_blob_write(blob, buff, len, offset);
+				offset += len;
+			}
+
+			sqlite3_blob_close(blob);
+			sqlite3_finalize(stmt);
+			blob = NULL;
+			stmt = NULL;
+		);
+		remain -= block;
+	}
 
 	free(buff);
 	fclose(fd);
-	remove(temp_index);
+	//remove(temp_index);
 	free(temp_index);
 }
 
 void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db) {
 	sqlite3_blob *blob;
-	uint32_t bytes = 0;
-	int32_t offset = 0;
-	int32_t len;
+	uint64_t bytes = 0;
+	uint64_t offset = 0;
+	int64_t len;
 	FILE *fh;
 	char *temp_index;
 	void *buff;

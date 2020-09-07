@@ -930,7 +930,6 @@ static PyMemberDef pyfastx_fasta_members[] = {
 
 static PyMethodDef pyfastx_fasta_methods[] = {
 	{"build_index", (PyCFunction)pyfastx_fasta_build_index, METH_NOARGS, NULL},
-	//{"rebuild_index", (PyCFunction)pyfastx_fasta_rebuild_index, METH_NOARGS, NULL},
 	{"fetch", (PyCFunction)pyfastx_fasta_fetch, METH_VARARGS|METH_KEYWORDS, NULL},
 	{"count", (PyCFunction)pyfastx_fasta_count, METH_VARARGS, NULL},
 	{"keys", (PyCFunction)pyfastx_fasta_keys, METH_NOARGS, NULL},

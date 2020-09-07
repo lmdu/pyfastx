@@ -51,12 +51,12 @@ ssize_t get_line(char **buf, FILE *fp);*/
 	do { clock_t s, e; s=clock(); x; e=clock(); fprintf(stderr, "time: %.12f\n", (double)(e-s)/CLOCKS_PER_SEC); } while(0)
 
 //support large fseek offset
-/*#ifdef _WIN32
+#ifdef _WIN32
 	#define FSEEK _fseeki64
 	#define FTELL _ftelli64
 #else
 	#define FSEEK fseeko
 	#define FTELL ftello
-#endif*/
+#endif
 
 #endif
