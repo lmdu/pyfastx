@@ -370,13 +370,14 @@ void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite
 	sqlite3_blob *blob;
 	char *temp_index;
 	FILE* fd;
-	uint64_t remain;
+	int64_t remain;
 	uint32_t offset;
 	uint32_t block;
 	int32_t len;
 	void *buff;
 	int ret;
 	int rowid;
+	int32_t chunk;
 
 	ret = zran_build_index(gzip_index, 0, 0);
 
@@ -395,16 +396,13 @@ void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite
 	}
 
 	remain = FTELL(fd);
-
 	rewind(fd);
-	
 
 	buff = malloc(1048576);
 
-
 	while (remain > 0) {
-		if (remain > 1073741824) {
-			block = 1073741824;
+		if (remain > 524288000) {
+			block = 524288000;
 		} else {
 			block = remain;
 		}
@@ -418,61 +416,82 @@ void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite
 			sqlite3_blob_open(index_db, "main", "gzindex", "content", rowid, 1, &blob);
 
 			while (offset < block) {
-				if ((len=fread(buff, 1, 1048576, fd)) <= 0) {
+				chunk = block - offset;
+				if (chunk > 1048576) chunk = 1048576;
+
+				if ((len=fread(buff, 1, chunk, fd)) > 0) {
+					sqlite3_blob_write(blob, buff, len, offset);
+					offset += len;
+				} else {
 					break;
 				}
-				sqlite3_blob_write(blob, buff, len, offset);
-				offset += len;
 			}
 
 			sqlite3_blob_close(blob);
 			sqlite3_finalize(stmt);
-			blob = NULL;
-			stmt = NULL;
 		);
-		remain -= block;
+		blob = NULL;
+		stmt = NULL;
+		remain -= offset;
 	}
 
 	free(buff);
 	fclose(fd);
-	//remove(temp_index);
+	remove(temp_index);
 	free(temp_index);
 }
 
 void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db) {
 	sqlite3_blob *blob;
+	sqlite3_stmt *stmt;
 	uint64_t bytes = 0;
 	uint64_t offset = 0;
 	int64_t len;
 	FILE *fh;
 	char *temp_index;
 	void *buff;
+	int i, rows;
+
+	PYFASTX_SQLITE_CALL(
+		sqlite3_prepare_v2(index_db, "SELECT COUNT(*) FROM gzindex", -1, &stmt, NULL);
+		sqlite3_step(stmt);
+		rows = sqlite3_column_int(stmt, 0);
+		sqlite3_finalize(stmt);
+	);
+
+	if (!rows) {
+		PyErr_SetString(PyExc_RuntimeError, "no gzip index exists in index file");
+		return;
+	}
 
 	temp_index = generate_random_name(index_file);
 	fh = fopen(temp_index, "wb");
 	buff = malloc(1048576);
 
-	PYFASTX_SQLITE_CALL(
-		sqlite3_blob_open(index_db, "main", "gzindex", "content", 1, 0, &blob);
-		bytes = sqlite3_blob_bytes(blob);
+	for (i = 1; i <= rows; i++) {
+		offset = 0;
 
-		while (offset < bytes) {
-			len = bytes - offset;
-			if (len > 1048576) len = 1048576;
-			sqlite3_blob_read(blob, buff, len, offset);
-			fwrite(buff, 1, len, fh);
-			offset += len;
-		}
-		sqlite3_blob_close(blob);
-	);
+		PYFASTX_SQLITE_CALL(
+			sqlite3_blob_open(index_db, "main", "gzindex", "content", i, 0, &blob);
+			bytes = sqlite3_blob_bytes(blob);
+
+			while (offset < bytes) {
+				len = bytes - offset;
+				if (len > 1048576) len = 1048576;
+				sqlite3_blob_read(blob, buff, len, offset);
+				fwrite(buff, 1, len, fh);
+				offset += len;
+			}
+			sqlite3_blob_close(blob);
+		);
+		blob = NULL;
+	}
 	free(buff);
 	fclose(fh);
 
 	fh = fopen(temp_index, "rb");
 	if (zran_import_index(gzip_index, fh) != ZRAN_IMPORT_OK) {
-		fclose(fh);
 		PyErr_SetString(PyExc_RuntimeError, "failed to import gzip index");
-		return;
 	}
 	fclose(fh);
 	remove(temp_index);
