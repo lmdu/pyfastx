@@ -524,3 +524,18 @@ int64_t integer_to_long(PyObject* num) {
 	PyErr_SetString(PyExc_ValueError, "the object is not an integer");
 	return 0;
 }*/
+
+char *str_n_str(char *haystack, char *needle, uint32_t len, uint32_t size) {
+	char *result;
+	uint32_t pos;
+	result = strstr(haystack, needle);
+
+	if (result) {
+		pos = result - haystack;
+		if (pos + len <= size) {
+			return result;
+		}
+	}
+
+	return NULL;
+}

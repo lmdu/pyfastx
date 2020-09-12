@@ -96,14 +96,15 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	}
 
 	if ((self->id == self->index->cache_chrom) && (self->start>=self->index->cache_start) && (self->end<=self->index->cache_end)){
-		char *buff = (char *)malloc(self->seq_len + 1);
+		/*char *buf = (char *)malloc(self->seq_len + 1);
 		memcpy(buff, self->index->cache_seq.s + (self->start - self->index->cache_start), self->seq_len);
 		buff[self->seq_len] = '\0';
-		return buff;
+		return buff;*/
+		return self->index->cache_seq.s + (self->start - self->index->cache_start);
 	}
 
-	if (self->index->cache_chrom) {
-		free(self->index->cache_name.s);
+	if (self->index->cache_name.s) {
+		self->index->cache_name.s[0] = '\0';
 	}
 
 	pyfastx_index_fill_cache(self->index, self->offset, self->byte_len);
@@ -123,10 +124,16 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	return self->index->cache_seq.s;
 }
 
+/*PyObject *pyfastx_sequence_new(pyfastx_Sequence* self) {
+	PyObject *retval = PyUnicode_New(self->seq_len, 127);
+	
+	if (retval == NULL)
+		return NULL;
 
-/*PyObject *pyfastx_sequence_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
-	pyfastx_Sequence *obj = (pyfastx_Sequence *)type->tp_alloc(type, 0);
-	return (PyObject *)obj;
+	Py_UCS1 *data = PyUnicode_1BYTE_DATA(retval);
+
+	memcpy(PyUnicode_1BYTE_DATA(result), hello, strlen(hello));
+	return retval;
 }*/
 
 void pyfastx_sequence_dealloc(pyfastx_Sequence* self) {
@@ -272,6 +279,7 @@ uint8_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 	char *seq;
 	char *subseq;
 	char *ret;
+	Py_ssize_t sublen;
 
 	if (!PyUnicode_CheckExact(key)) {
 		return 0;
@@ -282,9 +290,9 @@ uint8_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 	}
 
 	seq = pyfastx_sequence_get_subseq(self);
-	subseq = (char *)PyUnicode_AsUTF8(key);
-	ret = strstr(seq, subseq);
-	pyfastx_sequence_free_subseq(self, seq);
+	subseq = (char *)PyUnicode_AsUTF8AndSize(key, &sublen);
+	ret = str_n_str(seq, subseq, sublen, self->seq_len);
+	//pyfastx_sequence_free_subseq(self, seq);
 
 	return ret != NULL ? 1 : 0;
 }
@@ -312,7 +320,7 @@ PyObject *pyfastx_sequence_description(pyfastx_Sequence* self, void* closure){
 	return Py_BuildValue("s", self->desc);
 }
 
-char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
+/*char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
 	char *ret;
 	char *seq;
 
@@ -328,7 +336,7 @@ char *pyfastx_sequence_acquire(pyfastx_Sequence* self){
 	pyfastx_sequence_free_subseq(self, seq);
 	
 	return ret;
-}
+}*/
 
 PyObject *pyfastx_sequence_raw(pyfastx_Sequence* self, void* closure) {
 	int64_t new_offset;
@@ -362,35 +370,40 @@ PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
 	}
 
 	seq = pyfastx_sequence_get_subseq(self);
-	ret = Py_BuildValue("s", seq);
-
-	pyfastx_sequence_free_subseq(self, seq);
+	//ret = Py_BuildValue("s", seq);
+	//pyfastx_sequence_free_subseq(self, seq);
+	ret = PyUnicode_New(self->seq_len, 127);
+	memcpy(PyUnicode_1BYTE_DATA(ret), seq, self->seq_len);
 
 	return ret;
 }
 
 PyObject *pyfastx_sequence_reverse(pyfastx_Sequence* self, void* closure){
 	char *seq;
+	char *data;
 	PyObject *ret;
 
-	seq = pyfastx_sequence_acquire(self);
-	reverse_seq(seq);
-	
-	ret = Py_BuildValue("s", seq);
-	free(seq);
+	//seq = pyfastx_sequence_acquire(self);
+	seq = pyfastx_sequence_get_subseq(self);
+	ret = PyUnicode_New(self->seq_len, 127);
+	data = (char *)PyUnicode_1BYTE_DATA(ret);
+	memcpy(data, seq, self->seq_len);
+	reverse_seq(data);
 
 	return ret;
 }
 
 PyObject *pyfastx_sequence_complement(pyfastx_Sequence* self, void* closure){
 	char *seq;
+	char *data;
 	PyObject *ret;
 
-	seq = pyfastx_sequence_acquire(self);
-	complement_seq(seq);
-
-	ret = Py_BuildValue("s", seq);
-	free(seq);
+	//seq = pyfastx_sequence_acquire(self);
+	seq = pyfastx_sequence_get_subseq(self);
+	ret = PyUnicode_New(self->seq_len, 127);
+	data = (char *)PyUnicode_1BYTE_DATA(ret);
+	memcpy(data, seq, self->seq_len);
+	complement_seq(data);
 
 	return ret;
 }
@@ -398,13 +411,15 @@ PyObject *pyfastx_sequence_complement(pyfastx_Sequence* self, void* closure){
 //complement reverse sequence
 PyObject *pyfastx_sequence_antisense(pyfastx_Sequence* self, void* closure){
 	char *seq;
+	char *data;
 	PyObject *ret;
 
-	seq = pyfastx_sequence_acquire(self);
-	reverse_complement_seq(seq);
-
-	ret = Py_BuildValue("s", seq);
-	free(seq);
+	//seq = pyfastx_sequence_acquire(self);
+	seq = pyfastx_sequence_get_subseq(self);
+	ret = PyUnicode_New(self->seq_len, 127);
+	data = (char *)PyUnicode_1BYTE_DATA(ret);
+	memcpy(data, seq, self->seq_len);
+	reverse_complement_seq(data);
 
 	return ret;
 }
@@ -524,7 +539,6 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 	int strand = '+';
 
 	char* keywords[] = {"subseq", "strand", NULL};
-
 	
 	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "O|C", keywords, &subobj, &strand)){
 		return NULL;
@@ -542,7 +556,7 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 
 	seq = pyfastx_sequence_get_subseq(self);
 
-	result = strstr(seq, subseq);
+	result = str_n_str(seq, subseq, sublen, self->seq_len);
 
 	if (result != NULL) {
 		if (strand == '-') {
@@ -552,7 +566,7 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 		}
 	}
 
-	pyfastx_sequence_free_subseq(self, seq);
+	//pyfastx_sequence_free_subseq(self, seq);
 	
 	if (result == NULL) {
 		Py_RETURN_NONE;
