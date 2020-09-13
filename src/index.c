@@ -365,7 +365,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	PYFASTX_SQLITE_CALL(
 		sqlite3_exec(self->index_db, "PRAGMA locking_mode=NORMAL;", NULL, NULL, NULL);
 		sqlite3_exec(self->index_db, "COMMIT;", NULL, NULL, NULL);
-		sqlite3_exec(self->index_db, "CREATE INDEX chromidx ON seq (chrom);", NULL, NULL, NULL);
+		sqlite3_exec(self->index_db, "CREATE UNIQUE INDEX chromidx ON seq (chrom);", NULL, NULL, NULL);
 		sqlite3_prepare_v2(self->index_db, "INSERT INTO stat (seqnum,seqlen) VALUES (?,?);", -1, &stmt, NULL);
 		sqlite3_bind_int64(stmt, 1, total_seq);
 		sqlite3_bind_int64(stmt, 2, total_len);
@@ -503,16 +503,16 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
 	sqlite3_stmt *stmt;
 	PyObject *obj;
 	int ret;
-	
+
 	//select sql statement, chrom indicates seq name or chromomsome
 	const char* sql = "SELECT * FROM seq WHERE chrom=? LIMIT 1;";
-	
+
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 		sqlite3_bind_text(stmt, 1, name, -1, NULL);
 		ret = sqlite3_step(stmt);
 	);
-	
+
 	if (ret != SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_Format(PyExc_KeyError, "%s does not exist in fasta file", name);
@@ -537,7 +537,7 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 		sqlite3_bind_int(stmt, 1, chrom);
 		ret = sqlite3_step(stmt);
 	);
-	
+
 	if (ret != SQLITE_ROW){
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_IndexError, "Index Error");

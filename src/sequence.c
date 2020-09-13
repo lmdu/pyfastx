@@ -275,7 +275,7 @@ uint32_t pyfastx_sequence_length(pyfastx_Sequence* self){
 	return self->seq_len;
 }
 
-uint8_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
+int pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 	char *seq;
 	char *subseq;
 	char *ret;
@@ -294,7 +294,7 @@ uint8_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key){
 	ret = str_n_str(seq, subseq, sublen, self->seq_len);
 	//pyfastx_sequence_free_subseq(self, seq);
 
-	return ret != NULL ? 1 : 0;
+	return ret ? 1 : 0;
 }
 
 PyObject *pyfastx_sequence_get_name(pyfastx_Sequence* self, void* closure){

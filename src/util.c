@@ -531,8 +531,8 @@ char *str_n_str(char *haystack, char *needle, uint32_t len, uint32_t size) {
 	result = strstr(haystack, needle);
 
 	if (result) {
-		pos = result - haystack;
-		if (pos + len <= size) {
+		pos = result - haystack + len;
+		if (pos <= size) {
 			return result;
 		}
 	}

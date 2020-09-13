@@ -73,7 +73,7 @@ extern PyTypeObject pyfastx_SequenceType;
 
 uint32_t pyfastx_sequence_length(pyfastx_Sequence* self);
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self);
-uint8_t pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key);
+int pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key);
 
 char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self);
 char *pyfastx_sequence_get_fullseq(pyfastx_Sequence* self);
