@@ -5,7 +5,7 @@ import platform
 from setuptools import setup, Extension
 
 link_args = ['-lz', '-lsqlite3']
-comp_args = []
+comp_args = ['-Wno-unused-result']
 include_dirs = []
 libs = []
 lib_dirs = []

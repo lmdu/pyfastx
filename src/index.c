@@ -665,8 +665,10 @@ void pyfastx_index_random_read(pyfastx_Index* self, char* buff, int64_t offset, 
 		zran_seek(self->gzip_index, offset, SEEK_SET, NULL);
 		zran_read(self->gzip_index, buff, bytes);
 	} else {
-		gzseek(self->gzfd, offset, SEEK_SET);
-		gzread(self->gzfd, buff, bytes);
+		/*gzseek(self->gzfd, offset, SEEK_SET);
+		gzread(self->gzfd, buff, bytes);*/
+		FSEEK(self->fd, offset, SEEK_SET);
+		fread(buff, bytes, 1, self->fd);
 	}
 	buff[bytes] = '\0';
 }

@@ -96,8 +96,10 @@ void pyfastx_read_random_reader(pyfastx_Read *self, char *buff, int64_t offset, 
         zran_seek(self->fastq->gzip_index, offset, SEEK_SET, NULL);
         zran_read(self->fastq->gzip_index, buff, bytes);
     } else {
-        gzseek(self->fastq->gzfd, offset, SEEK_SET);
-        gzread(self->fastq->gzfd, buff, bytes);
+        /*gzseek(self->fastq->gzfd, offset, SEEK_SET);
+        gzread(self->fastq->gzfd, buff, bytes);*/
+        FSEEK(self->fastq->fd, offset, SEEK_SET);
+        fread(buff, bytes, 1, self->fastq->fd);
     }
 }
 
