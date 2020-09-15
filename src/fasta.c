@@ -190,8 +190,27 @@ PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self){
 	Py_RETURN_TRUE;
 }*/
 
+PyObject *pyfastx_fasta_flank(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs) {
+	static char *keywords[] = {"name", "start", "end", "flank_len", "cache", NULL};
+	char *name;
+	uint32_t start;
+	uint32_t end;
+	uint32_t len = 50;
+	int cache = 0;
+
+	PyObject *seq;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sii|ii", keywords, &name, &start, &end, &len, &cache)) {
+		return NULL;
+	}
+
+	seq  = pyfastx_index_get_seq_by_name(self->index, name);
+
+
+}
+
 PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
-	static char* keywords[] = {"name", "intervals", "strand", NULL};
+	static char* keywords[] = {"name", "intervals", "strand", "cache", NULL};
 
 	char *name;
 	char *seq;
@@ -199,6 +218,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	uint64_t start;
 	uint64_t end;
 	int strand = '+';
+	int cache = 0;
 	PyObject *item;
 	Py_ssize_t size;
 	sqlite3_stmt *stmt;
@@ -210,7 +230,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	int64_t offset;
 	uint32_t bytes;
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|C", keywords, &name, &intervals, &strand)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|Ci", keywords, &name, &intervals, &strand, &cache)){
 		return NULL;
 	}
 
@@ -931,6 +951,7 @@ static PyMemberDef pyfastx_fasta_members[] = {
 static PyMethodDef pyfastx_fasta_methods[] = {
 	{"build_index", (PyCFunction)pyfastx_fasta_build_index, METH_NOARGS, NULL},
 	{"fetch", (PyCFunction)pyfastx_fasta_fetch, METH_VARARGS|METH_KEYWORDS, NULL},
+	{"flank", (PyCFunction)pyfastx_fasta_flank, METH_VARARGS|METH_KEYWORDS, NULL},
 	{"count", (PyCFunction)pyfastx_fasta_count, METH_VARARGS, NULL},
 	{"keys", (PyCFunction)pyfastx_fasta_keys, METH_NOARGS, NULL},
 	{"nl", (PyCFunction)pyfastx_fasta_nl, METH_VARARGS, NULL},
