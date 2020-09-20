@@ -123,6 +123,12 @@ class FastqTest(unittest.TestCase):
 			self.assertEqual(seq, self.reads[i][1])
 			self.assertEqual(qual, self.reads[i][2])
 
+	def test_read_len(self):
+		lens = [len(it[1]) for it in self.reads.values()]
+
+		self.assertEqual(self.fastq.minlen, min(lens))
+		self.assertEqual(self.fastq.maxlen, min(lens))
+
 	def test_repr(self):
 		self.assertEqual(repr(self.fastq), "<Fastq> {} contains {} reads".format(gzip_fastq, len(self.reads)))
 
@@ -136,7 +142,8 @@ class FastqTest(unittest.TestCase):
 		with self.assertRaises(KeyError):
 			_ = self.fastq[int]
 
-
+		with self.assertRaises(KeyError):
+			_ = self.fastq['abc']
 
 if __name__ == '__main__':
 	unittest.main()

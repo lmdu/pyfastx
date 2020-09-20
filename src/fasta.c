@@ -13,7 +13,7 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 	
 	//sequence count
 	PYFASTX_SQLITE_CALL(
-		sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM stat LIMIT 1;", -1, &stmt, NULL);
+		sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM stat LIMIT 1", -1, &stmt, NULL);
 		ret = sqlite3_step(stmt);
 	);
 
@@ -23,9 +23,7 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 			self->seq_length = sqlite3_column_int64(stmt, 1);
 		);
 	} else {
-		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "get seq count and length error");
-		return;
 	}
 
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
@@ -234,35 +232,6 @@ PyObject * pyfastx_fasta_slice_from_cache(pyfastx_Fasta *self, uint32_t start, u
 	ret = Py_BuildValue("ss", left, right);
 	free(left);
 	free(right);
-
-	return ret;
-}
-
-char *pyfastx_fasta_slice_from_file(pyfastx_Sequence* self, int32_t slice_start, int32_t slice_stop) {
-	int64_t offset;
-	uint32_t bytelen;
-	int before_sline;
-	int before_eline;
-	int cross_line;
-	char *ret;
-
-	if (slice_stop > slice_start) {
-		before_sline = slice_start/(self->line_len - self->end_len);
-		before_eline = slice_stop/(self->line_len - self->end_len);
-		cross_line = before_eline - before_sline;
-		offset = self->offset + slice_start + self->end_len*before_sline;
-		bytelen = slice_stop - slice_start + cross_line*self->end_len;
-		ret = (char *)malloc(bytelen + 1);
-		pyfastx_index_random_read(self->index, ret, offset, bytelen);
-		if (self->index->uppercase) {
-			remove_space_uppercase(ret, bytelen);
-		} else {
-			remove_space(ret, bytelen);
-		}
-	} else {
-		ret = (char *)malloc(1);
-		ret[0] = '\0';
-	}
 
 	return ret;
 }

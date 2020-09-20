@@ -239,7 +239,18 @@ class FastaTest(unittest.TestCase):
 		self.assertEqual(str(self.faidx[name])[s:start-1], left)
 		self.assertEqual(str(self.faidx[name])[end:end+flen], right)
 
+		left, right = self.fastx.flank(name, 1, len(self.faidx[name]))
+		self.assertEqual('', left)
+		self.assertEqual('', right)
+
+	def test_no_upper(self):
+		fa = pyfastx.Fasta(flat_fasta, uppercase=False)
+		self.assertEqual(self.fastx[0].seq, fa[0].seq)
+
 	def test_exception(self):
+		with self.assertRaises(ValueError):
+			pyfastx.Fasta(dict)
+
 		with self.assertRaises(TypeError):
 			pyfastx.Fasta(flat_fasta, key_func=1)
 
