@@ -65,7 +65,7 @@ class FastqTest(unittest.TestCase):
 
 		fq = pyfastx.Fastq(gzip_fastq, build_index=False)
 		fq.build_index()
-		
+
 		self.fastq = pyfastx.Fastq(gzip_fastq)
 
 	def test_fastq(self):

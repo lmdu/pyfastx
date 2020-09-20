@@ -132,9 +132,9 @@ pyfastx.Fasta
 
 		:param str chrom: chromosome name or sequence name
 
-		:param int start: start 1-based position of subsequence on chrom
+		:param int start: 1-based start position of subsequence on chrom
 
-		:param int end: end 1-based position of subsequence on chrom
+		:param int end: 1-based end position of subsequence on chrom
 
 		:param int flank_length: length of flank sequence, default 50
 
