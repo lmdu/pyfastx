@@ -209,7 +209,7 @@ Get flank sequences for the given subsequence, return a tuple with left and righ
 
 .. note::
 
-	The start and end position of subsequence were 1-based. When extracting flank for large numbers of subsequences from the same sequence, ``use_cache=True`` was recommended
+	The start and end position of subsequence were 1-based. When extracting flank for large numbers of subsequences from the same sequence, ``use_cache=True`` was recommended to improve speed.
 
 Key function
 ------------
