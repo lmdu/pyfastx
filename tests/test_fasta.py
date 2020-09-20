@@ -218,6 +218,27 @@ class FastaTest(unittest.TestCase):
 
 		self.assertEqual(expect, result)
 
+	def test_seq_flank(self):
+		idx = self.get_random_index()
+		name = list(self.faidx.keys())[idx]
+		l = len(self.fastx[idx])
+
+		a = int(l/2)
+		start = random.randint(1, a)
+		end = random.randint(a+1, l)
+		flen = 20
+		left, right = self.fastx.flank(name, start, end, flen)
+		s = start - flen - 1
+		if s < 0:
+			s = 0
+
+		self.assertEqual(str(self.faidx[name])[s:start-1], left)
+		self.assertEqual(str(self.faidx[name])[end:end+flen], right)
+
+		left, right = self.fastx.flank(name, start, end, flank_length=flen, use_cache=True)
+		self.assertEqual(str(self.faidx[name])[s:start-1], left)
+		self.assertEqual(str(self.faidx[name])[end:end+flen], right)
+
 	def test_exception(self):
 		with self.assertRaises(TypeError):
 			pyfastx.Fasta(flat_fasta, key_func=1)

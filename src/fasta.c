@@ -2,6 +2,7 @@
 #include "util.h"
 #include "identifier.h"
 #include "structmember.h"
+#include "sequence.h"
 
 /*calculate fasta attributes including sequence count, length,
 composition (ATGCN count) and GC content
@@ -190,27 +191,206 @@ PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self){
 	Py_RETURN_TRUE;
 }*/
 
+PyObject * pyfastx_fasta_slice_from_cache(pyfastx_Fasta *self, uint32_t start, uint32_t end, uint32_t flank) {
+	int32_t slice_start;
+	uint32_t slice_len;
+	char *left;
+	char *right;
+	PyObject *ret;
+
+	slice_start = start - flank - 1;
+	if (slice_start < 0) {
+		slice_len = flank + slice_start;
+		slice_start = 0;
+	} else {
+		slice_len = flank;
+	}
+
+	if (slice_len > 0) {
+		left = (char *)malloc(slice_len + 1);
+		memcpy(left, self->index->cache_seq.s+slice_start, slice_len);
+		left[slice_len] = '\0';
+	} else {
+		left = (char *)malloc(1);
+		left[0] = '\0';
+	}
+
+	slice_start = end;
+	if ((end + flank) > self->index->cache_seq.l) {
+		slice_len = self->index->cache_seq.l - end;
+	} else {
+		slice_len = flank;
+	}
+
+	if (slice_len > 0) {
+		right = (char *)malloc(slice_len + 1);
+		memcpy(right, self->index->cache_seq.s+slice_start, slice_len);
+		right[slice_len] = '\0';
+	} else {
+		right = (char *)malloc(1);
+		right[0] = '\0';
+	}
+
+	ret = Py_BuildValue("ss", left, right);
+	free(left);
+	free(right);
+
+	return ret;
+}
+
+char *pyfastx_fasta_slice_from_file(pyfastx_Sequence* self, int32_t slice_start, int32_t slice_stop) {
+	int64_t offset;
+	uint32_t bytelen;
+	int before_sline;
+	int before_eline;
+	int cross_line;
+	char *ret;
+
+	if (slice_stop > slice_start) {
+		before_sline = slice_start/(self->line_len - self->end_len);
+		before_eline = slice_stop/(self->line_len - self->end_len);
+		cross_line = before_eline - before_sline;
+		offset = self->offset + slice_start + self->end_len*before_sline;
+		bytelen = slice_stop - slice_start + cross_line*self->end_len;
+		ret = (char *)malloc(bytelen + 1);
+		pyfastx_index_random_read(self->index, ret, offset, bytelen);
+		if (self->index->uppercase) {
+			remove_space_uppercase(ret, bytelen);
+		} else {
+			remove_space(ret, bytelen);
+		}
+	} else {
+		ret = (char *)malloc(1);
+		ret[0] = '\0';
+	}
+
+	return ret;
+}
+
+void pyfastx_fasta_seq_info(pyfastx_Fasta *self, char *name, uint64_t *chrom, int64_t *offset, uint32_t *bytes, uint32_t *slen, uint32_t *llen, int *elen, int *normal) {
+	sqlite3_stmt *stmt;
+	int ret;
+
+	const char *sql = "SELECT ID,boff,blen,slen,llen,elen,norm FROM seq WHERE chrom=? LIMIT 1;";
+
+	PYFASTX_SQLITE_CALL(
+		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
+		sqlite3_bind_text(stmt, 1, name, -1, NULL);
+		ret = sqlite3_step(stmt);
+	);
+	
+	if (ret == SQLITE_ROW){
+		PYFASTX_SQLITE_CALL(
+			*chrom = sqlite3_column_int64(stmt, 0);
+			*offset = sqlite3_column_int64(stmt, 1);
+			*bytes = sqlite3_column_int(stmt, 2);
+			*slen = sqlite3_column_int(stmt, 3);
+			*llen = sqlite3_column_int(stmt, 4);
+			*elen = sqlite3_column_int(stmt, 5);
+			*normal = sqlite3_column_int(stmt, 6);
+		);
+	} else {
+		PyErr_Format(PyExc_NameError, "Sequence %s does not exists", name);
+	}
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+}
+
+void pyfastx_fasta_cache_full(pyfastx_Fasta *self, uint64_t chrom, int64_t offset, uint32_t bytes) {
+	pyfastx_index_fill_cache(self->index, offset, bytes);
+	self->index->cache_chrom = chrom;
+	self->index->cache_start = 1;
+	self->index->cache_end = self->index->cache_seq.l;
+	self->index->cache_full = 1;
+}
+
+char *pyfastx_fasta_slice_seq(pyfastx_Fasta *self, int64_t offset, uint32_t bytelen, uint32_t line_len, int end_len, int32_t slice_start, int32_t slice_stop) {
+	int before_sline;
+	int before_eline;
+	int cross_line;
+	char *ret;
+
+	if (slice_stop > slice_start) {
+		before_sline = slice_start/(line_len - end_len);
+		before_eline = slice_stop/(line_len - end_len);
+		cross_line = before_eline - before_sline;
+		offset = offset + slice_start + end_len*before_sline;
+		bytelen = slice_stop - slice_start + cross_line*end_len;
+		ret = (char *)malloc(bytelen + 1);
+		pyfastx_index_random_read(self->index, ret, offset, bytelen);
+		if (self->index->uppercase) {
+			remove_space_uppercase(ret, bytelen);
+		} else {
+			remove_space(ret, bytelen);
+		}
+	} else {
+		ret = (char *)malloc(1);
+		ret[0] = '\0';
+	}
+
+	return ret;
+}
+
 PyObject *pyfastx_fasta_flank(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs) {
-	static char *keywords[] = {"name", "start", "end", "flank_len", "cache", NULL};
+	static char *keywords[] = {"chrom", "start", "end", "flank_length", "use_cache", NULL};
 	char *name;
 	uint32_t start;
 	uint32_t end;
-	uint32_t len = 50;
-	int cache = 0;
+	int32_t slice_start;
+	int32_t slice_stop;
+	char *left;
+	char *right;
+	PyObject *ret;
 
-	PyObject *seq;
+	uint64_t chrom;
+	int64_t offset;
+	uint32_t bytes;
+	uint32_t seq_len;
+	uint32_t line_len;
+	int end_len;
+	int normal;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sii|ii", keywords, &name, &start, &end, &len, &cache)) {
+	int use_cache = 0;
+	uint32_t flank_len = 50;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sii|ii", keywords, &name, &start, &end, &flank_len, &use_cache)) {
 		return NULL;
 	}
 
-	seq  = pyfastx_index_get_seq_by_name(self->index, name);
+	if (self->index->cache_name.s && strcmp(self->index->cache_name.s, name) == 0 && self->index->cache_full) {
+		return pyfastx_fasta_slice_from_cache(self, start, end, flank_len);
+	}
 
+	pyfastx_fasta_seq_info(self, name, &chrom, &offset, &bytes, &seq_len, &line_len, &end_len, &normal);
 
+	if (use_cache || !normal) {
+		pyfastx_fasta_cache_full(self, chrom, offset, bytes);
+		ret = pyfastx_fasta_slice_from_cache(self, start, end, flank_len);
+	} else {
+		slice_start = start - flank_len - 1;
+		if (slice_start < 0) {
+			slice_start = 0;
+		}
+		slice_stop = start - 1;
+
+		left = pyfastx_fasta_slice_seq(self, offset, bytes, line_len, end_len, slice_start, slice_stop);
+
+		slice_stop = end + flank_len;
+		if (slice_stop > seq_len) {
+			slice_stop = seq_len;
+		}
+		slice_start = end;
+
+		right = pyfastx_fasta_slice_seq(self, offset, bytes, line_len, end_len, slice_start, slice_stop);
+		ret = Py_BuildValue("ss", left, right);
+		free(left);
+		free(right);
+	}
+
+	return ret;
 }
 
 PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
-	static char* keywords[] = {"name", "intervals", "strand", "cache", NULL};
+	static char* keywords[] = {"chrom", "intervals", "strand", NULL};
 
 	char *name;
 	char *seq;
@@ -218,19 +398,18 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	uint64_t start;
 	uint64_t end;
 	int strand = '+';
-	int cache = 0;
 	PyObject *item;
 	Py_ssize_t size;
 	sqlite3_stmt *stmt;
 	const char* sql;
-	uint32_t chrom;
+	uint64_t chrom;
 	uint32_t seq_len;
 	char* sub_seq;
 	int ret;
 	int64_t offset;
 	uint32_t bytes;
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|Ci", keywords, &name, &intervals, &strand, &cache)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|C", keywords, &name, &intervals, &strand)){
 		return NULL;
 	}
 
@@ -281,12 +460,6 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		strcpy(self->index->cache_name.s, name);
 		
 		pyfastx_index_fill_cache(self->index, offset, bytes);
-
-		if (self->index->uppercase) {
-			self->index->cache_seq.l = remove_space_uppercase(self->index->cache_seq.s, bytes);
-		} else {
-			self->index->cache_seq.l = remove_space(self->index->cache_seq.s, bytes);
-		}
 
 		seq = self->index->cache_seq.s;
 	}

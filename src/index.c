@@ -680,4 +680,10 @@ void pyfastx_index_fill_cache(pyfastx_Index* self, int64_t offset, uint32_t size
 	}
 
 	pyfastx_index_random_read(self, self->cache_seq.s, offset, size);
+
+	if (self->uppercase) {
+		self->cache_seq.l = remove_space_uppercase(self->cache_seq.s, size);
+	} else {
+		self->cache_seq.l = remove_space(self->cache_seq.s, size);
+	}
 }

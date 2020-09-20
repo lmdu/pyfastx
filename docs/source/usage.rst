@@ -186,6 +186,21 @@ Subsequences can be retrieved from FASTA file by using a list of [start, end] co
 	>>> fa.fetch('JZ822577.1', (1, 10), strand='-')
 	'ATCTCTAGAG'
 
+Get flank sequences
+-------------------
+
+Get flank sequences for the given subsequence, New in ``pyfastx`` 0.7.0
+
+.. code:: python
+
+	>>> # get flank sequences for subsequence JZ822577:50-60
+	>>> fa.flank('JZ822577.1', 50, 60, 20)
+	('TCACTCAGGCTCTTTGTCAT', 'TAGGATATCGAGTATTCAAG')
+
+	>>> # get flank sequences by buffer cache
+	>>> fa.flank('JZ822577.1', 70, 90, flank_length=20, use_cache=True)
+	('TTTAGTTTGACTAGGATATC', 'TTGGTAATCTTTGCGGTGCA')
+
 Key function
 ------------
 

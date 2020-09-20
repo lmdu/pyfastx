@@ -107,11 +107,11 @@ pyfastx.Fasta
 
 		New in ``pyfastx`` 0.3.0
 
-	.. py:method:: fetch(name, intervals, strand='+')
+	.. py:method:: fetch(chrom, intervals, strand='+')
 
 		truncate subsequences from a given sequence by a start and end coordinate or a list of coordinates. This function will cache the full sequence into memory, and is suitable for extracting large numbers of subsequences from specified sequence.
 
-		:param str name: sequence name
+		:param str chrom: chromosome name or sequence name
 
 		:param list/tuple intervals: list of [start, end] coordinates
 
@@ -125,6 +125,28 @@ pyfastx.Fasta
 		:return: sliced subsequences
 
 		:rtype: str
+
+	.. py:method:: flank(chrom, start, end, flank_length=50, use_cache=False)
+
+		Get the flank sequence of given subsequence with start and end. New in 0.7.0
+
+		:param str chrom: chromosome name or sequence name
+
+		:param int start: start 1-based position of subsequence on chrom
+
+		:param int end: end 1-based position of subsequence on chrom
+
+		:param int flank_length: length of flank sequence, default 50
+
+		:param bool use_cache: cache the whole sequence
+
+		.. note::
+
+			If you want to extract flank sequence for large numbers of subsequences from the same sequence. Use ``use_cache=True`` will greatly improve the speed
+
+		:return: left flank and right flank sequence
+
+		:rtype: tuple
 
 	.. py:method:: build_index()
 

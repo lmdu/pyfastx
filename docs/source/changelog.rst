@@ -1,14 +1,15 @@
 Changelog
 =========
 
-Version 0.7.0 (2020-09-xx)
----------------------------
+Version 0.7.0 (2020-09-20)
+--------------------------
 
+- Added support for extracting flank sequences
+- Added support for indexing super large gzip file
 - Reduced memory consumption when building gzip index
 - Improved the speed of random access to reads from fastq
 - Fixed sequence dealloc error cuasing no fasta delloc trigger
 - Fixed fastq max and min quality score return value
-- Added support for indexing super large gzip file
 
 Version 0.6.17 (2020-08-31)
 ---------------------------

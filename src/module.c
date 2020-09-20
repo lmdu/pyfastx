@@ -51,6 +51,9 @@ PyObject *pyfastx_gzip_check(PyObject *self, PyObject *args) {
 
 	memcpy(PyUnicode_1BYTE_DATA(result), hello, strlen(hello));
 	return result;
+	char *s = (char *)malloc(1);
+	s[0] = '\0';
+	return Py_BuildValue("s", s);
 }*/
 
 static PyMethodDef module_methods[] = {

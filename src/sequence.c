@@ -72,11 +72,11 @@ char *pyfastx_sequence_get_fullseq(pyfastx_Sequence* self) {
 
 	pyfastx_index_fill_cache(self->index, self->offset, self->byte_len);
 
-	if (self->index->uppercase) {
+	/*if (self->index->uppercase) {
 		self->index->cache_seq.l = remove_space_uppercase(self->index->cache_seq.s, self->byte_len);
 	} else {
 		self->index->cache_seq.l = remove_space(self->index->cache_seq.s, self->byte_len);
-	}
+	}*/
 
 	self->index->cache_chrom = self->id;
 	self->index->cache_start = 1;
@@ -109,11 +109,11 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 
 	pyfastx_index_fill_cache(self->index, self->offset, self->byte_len);
 
-	if (self->index->uppercase) {
+	/*if (self->index->uppercase) {
 		self->index->cache_seq.l = remove_space_uppercase(self->index->cache_seq.s, self->byte_len);
 	} else {
 		self->index->cache_seq.l = remove_space(self->index->cache_seq.s, self->byte_len);
-	}
+	}*/
 
 	//Py_END_ALLOW_THREADS
 	self->index->cache_chrom = self->id;
@@ -509,7 +509,7 @@ PyObject *pyfastx_sequence_subscript(pyfastx_Sequence* self, PyObject* item){
 			int before_sline = slice_start/(self->line_len - self->end_len);
 
 			//number of the lines before slice stop
-			int before_eline = (slice_stop + 1)/(self->line_len - self->end_len);
+			int before_eline = slice_stop/(self->line_len - self->end_len);
 
 			//number of the lines crossed by sliced sequence
 			int cross_line = before_eline - before_sline;
@@ -584,7 +584,7 @@ PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
 	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-		sqlite3_bind_int(stmt, 1, self->id);
+		sqlite3_bind_int64(stmt, 1, self->id);
 		ret = sqlite3_step(stmt);
 	);
 
@@ -624,7 +624,7 @@ PyObject *pyfastx_sequence_gc_skew(pyfastx_Sequence *self, void* closure) {
 	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-		sqlite3_bind_int(stmt, 1, self->id);
+		sqlite3_bind_int64(stmt, 1, self->id);
 		ret = sqlite3_step(stmt);
 	);
 
@@ -660,7 +660,7 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-		sqlite3_bind_int(stmt, 1, self->id);
+		sqlite3_bind_int64(stmt, 1, self->id);
 		ret = sqlite3_step(stmt);
 	);
 

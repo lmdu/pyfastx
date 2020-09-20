@@ -228,10 +228,11 @@ int zran_build_index(
 
 /* Return codes for zran_seek. */
 enum {
-    ZRAN_SEEK_FAIL        = -1,
-    ZRAN_SEEK_OK          =  0,
-    ZRAN_SEEK_NOT_COVERED =  1,
-    ZRAN_SEEK_EOF         =  2,
+    ZRAN_SEEK_FAIL            = -1,
+    ZRAN_SEEK_OK              =  0,
+    ZRAN_SEEK_NOT_COVERED     =  1,
+    ZRAN_SEEK_EOF             =  2,
+    ZRAN_SEEK_INDEX_NOT_BUILT =  3
 };
 
 
@@ -241,29 +242,30 @@ enum {
  * created with the ZRAN_AUTO_BUILD flag, the index is expanded
  * to cover the offset.
  *
- * Seeking from the end of the uncompressed stream is not supported
- * - you may only seek from the beginning of the file, or from the
- * current seek location. In other words, the whence argument must
- * be equal to SEEK_SET or SEEK_CUR.
+ * Seeking from the end of the uncompressed stream (using SEEK_END)
+ * is only possible if the index fully covers the file.
  *
  * Returns:
  *    - ZRAN_SEEK_OK for success.
  *
- *    - ZRAN_SEEK_FAIL to indicate failure of some sort.
+ *    - ZRAN_SEEK_INDEX_NOT_BUILT if SEEK_END is used, and the index
+ *      does not fully cover the file.
  *
  *    - ZRAN_SEEK_NOT_COVERED to indicate that the index does not
  *      cover the requested offset (will never happen if
  *      ZRAN_AUTO_BUILD is active).
-
+ *
  *    - ZRAN_SEEK_EOF to indicate that the requested offset
  *      is past the end of the uncompressed stream.
+ *
+ *    - ZRAN_SEEK_FAIL to indicate failure of some sort.
  */
 int zran_seek(
-  zran_index_t  *index,   /* The index                      */
-  int64_t        offset,  /* Uncompressed offset to seek to */
-  uint8_t        whence,  /* Must be SEEK_SET or SEEK_CUR   */
+  zran_index_t  *index,   /* The index                       */
+  int64_t        offset,  /* Uncompressed offset to seek to  */
+  uint8_t        whence,  /* SEEK_SET, SEEK_CUR, or SEEK_END */
   zran_point_t **point    /* Optional place to store
-                             corresponding zran_point_t     */
+                             corresponding zran_point_t      */
 );
 
 /*

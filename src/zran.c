@@ -590,19 +590,23 @@ int _zran_expand_point_list(zran_index_t *index) {
 
 /* Frees any unused memory allocated for index storage. */
 int _zran_free_unused(zran_index_t *index) {
+
     zran_point_t *new_list;
+    size_t        new_size;
 
     zran_log("_zran_free_unused\n");
 
+    if (index->npoints < 8) new_size = 8;
+    else                    new_size = index->npoints;
 
-    new_list = realloc(index->list, sizeof(zran_point_t) * index->npoints);
+    new_list = realloc(index->list, sizeof(zran_point_t) * new_size);
 
     if (new_list == NULL) {
         return -1;
     }
 
     index->list = new_list;
-    index->size = index->npoints;
+    index->size = new_size;
 
     return 0;
 }
@@ -2031,8 +2035,7 @@ fail:
 
 /*
  * Seek to the approximate location of the specified offset into
- * the uncompressed data stream. The whence argument must be
- * SEEK_SET or SEEK_CUR.
+ * the uncompressed data stream.
  */
 int zran_seek(zran_index_t  *index,
               int64_t        offset,
@@ -2045,8 +2048,29 @@ int zran_seek(zran_index_t  *index,
 
     zran_log("zran_seek(%lld, %i)\n", offset, whence);
 
-    if (whence != SEEK_SET && whence != SEEK_CUR) {
-        goto fail;
+    if (whence == SEEK_END && index->uncompressed_size == 0) {
+      goto index_not_built;
+    }
+
+    /*
+     * The offset passed in is signed, so
+     * negative offsets are allowed. But
+     * here we transform the offset to
+     * positive, as _zran_get_point_with_expand
+     * requires an absolute offset from the
+     * beginning of the uncompressed stream.
+     *
+     * I am not currently taking into account
+     * the overflow potential when converting
+     * from int64 to uint64.a
+     */
+
+    /*
+     * SEEK_END: seek relative to the
+     * end of the uncompressed stream
+     */
+    if (whence == SEEK_END) {
+      offset += index->uncompressed_size;
     }
 
     /*
@@ -2096,8 +2120,9 @@ int zran_seek(zran_index_t  *index,
 
     return ZRAN_SEEK_OK;
 
-fail:        return ZRAN_SEEK_FAIL;
-not_covered: return ZRAN_SEEK_NOT_COVERED;
+fail:            return ZRAN_SEEK_FAIL;
+index_not_built: return ZRAN_SEEK_INDEX_NOT_BUILT;
+not_covered:     return ZRAN_SEEK_NOT_COVERED;
 eof:
     index->uncmp_seek_offset = index->uncompressed_size;
     return ZRAN_SEEK_EOF;
