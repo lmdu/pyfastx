@@ -142,19 +142,19 @@ int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 	char *sql;
 	int ret;
 
-	if(!PyUnicode_CheckExact(key)){
+	if (!PyUnicode_CheckExact(key)) {
 		return 0;
 	}
 
 	name = (char *)PyUnicode_AsUTF8(key);
 
 	if (!self->filter && !self->sort && !self->order) {
-		sql = sqlite3_mprintf("SELECT * FROM seq WHERE chrom=?");
+		sql = sqlite3_mprintf("SELECT 1 FROM seq WHERE chrom=? LIMIT 1");
 	} else {
 		if (self->update) {
 			create_temp_query_set(self);
 		}
-		sql = sqlite3_mprintf("SELECT * FROM tmp WHERE chrom=?");
+		sql = sqlite3_mprintf("SELECT 1 FROM tmp WHERE chrom=? LIMIT 1");
 	}
 
 	PYFASTX_SQLITE_CALL(

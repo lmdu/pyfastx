@@ -527,7 +527,7 @@ PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){
 		return pyfastx_index_get_seq_by_id(self->index, i+1);
 
 	} else if (PyUnicode_CheckExact(item)) {	
-		return pyfastx_index_get_seq_by_name(self->index, (char *)PyUnicode_AsUTF8(item));
+		return pyfastx_index_get_seq_by_name(self->index, item);
 
 	} else {
 		PyErr_SetString(PyExc_KeyError, "the key must be index number or sequence name");
@@ -551,7 +551,7 @@ int pyfastx_fasta_contains(pyfastx_Fasta *self, PyObject *key){
 	name = (char *)PyUnicode_AsUTF8(key);
 
 	PYFASTX_SQLITE_CALL(
-		sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM seq WHERE chrom=? LIMIT 1;", -1, &stmt, NULL);
+		sqlite3_prepare_v2(self->index->index_db, "SELECT 1 FROM seq WHERE chrom=? LIMIT 1;", -1, &stmt, NULL);
 		sqlite3_bind_text(stmt, 1, name, -1, NULL);
 		ret = sqlite3_step(stmt);
 		sqlite3_finalize(stmt);

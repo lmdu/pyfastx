@@ -452,28 +452,8 @@ void pyfastx_index_free(pyfastx_Index *self){
 	gzclose(self->gzfd);
 }
 
-PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
-	//int32_t a, c, g, t, n;
-	int nbytes;
-
-	//pyfastx_Sequence *seq = PyObject_New(pyfastx_Sequence, &pyfastx_SequenceType);
+pyfastx_Sequence* pyfastx_index_new_seq(pyfastx_Index *self) {
 	pyfastx_Sequence *seq = (pyfastx_Sequence *)PyObject_CallObject((PyObject *)&pyfastx_SequenceType, NULL);
-
-	PYFASTX_SQLITE_CALL(
-		seq->id = sqlite3_column_int64(stmt, 0);
-		nbytes = sqlite3_column_bytes(stmt, 1);
-		seq->name = (char *)malloc(nbytes + 1);
-		memcpy(seq->name, sqlite3_column_text(stmt, 1), nbytes);
-		seq->name[nbytes] = '\0';
-		seq->offset = sqlite3_column_int64(stmt, 2);
-		seq->byte_len = sqlite3_column_int(stmt, 3);
-		seq->seq_len = sqlite3_column_int(stmt, 4);
-		seq->line_len = sqlite3_column_int(stmt, 5);
-		seq->end_len = sqlite3_column_int(stmt, 6);
-		seq->normal = sqlite3_column_int(stmt, 7);
-		seq->desc_len = sqlite3_column_int(stmt, 8);
-	);
-	
 	//is full sequence
 	seq->complete = 1;
 
@@ -494,41 +474,80 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 	seq->desc = NULL;
 	seq->raw = NULL;
 
+	return seq;
+}
+
+PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
+	//int32_t a, c, g, t, n;
+	int nbytes;
+
+	pyfastx_Sequence *seq = pyfastx_index_new_seq(self);
+
+	PYFASTX_SQLITE_CALL(
+		seq->id = sqlite3_column_int64(stmt, 0);
+		nbytes = sqlite3_column_bytes(stmt, 1);
+		seq->name = (char *)malloc(nbytes + 1);
+		memcpy(seq->name, sqlite3_column_text(stmt, 1), nbytes);
+		seq->name[nbytes] = '\0';
+		seq->offset = sqlite3_column_int64(stmt, 2);
+		seq->byte_len = sqlite3_column_int(stmt, 3);
+		seq->seq_len = sqlite3_column_int(stmt, 4);
+		seq->line_len = sqlite3_column_int(stmt, 5);
+		seq->end_len = sqlite3_column_int(stmt, 6);
+		seq->normal = sqlite3_column_int(stmt, 7);
+		seq->desc_len = sqlite3_column_int(stmt, 8);
+	);
+
 	//Py_INCREF(seq);
 	return (PyObject *)seq;
 }
 
-PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, char *name){
+PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, PyObject *sname){
 	// sqlite3 prepare object
 	sqlite3_stmt *stmt;
-	PyObject *obj;
+	pyfastx_Sequence *obj;
+	Py_ssize_t nbytes;
+	char *name;
 	int ret;
+
+	name = (char *)PyUnicode_AsUTF8AndSize(sname, &nbytes);
 
 	//select sql statement, chrom indicates seq name or chromomsome
 	const char* sql = "SELECT * FROM seq WHERE chrom=? LIMIT 1;";
-
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 		sqlite3_bind_text(stmt, 1, name, -1, NULL);
 		ret = sqlite3_step(stmt);
 	);
 
-	if (ret != SQLITE_ROW) {
+	if (ret == SQLITE_ROW) {
+		obj = pyfastx_index_new_seq(self);
+		obj->name = (char *)malloc(nbytes + 1);
+		memcpy(obj->name, name, nbytes);
+		obj->name[nbytes] = '\0';
+
+		PYFASTX_SQLITE_CALL(
+			obj->id = sqlite3_column_int64(stmt, 0);
+			obj->offset = sqlite3_column_int64(stmt, 2);
+			obj->byte_len = sqlite3_column_int(stmt, 3);
+			obj->seq_len = sqlite3_column_int(stmt, 4);
+			obj->line_len = sqlite3_column_int(stmt, 5);
+			obj->end_len = sqlite3_column_int(stmt, 6);
+			obj->normal = sqlite3_column_int(stmt, 7);
+			obj->desc_len = sqlite3_column_int(stmt, 8);
+		);
+		return (PyObject *)obj;
+	} else {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_Format(PyExc_KeyError, "%s does not exist in fasta file", name);
 		return NULL;
 	}
-
-	obj = pyfastx_index_make_seq(self, stmt);
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-
-	return obj;
 }
-
 
 PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 	sqlite3_stmt *stmt;
-	PyObject *obj;
+	pyfastx_Sequence *obj;
+	Py_ssize_t nbytes;
 	int ret;
 
 	const char* sql = "SELECT * FROM seq WHERE ID=? LIMIT 1;";
@@ -538,16 +557,28 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 		ret = sqlite3_step(stmt);
 	);
 
-	if (ret != SQLITE_ROW){
+	if (ret == SQLITE_ROW){
+		obj = pyfastx_index_new_seq(self);
+		obj->id = chrom;
+		PYFASTX_SQLITE_CALL(
+			nbytes = sqlite3_column_bytes(stmt, 1);
+			obj->name = (char *)malloc(nbytes + 1);
+			memcpy(obj->name, sqlite3_column_text(stmt, 1), nbytes);
+			obj->name[nbytes] = '\0';
+			obj->offset = sqlite3_column_int64(stmt, 2);
+			obj->byte_len = sqlite3_column_int(stmt, 3);
+			obj->seq_len = sqlite3_column_int(stmt, 4);
+			obj->line_len = sqlite3_column_int(stmt, 5);
+			obj->end_len = sqlite3_column_int(stmt, 6);
+			obj->normal = sqlite3_column_int(stmt, 7);
+			obj->desc_len = sqlite3_column_int(stmt, 8);
+		);
+		return (PyObject *)obj;
+	} else { 
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_IndexError, "Index Error");
 		return NULL;
 	}
-
-	obj = pyfastx_index_make_seq(self, stmt);
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-
-	return obj;
 }
 
 

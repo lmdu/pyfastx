@@ -358,11 +358,21 @@ uint64_t pyfastx_fastq_length(pyfastx_Fastq *self) {
 	return self->read_counts;
 }
 
+pyfastx_Read* pyfastx_fastq_new_read(pyfastx_Fastq *self) {
+	pyfastx_Read* read = (pyfastx_Read *)PyObject_CallObject((PyObject *)&pyfastx_ReadType, NULL);
+	read->fastq = self;
+	read->seq = NULL;
+	read->qual = NULL;
+	read->raw = NULL;
+	read->desc = NULL;
+	return read;
+}
+
 PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 	int nbytes;
 
 	//pyfastx_Read *read = PyObject_New(pyfastx_Read, &pyfastx_ReadType);
-	pyfastx_Read *read = (pyfastx_Read *)PyObject_CallObject((PyObject *)&pyfastx_ReadType, NULL);
+	pyfastx_Read *read = pyfastx_fastq_new_read(self);
 
 	PYFASTX_SQLITE_CALL(
 		read->id = sqlite3_column_int64(stmt, 0);
@@ -377,19 +387,14 @@ PyObject* pyfastx_fastq_make_read(pyfastx_Fastq *self, sqlite3_stmt *stmt) {
 		//sqlite3_finalize(stmt);
 	);
 
-	read->fastq = self;
-	read->seq = NULL;
-	read->qual = NULL;
-	read->raw = NULL;
-	read->desc = NULL;
-
 	//Py_INCREF(read);
 	return (PyObject *)read;
 }
 
 PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint64_t read_id) {
 	sqlite3_stmt *stmt;
-	PyObject *obj;
+	pyfastx_Read *obj;
+	int nbytes;
 	int ret;
 
 	const char* sql = "SELECT * FROM read WHERE ID=? LIMIT 1;";
@@ -399,23 +404,37 @@ PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint64_t read_id) {
 		ret = sqlite3_step(stmt);
 	);
 
-	if (ret != SQLITE_ROW) {
+	if (ret == SQLITE_ROW) {
+		obj = pyfastx_fastq_new_read(self);
+		obj->id = read_id;
+		PYFASTX_SQLITE_CALL(
+			nbytes = sqlite3_column_bytes(stmt, 1);
+			obj->name = (char *)malloc(nbytes + 1);
+			memcpy(obj->name, sqlite3_column_text(stmt, 1), nbytes);
+			obj->name[nbytes] = '\0';
+			obj->desc_len = sqlite3_column_int(stmt, 2);
+			obj->read_len = sqlite3_column_int(stmt, 3);
+			obj->seq_offset = sqlite3_column_int64(stmt, 4);
+			obj->qual_offset = sqlite3_column_int64(stmt, 5);
+			sqlite3_finalize(stmt);
+		);
+		return (PyObject *)obj;
+	} else {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_IndexError, "Index Error");
 		return NULL;
 	}
-
-	obj = pyfastx_fastq_make_read(self, stmt);
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-
-	return obj;
 }
 
-PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, char* name) {
+PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, PyObject* rname) {
 	// sqlite3 prepare object
 	sqlite3_stmt *stmt;
-	PyObject *obj;
+	pyfastx_Read *obj;
+	char *name;
+	Py_ssize_t nbytes;
 	int ret;
+
+	name = (char *)PyUnicode_AsUTF8AndSize(rname, &nbytes);
 	
 	//select sql statement, chrom indicates seq name or chromomsome
 	const char* sql = "SELECT * FROM read WHERE name=? LIMIT 1;";
@@ -425,16 +444,26 @@ PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, char* name) {
 		ret = sqlite3_step(stmt);
 	);
 
-	if (ret != SQLITE_ROW) {
+	if (ret == SQLITE_ROW) {
+		obj = pyfastx_fastq_new_read(self);
+		obj->name = (char *)malloc(nbytes + 1);
+		memcpy(obj->name, name, nbytes);
+		obj->name[nbytes] = '\0';
+
+		PYFASTX_SQLITE_CALL(
+			obj->id = sqlite3_column_int64(stmt, 0);
+			obj->desc_len = sqlite3_column_int(stmt, 2);
+			obj->read_len = sqlite3_column_int(stmt, 3);
+			obj->seq_offset = sqlite3_column_int64(stmt, 4);
+			obj->qual_offset = sqlite3_column_int64(stmt, 5);
+			sqlite3_finalize(stmt);
+		);
+		return (PyObject *)obj;
+	} else {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_Format(PyExc_KeyError, "%s does not exist in fastq file", name);
 		return NULL;
 	}
-
-	obj = pyfastx_fastq_make_read(self, stmt);
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-
-	return obj;
 }
 
 PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
@@ -456,7 +485,7 @@ PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
 		return pyfastx_fastq_get_read_by_id(self, i+1);
 		
 	} else if (PyUnicode_Check(item)) {
-		return pyfastx_fastq_get_read_by_name(self, (char *)PyUnicode_AsUTF8(item));
+		return pyfastx_fastq_get_read_by_name(self, item);
 
 	} else {
 		PyErr_SetString(PyExc_KeyError, "the key must be index number or read name");
@@ -479,7 +508,7 @@ int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
 	}
 
 	name = (char *)PyUnicode_AsUTF8(key);
-	sql = "SELECT * FROM read WHERE name=? LIMIT 1;";
+	sql = "SELECT 1 FROM read WHERE name=? LIMIT 1;";
 
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
