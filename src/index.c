@@ -535,6 +535,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, PyObject *sname){
 			obj->end_len = sqlite3_column_int(stmt, 6);
 			obj->normal = sqlite3_column_int(stmt, 7);
 			obj->desc_len = sqlite3_column_int(stmt, 8);
+			sqlite3_finalize(stmt);
 		);
 		return (PyObject *)obj;
 	} else {
@@ -572,6 +573,7 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 			obj->end_len = sqlite3_column_int(stmt, 6);
 			obj->normal = sqlite3_column_int(stmt, 7);
 			obj->desc_len = sqlite3_column_int(stmt, 8);
+			sqlite3_finalize(stmt);
 		);
 		return (PyObject *)obj;
 	} else { 

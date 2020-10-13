@@ -477,16 +477,14 @@ PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
 			i += self->read_counts;
 		}
 
-		if(i >= self->read_counts){
+		if (i >= self->read_counts) {
 			PyErr_SetString(PyExc_IndexError, "index out of range");
 			return NULL;
 		}
 
-		return pyfastx_fastq_get_read_by_id(self, i+1);
-		
+		return pyfastx_fastq_get_read_by_id(self, i+1);	
 	} else if (PyUnicode_Check(item)) {
 		return pyfastx_fastq_get_read_by_name(self, item);
-
 	} else {
 		PyErr_SetString(PyExc_KeyError, "the key must be index number or read name");
 		return NULL;
