@@ -111,6 +111,11 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		if (full_index) {
 			pyfastx_fasta_calc_composition(obj);
 		}
+
+		PYFASTX_SQLITE_CALL(
+			sqlite3_prepare_v2(obj->index->index_db, "SELECT * FROM seq WHERE chrom=? LIMIT 1;", -1, &obj->index->seq_stmt, NULL);
+			sqlite3_prepare_v2(obj->index->index_db, "SELECT * FROM seq WHERE ID=? LIMIT 1;", -1, &obj->index->uid_stmt, NULL);
+		);
 	}
 
 	return (PyObject *)obj;

@@ -42,3 +42,8 @@ tests/__pycache__/test_fastq.cpython-37.pyc
 tests/__pycache__/test_identifier.cpython-37.pyc
 tests/__pycache__/test_read.cpython-37.pyc
 tests/__pycache__/test_sequence.cpython-37.pyc
+tt.fq
+tt.fq.fxi
+tt.fq.gz.fxi
+tt.list
+tt.py

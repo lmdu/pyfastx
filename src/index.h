@@ -61,6 +61,10 @@ typedef struct {
 	//enter iterating loop
 	uint8_t iterating;
 
+	//prepared sql
+	sqlite3_stmt *uid_stmt;
+	sqlite3_stmt *seq_stmt;
+
 } pyfastx_Index;
 
 //void pyfastx_build_gzip_index(pyfastx_Index *self);

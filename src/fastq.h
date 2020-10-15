@@ -53,6 +53,8 @@ typedef struct {
 	//the ID of the current iter read
 	//uint64_t iter_id;
 	sqlite3_stmt *iter_stmt;
+	sqlite3_stmt *id_stmt;
+	sqlite3_stmt *name_stmt;
 
 	//if build_index is True means has index
 	uint8_t has_index;
