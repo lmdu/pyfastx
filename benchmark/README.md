@@ -6,12 +6,14 @@ All tools support for random access were used to perform benchmark. Python 3.6.6
 
 | Tools    | Version  | Language  | URL                                         |
 |----------|----------|-----------|---------------------------------------------|
-| pyfastx  | v0.6.10  | C, Python | <http://github.com/lmdu/pyfastx>            |
+| pyfastx  | v0.7.0   | C, Python | <http://github.com/lmdu/pyfastx>            |
 | samtools | v1.9     | C         | <http://www.htslib.org/>                    |
 | pysam    | v0.15.3  | C, Python | <https://github.com/pysam-developers/pysam> |
-| seqkit   | v0.11.0  | Go        | <https://bioinf.shenwei.me/seqkit>          |
+| seqkit   | v0.13.2  | Go        | <https://bioinf.shenwei.me/seqkit>          |
+| bioperl  | v1.7.7   | Perl      | <https://bioperl.org>                       |
 | pyfasta  | v0.5.2   | Python    | <https://github.com/brentp/pyfasta>         |
-| pyfaidx  | v0.5.5.2 | Python    | <https://github.com/mdshw5/pyfaidx>         |
+| biopython| v1.74    | Python    | <https://biopython.org>                     |
+| pyfaidx  | v0.5.8   | Python    | <https://github.com/mdshw5/pyfaidx>         |
 
 ## Test data
 
@@ -35,35 +37,121 @@ We downloaded 15 genome FASTA files from NCBI FTP server with different size and
 | Arabidopsis thaliana     | Thale cress      | GCF_000001735.4    | 119,300,826      | 6               |
 | Saccharomyces cerevisiae | Yeast            | GCF_000146045.2    | 12,071,326       | 16              |
 
-Download these FASTA files, and place in a directory (e.g. data), uncompress the file and retain the gzip compressed file.
+Download these FASTA files, and place in a directory (e.g. data/fastas), uncompress the file and retain the gzip compressed file.
+
+We downloaded 5 FASTQ files from [NGDC database](https://bigd.big.ac.cn/). These FASTQ files were listed in table below.
+
+| Accession | Total bases \(bp\) | Read counts  | Plain file size \(B\) | Plain file size \(GB\) | Gzip file size \(B\) | Gzip file size \(GB\) |
+|-----------|--------------------|--------------|-----------------------|------------------------|----------------------|-----------------------|
+| CRD000339 | 39,221,236,800     | 392,212,368  | 102,558,579,168       | 95\.52                 | 30,316,624,332       | 28\.23                |
+| CRD000389 | 20,655,260,429     | 204,507,529  | 49,907,114,035        | 46\.48                 | 17,716,170,588       | 16\.50                |
+| CRD000371 | 13,930,424,000     | 139,304,240  | 36,426,113,582        | 33\.92                 | 10,972,470,560       | 10\.22                |
+| CRD000411 | 5,515,159,742      | 54,605,542   | 13,325,681,150        | 12\.41                 | 4,204,994,577        | 3\.92                 |
+| CRD000365 | 1,597,691,427      | 15,818,727   | 3,860,387,755         | 3\.60                  | 1,211,374,918        | 1\.13                 |
+
+Download these FASTQ files, and place in a directory (e.g. data/fastqs), uncompress the file and retain the gzip compressed file.
 
 ## Test method
 
-We used linux command ``/usr/bin/time -f "%e %M"`` to estimate the running time and peak memory of building index, random access and reverse complement for each tool. Each test was performed in triplicate. The mean was calculated as final results.
+We used linux command ``/usr/bin/time -f "%e %M"`` to estimate the running time and peak memory of building index, random access and sequence iteration for each tool. Each test was performed 3 times. The average value was calculated as final results.
 
 ## Perform test
 
 ### Building index
 
-```sh
-./benchmark_build_index.sh 3 data/*.fa > benchmark_result_build_index.tsv
-python make_ggplot2_matrix_for_index_access.py benchmark_result_build_index.tsv > build_index_matrix.tsv
-```
-
-### Random access to longest sequence
+building index for fastas
 
 ```sh
-./benchmark_random_access.sh 3 data/*.fa > benchmark_result_random_access.tsv
-python make_ggplot2_matrix_for_index_access.py benchmark_result_random_access.tsv > random_access_matrix.tsv
+./benchmark_fasta_build_index.sh 3 data/fastas/*.fa > benchmark_result_fasta_build_index.tsv
+python3 make_fasta_ggplot2_matrix.py benchmark_result_fasta_build_index.tsv > matrix_fasta_build_index.tsv
 ```
-
-### Reverse complement longest sequence
+building index for fastqs
 
 ```sh
-./benchmark_reverse_complement.sh 3 data/*.fa > benchmark_result_reverse_complement.tsv
-python make_ggplot2_matrix_for_reverse_complement.py benchmark_result_reverse_complement.tsv > reverse_complement_matrix.tsv
+./benchmark_fastq_build_index.sh 3 data/fastqs/*.fq > benchmark_result_fastq_build_index.tsv
+python3 make_fastq_ggplot2_matrix.py benchmark_result_fastq_build_index.tsv > matrix_fastq_build_index.tsv
 ```
 
-## Plot
+### Random access
 
-Recommended you use RStudio to plot, replace the input file in Line 4 of Plots.R file with matrix file generated above, and then copy code to RStudio to plot.
+randomly get 30% of sequence names from fastas with random seed of 123
+
+```sh
+python3 get_random_sequence_names_from_fasta.py 123 0.3 data/fastas/*.fa
+```
+random access to sequences from fastas
+
+```sh
+./benchmark_fasta_random_access.sh 3 data/fastas/*.fa > benchmark_result_fasta_random_access.tsv
+python3 make_fasta_ggplot2_matrix.py benchmark_result_fasta_random_access.tsv > matrix_fasta_random_access.tsv
+```
+
+randomly generate one thousand subsequence region with length of 1 Kb and random seed 123
+
+```sh
+python3 generate_random_interval.py 123 data/fastas/*.fa
+```
+
+random access to subsequences from fastas
+
+```sh
+./benchmark_fasta_extract_subsequences.sh 3 data/fastas/*.fa > benchmark_result_fasta_extract_subsequences.tsv
+python3 make_fasta_ggplot2_matrix.py benchmark_result_fasta_extract_subsequences.tsv > matrix_fasta_extract_subsequences.tsv
+```
+
+randomly get ten thousand names of reads from fastqs with random seed of 123
+
+```sh
+python3 get_random_read_names_from_fastq.py 123 data/fastqs/*.fq
+```
+
+random access to reads from fastqs
+
+```sh
+./benchmark_fastq_random_access.sh 3 data/fastqs/*.fq > benchmark_result_fastq_random_access.tsv
+python3 make_fastq_ggplot2_matrix.py benchmark_result_fastq_random_access.tsv > matrix_fastq_random_access.tsv
+```
+
+### Sequence iteration
+
+Iterating over sequences from fastas
+
+```sh
+./benchmark_fasta_sequence_iterate.sh 3 data/fastas/*.fa > benchmark_result_fasta_sequence_iterate.tsv
+python3 make_fasta_ggplot2_matrix.py benchmark_result_fasta_sequence_iterate.tsv > matrix_fasta_sequence_iterate.tsv
+```
+
+Iterating over reads from fastqs
+
+```sh
+./benchmark_fastq_sequence_iterate.sh 3 data/fastqs/*.fq > benchmark_result_fastq_sequence_iterate.tsv
+python3 make_fastq_ggplot2_matrix.py benchmark_result_fastq_sequence_iterate.tsv > matrix_fastq_sequence_iterate.tsv
+```
+
+### Plot
+
+Recommended you use RStudio to plot, place the matrix file to the folder of Rscripts.
+
+Select a work directory where matrix and rscripts located in
+
+```r
+setwd(dir.choose())
+```
+
+Plot for building index
+
+```r
+source('Figure_for_build_index.R')
+```
+
+Plot for random access
+
+```r
+source('Figure_for_random access.R')
+```
+
+Plot for sequence iteration
+
+```r
+source('Figure_for_sequence_iteration.R')
+```
