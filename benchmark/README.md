@@ -130,9 +130,9 @@ python3 make_fastq_ggplot2_matrix.py benchmark_result_fastq_sequence_iterate.tsv
 
 ### Plot
 
-Recommended you use RStudio to plot, place the matrix file to the folder of Rscripts.
+Recommended you use RStudio to plot, place the matrix file to the same folder of Rscripts. Prior to plotting, you should install ggplot2 and patchwork.
 
-Select a work directory where matrix and rscripts located in
+Select the work directory where matrix and rscripts located in
 
 ```r
 setwd(dir.choose())
@@ -147,7 +147,7 @@ source('Figure_for_build_index.R')
 Plot for random access
 
 ```r
-source('Figure_for_random access.R')
+source('Figure_for_random_access.R')
 ```
 
 Plot for sequence iteration
