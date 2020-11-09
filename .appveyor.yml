@@ -50,8 +50,8 @@ environment:
       PYTHON_ARCH: 64
 
 install:
-  - if [%PYTHON_ARCH%] LSS [3.9] appveyor DownloadFile https://github.com/lmdu/mingw64/raw/master/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z -FileName mw32.7z
-  - if [%PYTHON_ARCH%] LSS [3.9] 7z x -oC:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0 mw32.7z > NUL
+  - if [%PYTHON_VERSION%] LSS [3.9] appveyor DownloadFile https://github.com/lmdu/mingw64/raw/master/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z -FileName mw32.7z
+  - if [%PYTHON_VERSION%] LSS [3.9] 7z x -oC:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0 mw32.7z > NUL
   - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
   - if [%PYTHON_ARCH%] == [32] SET PATH=%MINGW_32%\bin;%PATH%
   - if [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
