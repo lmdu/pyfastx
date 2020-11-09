@@ -1,3 +1,5 @@
+image: Visual Studio 2019
+
 environment:
   global:
     MINGW_32: C:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32
