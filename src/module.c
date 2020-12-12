@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "fasta.h"
 #include "fastq.h"
+#include "fastx.h"
 #include "util.h"
 #include "read.h"
 #include "sequence.h"
@@ -100,6 +101,12 @@ static PyObject* pyfastx_module_init(void){
 	}
 	Py_INCREF((PyObject *)&pyfastx_FastqType);
 	PyModule_AddObject(module, "Fastq", (PyObject *)&pyfastx_FastqType);
+
+	if(PyType_Ready(&pyfastx_FastxType) < 0){
+		return NULL;
+	}
+	Py_INCREF((PyObject *)&pyfastx_FastxType);
+	PyModule_AddObject(module, "Fastx", (PyObject *)&pyfastx_FastxType);
 
 	if(PyType_Ready(&pyfastx_SequenceType) < 0){
 		return NULL;

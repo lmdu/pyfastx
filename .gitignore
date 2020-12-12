@@ -47,3 +47,4 @@ tt.fq.fxi
 tt.fq.gz.fxi
 tt.list
 tt.py
+build/temp.linux-x86_64-3.6/src/fastx.o

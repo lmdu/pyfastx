@@ -45,6 +45,26 @@ int fastq_validator(gzFile fd) {
 	return 0;
 }
 
+//check file is fasta or fastq file
+int fasta_or_fastq(gzFile fd) {
+	int c;
+	while ((c=gzgetc(fd)) != -1) {
+		if (isspace(c)) {
+			continue;
+		}
+
+		if (c == '>') {
+			return 1;
+		} else if ( c == '@') {
+			return 2;
+		} else {
+			return 0;
+		}
+	}
+
+	return 0;
+}
+
 /*
 remove space using jump table
 Reference:

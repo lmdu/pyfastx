@@ -36,6 +36,7 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 //a simple fasta/q validator
 int fasta_validator(gzFile fd);
 int fastq_validator(gzFile fd);
+int fasta_or_fastq(gzFile fd);
 
 //read line
 /*ssize_t get_until_delim(char **buf, int delimiter, FILE *fp);
