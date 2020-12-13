@@ -62,6 +62,7 @@ typedef struct {
 	uint8_t iterating;
 
 	//prepared sql
+	sqlite3_stmt *iter_stmt;
 	sqlite3_stmt *uid_stmt;
 	sqlite3_stmt *seq_stmt;
 
@@ -77,7 +78,12 @@ void pyfastx_index_free(pyfastx_Index *self);
 void pyfastx_index_cache_clear(pyfastx_Index *self);
 //void pyfastx_index_continue_read(pyfastx_Index *self, char *buff, int64_t offset, uint32_t bytes);
 
-PyObject *pyfastx_get_next_seq(pyfastx_Index *index);
+PyObject *pyfastx_index_next_seq(pyfastx_Index *self);
+PyObject *pyfastx_index_next_upper_seq(pyfastx_Index *self);
+PyObject *pyfastx_index_next_full_name_seq(pyfastx_Index *self);
+PyObject *pyfastx_index_next_full_name_upper_seq(pyfastx_Index *self);
+PyObject *pyfastx_index_next_with_index_seq(pyfastx_Index *self);
+
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt);
 PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, PyObject *name);
 PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id);

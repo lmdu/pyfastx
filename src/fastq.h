@@ -85,6 +85,9 @@ typedef struct {
 	//iteration mode
 	uint8_t iterating;
 
+	//iterate with full name
+	uint8_t full_name;
+
 } pyfastx_Fastq;
 
 extern PyTypeObject pyfastx_FastqType;

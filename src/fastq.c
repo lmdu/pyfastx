@@ -240,12 +240,13 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	int phred = 0;
 	int build_index = 1;
 	int full_index = 0;
+	int full_name = 0;
 
-	static char* keywords[] = {"file_name", "phred", "build_index", "full_index", NULL};
+	static char* keywords[] = {"file_name", "phred", "build_index", "full_index", "full_name", NULL};
 
 	pyfastx_Fastq *obj;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iii", keywords, &file_obj, &phred, &build_index, &full_index)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iiii", keywords, &file_obj, &phred, &build_index, &full_index, &full_name)) {
 		return NULL;
 	}
 
@@ -298,6 +299,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->name_stmt = NULL;
 
 	obj->has_index = build_index;
+	obj->full_name = full_name;
 
 	//initialize attribute
 	obj->phred = phred;
@@ -523,6 +525,8 @@ int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
 
 	return ret==SQLITE_ROW ? 1 : 0;
 }
+
+
 
 PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 	gzrewind(self->gzfd);

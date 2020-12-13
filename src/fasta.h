@@ -27,11 +27,8 @@ typedef struct {
 	//if build_index is True means has index
 	uint8_t has_index;
 
-	//current iter sequence id
-	//uint32_t iter_id;
-
-	//cursor for iteration
-	sqlite3_stmt *iter_stmt;
+	//iteration function
+	PyObject* (*func) (pyfastx_Index *);
 
 	//index for fast random access to sequence
 	pyfastx_Index* index;

@@ -61,6 +61,7 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, 
 	index->iterating = 0;
 
 	//prepared sql
+	index->iter_stmt = NULL;
 	index->uid_stmt = NULL;
 	index->seq_stmt = NULL;
 
@@ -76,24 +77,6 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, 
 void pyfastx_rewind_index(pyfastx_Index *self){
 	kseq_rewind(self->kseqs);
 	gzrewind(self->gzfd);
-}
-
-PyObject* pyfastx_get_next_seq(pyfastx_Index *self){
-	if (kseq_read(self->kseqs) >= 0) {
-		if (self->uppercase) {
-			upper_string(self->kseqs->seq.s, self->kseqs->seq.l);
-		}
-
-		if (self->full_name && self->kseqs->comment.l) {
-			PyObject *fname = PyUnicode_FromFormat("%s %s", self->kseqs->name.s, self->kseqs->comment.s);
-			PyObject *ret = Py_BuildValue("(Os)", fname, self->kseqs->seq.s);
-			Py_DECREF(fname);
-			return ret;
-		} else {
-			return Py_BuildValue("(ss)", self->kseqs->name.s, self->kseqs->seq.s);
-		}
-	}
-	return NULL;
 }
 
 void pyfastx_create_index(pyfastx_Index *self){
@@ -438,6 +421,10 @@ void pyfastx_index_free(pyfastx_Index *self){
 		free(self->index_file);
 	}
 
+	if (self->iter_stmt) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+	}
+
 	if (self->uid_stmt) {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->uid_stmt));
 	}
@@ -586,6 +573,62 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 	}
 }
 
+PyObject *pyfastx_index_next_seq(pyfastx_Index *self) {
+	if (kseq_read(self->kseqs) >= 0) {
+		return Py_BuildValue("(ss)", self->kseqs->name.s, self->kseqs->seq.s);
+	}
+
+	return NULL;
+}
+
+PyObject *pyfastx_index_next_upper_seq(pyfastx_Index *self) {
+	if (kseq_read(self->kseqs) >= 0) {
+		upper_string(self->kseqs->seq.s, self->kseqs->seq.l);
+		return Py_BuildValue("(ss)", self->kseqs->name.s, self->kseqs->seq.s);
+	}
+
+	return NULL;
+}
+
+PyObject *pyfastx_index_next_full_name_seq(pyfastx_Index *self) {
+	PyObject *fname;
+	PyObject *ret;
+	if (kseq_read(self->kseqs) >= 0) {
+		fname = PyUnicode_FromFormat("%s %s", self->kseqs->name.s, self->kseqs->comment.s);
+		ret = Py_BuildValue("(Os)", fname, self->kseqs->seq.s);
+		Py_DECREF(fname);
+		return ret;
+	}
+
+	return NULL;
+}
+
+PyObject *pyfastx_index_next_full_name_upper_seq(pyfastx_Index *self) {
+	PyObject *fname;
+	PyObject *ret;
+	if (kseq_read(self->kseqs) >= 0) {
+		upper_string(self->kseqs->seq.s, self->kseqs->seq.l);
+		fname = PyUnicode_FromFormat("%s %s", self->kseqs->name.s, self->kseqs->comment.s);
+		ret = Py_BuildValue("(Os)", fname, self->kseqs->seq.s);
+		Py_DECREF(fname);
+		return ret;
+	}
+
+	return NULL;
+}
+
+PyObject *pyfastx_index_next_with_index_seq(pyfastx_Index *self) {
+	int ret;
+	PYFASTX_SQLITE_CALL(ret = sqlite3_step(self->iter_stmt));
+	if (ret == SQLITE_ROW) {
+		return pyfastx_index_make_seq(self, self->iter_stmt);
+	}
+
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
+	self->iterating = 0;
+	self->iter_stmt = NULL;
+	return NULL;
+}
 
 /*void pyfastx_index_continue_read(pyfastx_Index *self, char *buff, int64_t offset, uint32_t bytes) {
 	int32_t gap;

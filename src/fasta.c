@@ -94,9 +94,6 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//create index
 	obj->index = pyfastx_init_index(obj->file_name, (int)file_len, uppercase, full_name, memory_index, key_func);
 
-	//initial iterator stmt
-	obj->iter_stmt = NULL;
-
 	//check is correct fasta format
 	if (!fasta_validator(obj->index->gzfd)) {
 		PyErr_Format(PyExc_RuntimeError, "%s is not plain or gzip compressed fasta formatted file", file_name);
@@ -122,14 +119,14 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 }
 
 void pyfastx_fasta_dealloc(pyfastx_Fasta *self){
-	if (self->iter_stmt) {
-		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
-	}
-
 	free(self->file_name);
 
 	pyfastx_index_free(self->index);
 	Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self){
+	return PyUnicode_FromFormat("<Fasta> %s contains %ld sequences", self->file_name, self->seq_counts);
 }
 
 PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){
@@ -138,22 +135,32 @@ PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){
 	if (self->has_index) {
 		self->index->iterating = 1;
 		PYFASTX_SQLITE_CALL(
-			sqlite3_finalize(self->iter_stmt);
-			self->iter_stmt = NULL;
-			sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM seq", -1, &self->iter_stmt, NULL);
+			sqlite3_finalize(self->index->iter_stmt);
+			self->index->iter_stmt = NULL;
+			sqlite3_prepare_v2(self->index->index_db, "SELECT * FROM seq", -1, &self->index->iter_stmt, NULL);
 		);
+
+		self->func = pyfastx_index_next_with_index_seq;
+	} else {
+		if (self->index->uppercase && self->index->full_name) {
+			self->func = pyfastx_index_next_full_name_upper_seq;
+		} else if (self->index->uppercase) {
+			self->func = pyfastx_index_next_upper_seq;
+		} else if (self->index->full_name) {
+			self->func = pyfastx_index_next_full_name_seq;
+		} else {
+			self->func = pyfastx_index_next_seq;
+		}
 	}
 
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
 
-PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self){
-	return PyUnicode_FromFormat("<Fasta> %s contains %ld sequences", self->file_name, self->seq_counts);
-}
+PyObject *pyfastx_fasta_next(pyfastx_Fasta *self) {
+	return self->func(self->index);
 
-PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
-	if (self->has_index) {
+	/*if (self->has_index) {
 		int ret;
 		PYFASTX_SQLITE_CALL(ret = sqlite3_step(self->iter_stmt));
 		if (ret == SQLITE_ROW) {
@@ -166,7 +173,7 @@ PyObject *pyfastx_fasta_next(pyfastx_Fasta *self){
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->iter_stmt));
 	self->index->iterating = 0;
 	self->iter_stmt = NULL;
-	return NULL;
+	return NULL;*/
 }
 
 PyObject *pyfastx_fasta_build_index(pyfastx_Fasta *self){
