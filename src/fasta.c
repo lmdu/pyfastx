@@ -70,10 +70,10 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//check input sequence file is whether exists
 	//file_name = (char *)PyUnicode_AsUTF8AndSize(file_obj, &file_len);
 
-	if (!file_name) {
+	/*if (!file_name) {
 		PyErr_Format(PyExc_ValueError, "the input file name is not a right string");
 		return NULL;
-	}
+	}*/
 
 	if (!file_exists(file_name)) {
 		PyErr_Format(PyExc_FileExistsError, "the input fasta file %s does not exists", file_name);

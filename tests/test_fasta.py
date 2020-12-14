@@ -248,9 +248,6 @@ class FastaTest(unittest.TestCase):
 		self.assertEqual(self.fastx[0].seq, fa[0].seq)
 
 	def test_exception(self):
-		with self.assertRaises(ValueError):
-			pyfastx.Fasta(dict)
-
 		with self.assertRaises(TypeError):
 			pyfastx.Fasta(flat_fasta, key_func=1)
 

@@ -48,3 +48,6 @@ tt.fq.gz.fxi
 tt.list
 tt.py
 build/temp.linux-x86_64-3.6/src/fastx.o
+build/temp.linux-x86_64-3.6/src/fakeys.o
+build/temp.linux-x86_64-3.6/src/fqkeys.o
+tests/__pycache__/test_fakeys.cpython-36.pyc
