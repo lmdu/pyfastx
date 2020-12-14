@@ -25,7 +25,7 @@ typedef struct {
 	int64_t qual_offset;
 
 	//parent fastq
-	pyfastx_Fastq *fastq;
+	pyfastx_FastqMiddleware *middle;
 
 	//read name
 	char *name;

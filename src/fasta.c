@@ -1,6 +1,7 @@
+#define PY_SSIZE_T_CLEAN
 #include "fasta.h"
 #include "util.h"
-#include "identifier.h"
+#include "fakeys.h"
 #include "structmember.h"
 #include "sequence.h"
 
@@ -31,7 +32,6 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 
 PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 	//fasta file path
-	PyObject *file_obj;
 	Py_ssize_t file_len;
 	char *file_name;
 
@@ -58,7 +58,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//paramters for fasta object construction
 	static char* keywords[] = {"file_name", "uppercase", "build_index", "full_index", "full_name", "memory_index", "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iiiiiO", keywords, &file_obj, &uppercase, &build_index, &full_index, &full_name, &memory_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiiO", keywords, &file_name, &file_len, &uppercase, &build_index, &full_index, &full_name, &memory_index, &key_func)){
 		return NULL;
 	}
 
@@ -68,7 +68,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 
 	//check input sequence file is whether exists
-	file_name = (char *)PyUnicode_AsUTF8AndSize(file_obj, &file_len);
+	//file_name = (char *)PyUnicode_AsUTF8AndSize(file_obj, &file_len);
 
 	if (!file_name) {
 		PyErr_Format(PyExc_ValueError, "the input file name is not a right string");
@@ -501,23 +501,23 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 
 PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self) {
 	//pyfastx_Identifier *ids = PyObject_New(pyfastx_Identifier, &pyfastx_IdentifierType);
-	pyfastx_Identifier *ids = (pyfastx_Identifier *)PyObject_CallObject((PyObject *)&pyfastx_IdentifierType, NULL);
+	pyfastx_FastaKeys *keys = (pyfastx_FastaKeys *)PyObject_CallObject((PyObject *)&pyfastx_FastaKeysType, NULL);
 	
-	if (!ids) {
+	if (!keys) {
 		return NULL;
 	}
 
-	ids->index_db = self->index->index_db;
-	ids->stmt = NULL;
-	ids->seq_counts = self->seq_counts;
-	ids->sort = 0;
-	ids->order = 0;
-	ids->update = 0;
-	ids->filter = NULL;
-	ids->temp_filter = NULL;
+	keys->index_db = self->index->index_db;
+	keys->stmt = NULL;
+	keys->seq_counts = self->seq_counts;
+	keys->sort = 0;
+	keys->order = 0;
+	keys->update = 0;
+	keys->filter = NULL;
+	keys->temp_filter = NULL;
 
-	//Py_INCREF(ids);
-	return (PyObject *)ids;
+	//Py_INCREF(keys);
+	return (PyObject *)keys;
 }
 
 PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){

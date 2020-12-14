@@ -1,10 +1,10 @@
-#include "identifier.h"
+#include "fakeys.h"
 #include "util.h"
 
 char SORTS[][6] = {"ID", "chrom", "slen"};
 char ORDERS[][5] = {"ASC", "DESC"};
 
-void pyfastx_identifier_dealloc(pyfastx_Identifier *self){
+void pyfastx_fasta_keys_dealloc(pyfastx_FastaKeys *self){
 	if (self->stmt) {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->stmt));
 	}
@@ -20,7 +20,7 @@ void pyfastx_identifier_dealloc(pyfastx_Identifier *self){
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-void create_temp_query_set(pyfastx_Identifier *self) {
+void create_temp_query_set(pyfastx_FastaKeys *self) {
 	char *sql;
 	PYFASTX_SQLITE_CALL(sqlite3_exec(self->index_db, "DROP TABLE tmp", NULL, NULL, NULL));
 	if (self->filter) {
@@ -35,16 +35,16 @@ void create_temp_query_set(pyfastx_Identifier *self) {
 	self->update = 0;
 }
 
-PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self) {
+PyObject *pyfastx_fasta_keys_iter(pyfastx_FastaKeys *self) {
 	char *sql;
 
-	if (!self->filter && !self->sort && !self->order) {
-		sql = sqlite3_mprintf("SELECT chrom FROM seq");
-	} else {
+	if (self->filter || self->sort || self->order) {
 		if (self->update) {
 			create_temp_query_set(self);
 		}
-		sql = sqlite3_mprintf("SELECT chrom FROM tmp");
+		sql = sqlite3_mprintf("SELECT chrom FROM tmp ORDER BY rowid");
+	} else {
+		sql = sqlite3_mprintf("SELECT chrom FROM seq ORDER BY ID");
 	}
 
 	if (self->stmt) {
@@ -59,7 +59,7 @@ PyObject *pyfastx_identifier_iter(pyfastx_Identifier *self) {
 	return (PyObject *)self;
 }
 
-PyObject *pyfastx_identifier_next(pyfastx_Identifier *self){
+PyObject *pyfastx_fasta_keys_next(pyfastx_FastaKeys *self){
 	int nbytes;
 	char *name;
 	int ret;
@@ -81,15 +81,15 @@ PyObject *pyfastx_identifier_next(pyfastx_Identifier *self){
 	return NULL;
 }
 
-uint64_t pyfastx_identifier_length(pyfastx_Identifier *self){
+uint64_t pyfastx_fasta_keys_length(pyfastx_FastaKeys *self){
 	return self->seq_counts;
 }
 
-PyObject *pyfastx_identifier_repr(pyfastx_Identifier *self){
-	return PyUnicode_FromFormat("<Identifier> contains %ld identifiers", self->seq_counts);
+PyObject *pyfastx_fasta_keys_repr(pyfastx_FastaKeys *self){
+	return PyUnicode_FromFormat("<FastaKeys> contains %ld keys", self->seq_counts);
 }
 
-PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
+PyObject *pyfastx_fasta_keys_item(pyfastx_FastaKeys *self, Py_ssize_t i){
 	sqlite3_stmt *stmt;
 	char *sql;
 	int ret;
@@ -100,25 +100,27 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 		i = i + self->seq_counts;
 	}
 
-	if (i >= self->seq_counts){
+	++i;
+
+	if (i > self->seq_counts){
 		PyErr_SetString(PyExc_IndexError, "index out of range");
 		return NULL;
 	}
 
-	if (!self->filter && !self->sort && !self->order) {
-		sql = sqlite3_mprintf("SELECT chrom FROM seq WHERE rowid=?");
-	} else {
+	if (self->filter || self->sort || self->order) {
 		if (self->update) {
 			create_temp_query_set(self);
 		}
 		sql = sqlite3_mprintf("SELECT chrom FROM tmp WHERE rowid=?");
+	} else {
+		sql = sqlite3_mprintf("SELECT chrom FROM seq WHERE ID=?");
 	}
 	
 	PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL));
 	sqlite3_free(sql);
 
 	PYFASTX_SQLITE_CALL(
-		sqlite3_bind_int(stmt, 1, i+1);
+		sqlite3_bind_int(stmt, 1, i);
 		ret = sqlite3_step(stmt);
 	);
 
@@ -131,12 +133,12 @@ PyObject *pyfastx_identifier_item(pyfastx_Identifier *self, Py_ssize_t i){
 		return Py_BuildValue("s", name);
 	} else {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-		PyErr_SetString(PyExc_ValueError, "get item error");
+		PyErr_Format(PyExc_ValueError, "get item error, code: %d", ret);
 		return NULL;
 	}
 }
 
-int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
+int pyfastx_fasta_keys_contains(pyfastx_FastaKeys *self, PyObject *key){
 	char *name;
 	sqlite3_stmt *stmt;
 	char *sql;
@@ -148,13 +150,13 @@ int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 
 	name = (char *)PyUnicode_AsUTF8(key);
 
-	if (!self->filter && !self->sort && !self->order) {
-		sql = sqlite3_mprintf("SELECT 1 FROM seq WHERE chrom=? LIMIT 1");
-	} else {
+	if (self->filter || self->sort || self->order) {
 		if (self->update) {
 			create_temp_query_set(self);
 		}
 		sql = sqlite3_mprintf("SELECT 1 FROM tmp WHERE chrom=? LIMIT 1");
+	} else {
+		sql = sqlite3_mprintf("SELECT 1 FROM seq WHERE chrom=? LIMIT 1");
 	}
 
 	PYFASTX_SQLITE_CALL(
@@ -168,7 +170,7 @@ int pyfastx_identifier_contains(pyfastx_Identifier *self, PyObject *key){
 	return ret==SQLITE_ROW ? 1 : 0;
 }
 
-PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyObject *kwargs) {
+PyObject *pyfastx_fasta_keys_sort(pyfastx_FastaKeys *self, PyObject *args, PyObject *kwargs) {
 	char *key = "id";
 	int reverse = 0;
 	
@@ -201,7 +203,7 @@ PyObject *pyfastx_identifier_sort(pyfastx_Identifier *self, PyObject *args, PyOb
 	return (PyObject *)self;
 }
 
-PyObject *pyfastx_idnetifier_richcompare(pyfastx_Identifier *self, PyObject *other, int op) {
+PyObject *pyfastx_fasta_keys_richcompare(pyfastx_FastaKeys *self, PyObject *other, int op) {
 	char *when;
 	uint32_t slen;
 	char signs[][3] = {"<", "<=", "=", "<>", ">", ">="};
@@ -238,7 +240,7 @@ PyObject *pyfastx_idnetifier_richcompare(pyfastx_Identifier *self, PyObject *oth
 	return Py_BuildValue("s", self->temp_filter);
 }
 
-PyObject *pyfastx_identifier_like(pyfastx_Identifier *self, PyObject *tag) {
+PyObject *pyfastx_fasta_keys_like(pyfastx_FastaKeys *self, PyObject *tag) {
 	if (!PyUnicode_CheckExact(tag)) {
 		PyErr_SetString(PyExc_ValueError, "the tag after % must be a string");
 		return NULL;
@@ -247,7 +249,7 @@ PyObject *pyfastx_identifier_like(pyfastx_Identifier *self, PyObject *tag) {
 	return PyUnicode_FromFormat("chrom LIKE '%%%s%%'", (char *)PyUnicode_AsUTF8(tag));
 }
 
-PyObject *pyfastx_identifier_filter(pyfastx_Identifier *self, PyObject *args) {
+PyObject *pyfastx_fasta_keys_filter(pyfastx_FastaKeys *self, PyObject *args) {
 	sqlite3_stmt *stmt;
 	char *sql;
 	char *tmp;
@@ -301,7 +303,7 @@ PyObject *pyfastx_identifier_filter(pyfastx_Identifier *self, PyObject *args) {
 	return (PyObject *)self;
 }
 
-PyObject *pyfastx_identifier_reset(pyfastx_Identifier *self) {
+PyObject *pyfastx_fasta_keys_reset(pyfastx_FastaKeys *self) {
 	sqlite3_stmt *stmt;
 	int ret;
 	
@@ -341,50 +343,50 @@ PyObject *pyfastx_identifier_reset(pyfastx_Identifier *self) {
 	return (PyObject *)self;
 }
 
-static PyMethodDef pyfastx_identifier_methods[] = {
-	{"sort", (PyCFunction)pyfastx_identifier_sort, METH_VARARGS|METH_KEYWORDS, NULL},
-	{"filter", (PyCFunction)pyfastx_identifier_filter, METH_VARARGS, NULL},
-	{"reset", (PyCFunction)pyfastx_identifier_reset, METH_NOARGS, NULL},
+static PyMethodDef pyfastx_fasta_keys_methods[] = {
+	{"sort", (PyCFunction)pyfastx_fasta_keys_sort, METH_VARARGS|METH_KEYWORDS, NULL},
+	{"filter", (PyCFunction)pyfastx_fasta_keys_filter, METH_VARARGS, NULL},
+	{"reset", (PyCFunction)pyfastx_fasta_keys_reset, METH_NOARGS, NULL},
 	{NULL, NULL, 0, NULL}
 };
 
 //as a number
-static PyNumberMethods identifier_as_number = {
+static PyNumberMethods fasta_keys_as_number = {
 	0,
 	0,
 	0,
-	(binaryfunc)pyfastx_identifier_like,
+	(binaryfunc)pyfastx_fasta_keys_like,
 	0,
 };
 
 //as a list
-static PySequenceMethods identifier_as_sequence = {
-	(lenfunc)pyfastx_identifier_length, /*sq_length*/
+static PySequenceMethods fasta_keys_as_sequence = {
+	(lenfunc)pyfastx_fasta_keys_length, /*sq_length*/
 	0, /*sq_concat*/
 	0, /*sq_repeat*/
-	(ssizeargfunc)pyfastx_identifier_item, /*sq_item*/
+	(ssizeargfunc)pyfastx_fasta_keys_item, /*sq_item*/
 	0, /*sq_slice */
 	0, /*sq_ass_item*/
 	0, /*sq_ass_splice*/
-	(objobjproc)pyfastx_identifier_contains, /*sq_contains*/
+	(objobjproc)pyfastx_fasta_keys_contains, /*sq_contains*/
 	0, /*sq_inplace_concat*/
 	0, /*sq_inplace_repeat*/
 };
 
-PyTypeObject pyfastx_IdentifierType = {
+PyTypeObject pyfastx_FastaKeysType = {
     //PyVarObject_HEAD_INIT(&PyType_Type, 0)
     PyVarObject_HEAD_INIT(NULL, 0)
     "Identifier",                     /* tp_name */
-    sizeof(pyfastx_Identifier),       /* tp_basicsize */
+    sizeof(pyfastx_FastaKeys),       /* tp_basicsize */
     0,                              /* tp_itemsize */
-    (destructor)pyfastx_identifier_dealloc,                              /* tp_dealloc */
+    (destructor)pyfastx_fasta_keys_dealloc,                              /* tp_dealloc */
     0,                              /* tp_print */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
     0,                              /* tp_reserved */
-    (reprfunc)pyfastx_identifier_repr,                              /* tp_repr */
-    &identifier_as_number,                              /* tp_as_number */
-    &identifier_as_sequence,                              /* tp_as_sequence */
+    (reprfunc)pyfastx_fasta_keys_repr,                              /* tp_repr */
+    &fasta_keys_as_number,                              /* tp_as_number */
+    &fasta_keys_as_sequence,                              /* tp_as_sequence */
     0,   /* tp_as_mapping */
     0,                              /* tp_hash */
     0,                              /* tp_call */
@@ -396,11 +398,11 @@ PyTypeObject pyfastx_IdentifierType = {
     0,                              /* tp_doc */
     0,                              /* tp_traverse */
     0,                              /* tp_clear */
-    (richcmpfunc)pyfastx_idnetifier_richcompare,                              /* tp_richcompare */
+    (richcmpfunc)pyfastx_fasta_keys_richcompare,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
-    (getiterfunc)pyfastx_identifier_iter,                              /* tp_iter */
-    (iternextfunc)pyfastx_identifier_next,                              /* tp_iternext */
-    pyfastx_identifier_methods,       /* tp_methods */
+    (getiterfunc)pyfastx_fasta_keys_iter,                              /* tp_iter */
+    (iternextfunc)pyfastx_fasta_keys_next,                              /* tp_iternext */
+    pyfastx_fasta_keys_methods,       /* tp_methods */
     0,       /* tp_members */
     0,       /* tp_getset */
     0,                              /* tp_base */

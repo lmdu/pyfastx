@@ -5,7 +5,8 @@
 #include "util.h"
 #include "read.h"
 #include "sequence.h"
-#include "identifier.h"
+#include "fakeys.h"
+#include "fqkeys.h"
 #include "version.h"
 #include "sqlite3.h"
 #include "zlib.h"
@@ -121,11 +122,17 @@ static PyObject* pyfastx_module_init(void){
 	Py_INCREF((PyObject *)&pyfastx_ReadType);
 	PyModule_AddObject(module, "Read", (PyObject *)&pyfastx_ReadType);
 
-	if(PyType_Ready(&pyfastx_IdentifierType) < 0){
+	if(PyType_Ready(&pyfastx_FastaKeysType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_IdentifierType);
-	PyModule_AddObject(module, "Identifier", (PyObject *)&pyfastx_IdentifierType);
+	Py_INCREF((PyObject *)&pyfastx_FastaKeysType);
+	PyModule_AddObject(module, "FastaKeys", (PyObject *)&pyfastx_FastaKeysType);
+
+	if (PyType_Ready(&pyfastx_FastqKeysType) < 0) {
+		return NULL;
+	}
+	Py_INCREF((PyObject *)&pyfastx_FastqKeysType);
+	PyModule_AddObject(module, "FastqKeys", (PyObject *)&pyfastx_FastqKeysType);
 
 	return module;
 }

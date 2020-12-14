@@ -39,7 +39,7 @@ class IdentifierTest(unittest.TestCase):
 
 	def test_key_repr(self):
 		ids = self.fastx.keys()
-		self.assertEqual(repr(ids), "<Identifier> contains {} identifiers".format(len(ids)))
+		self.assertEqual(repr(ids), "<FastaKeys> contains {} keys".format(len(ids)))
 
 	def test_key_identifier(self):
 		fikeys = list(self.faidx.keys())
