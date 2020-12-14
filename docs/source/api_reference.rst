@@ -156,7 +156,7 @@ pyfastx.Fasta
 
 		get all names of sequences
 
-		:return: an Identifier object
+		:return: an FastaKeys object
 
 	.. py:method:: count(n)
 
@@ -344,6 +344,14 @@ New in ``pyfastx`` 0.4.0
 
 		Build index for fastq file when build_index set to False
 
+	.. py:method:: keys()
+
+		New in ``pyfastx`` 0.8.0
+
+		Get all the names of reads in fastq file
+
+		:return: an FastqKeys object
+
 pyfastx.Read
 ------------
 
@@ -383,12 +391,29 @@ New in ``pyfastx`` 0.4.0
 
 		get read quality integer value (ascii - phred), return a list
 
-pyfastx.Identifier
+pyfastx.Fastx
+-------------
+
+New in ``pyfastx`` 0.8.0
+
+.. py:class:: pyfastx.Fastx(file_name, uppercase=False, format="auto")
+
+	A python binding of kseq.h, provide a simple api for iterating over sequences in fasta/q file
+
+	:param str file_name: input fasta or fastq file path
+
+	:param bool uppercase: always output uppercase sequence, only work for fasta file, default: False
+
+	:param str format: the input file format, can be "fasta" or "fastq", default: "auto", automatically detect the sequence file
+
+	:return: Fastx object
+
+pyfastx.FastaKeys
 ------------------
 
-.. py:class:: pyfastx.Identifier
+.. py:class:: pyfastx.FastaKeys
 
-	Identifier is a readonly and list-like object, contains all names of sequences
+	FastaKeys is a readonly and list-like object, contains all names of sequences
 
 	.. py:method:: sort(by="id", reverse=False)
 
@@ -415,3 +440,10 @@ pyfastx.Identifier
 		Clear all filters and sort order
 
 		:return: identifier object itself
+
+pyfastx.FastqKeys
+------------------
+
+.. py:class:: pyfastx.FastqKeys
+
+	FastqKeys is a readonly and list-like object, contains all names of reads

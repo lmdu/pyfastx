@@ -430,6 +430,16 @@ The fastest way to parse plain or gzipped FASTQ file without building index, the
 	>>> 	print(seq)
 	>>> 	print(qual)
 
+If you want to use full header line as read identifier without building index, you can do like this:
+
+New in ``pyfastx`` 0.8.0
+
+.. code:: python
+
+	>>> import pyfastx
+	>>> for name,seq,qual in pyfastx.Fastq('test/data/test.fq', build_index=False, full_name=True):
+	>>> 	print(name, seq, qual)
+
 You can also iterate read object from FASTQ object like this:
 
 .. code:: python
@@ -568,88 +578,126 @@ Get read information
 	>>> len(r)
 	150
 
-Identifier
-==========
+FASTX
+=====
 
-Get identifiers
+Iterate over sequences in FASTA
+-------------------------------
+
+When iterating over sequences on FASTX object, a tuple ``(name, seq, comment)`` will be returned, the comment is the content of header line after the first white space character
+
+.. code:: python
+
+	>>> fa = pyfastx.Fastx('tests/data/test.fa')
+	>>> for name,seq,comment in fa:
+	>>>		print(name)
+	>>> 	print(seq)
+	>>> 	print(comment)
+
+	>>> #always output uppercase sequence
+	>>> for item in pyfastx.Fastx('tests/data/test.fa', uppercase=True):
+	>>> 	print(item)
+
+	>>> #Manually specify sequence format
+	>>> for item in pyfastx.Fastx('tests/data/test.fa', format="fasta"):
+	>>> 	print(item)
+
+Iterate over reads in FASTQ
+---------------------------
+
+When iterating over reads on FASTX object, a tuple ``(name, seq, qual, comment)`` will be returned, the comment is the content of header line after the first white space character
+
+.. code:: python
+
+	>>> fq = pyfastx.Fastx('tests/data/test.fq')
+	>>> for name,seq,qual,comment in fq:
+	>>>		print(name)
+	>>> 	print(seq)
+	>>> 	print(qual)
+	>>> 	print(comment)
+
+FastaKeys
+=========
+
+Get fasta keys
 ---------------
 
-Get all identifiers of sequence as a list-like object.
+Get all names of sequence as a list-like object
 
 .. code:: python
 
 	>>> ids = fa.keys()
 	>>> ids
-	<Identifier> contains 211 identifiers
+	<FastaKeys> contains 211 keys
 
 	>>> # get count of sequence
 	>>> len(ids)
 	211
 
-	>>> # get identifier by index
+	>>> # get key by index
 	>>> ids[0]
 	'JZ822577.1'
 
-	>>> # check identifier where in fasta
+	>>> # check key whether in fasta
 	>>> 'JZ822577.1' in ids
 	True
 
-	>>> # iter identifiers
+	>>> # iterate over keys
 	>>> for name in ids:
 	>>> 	print(name)
 
 	>>> # convert to a list
 	>>> list(ids)
 
-Sort identifiers
+Sort keys
 ----------------
 
-Sort identifiers by sequence id, name, or length for iteration
+Sort keys by sequence id, name, or length for iteration
 
 New in ``pyfastx`` 0.5.0
 
 .. code:: python
 
-	>>> # sort identifiers by length with descending order
+	>>> # sort keys by length with descending order
 	>>> for name in ids.sort(by='length', reverse=True):
 	>>> 	print(name)
 
-	>>> # sort identifiers by name with ascending order
+	>>> # sort keys by name with ascending order
 	>>> for name in ids.sort(by='name'):
 	>>> 	print(name)
 
-	>>> # sort identifiers by id with descending order
+	>>> # sort keys by id with descending order
 	>>> for name in ids.sort(by='id', reverse=True)
 	>>> 	print(name)
 
-Filter identifiers
+Filter keys
 ------------------
 
-Filter identifiers by sequence length and name
+Filter keys by sequence length and name
 
 New in ``pyfastx`` 0.5.10
 
 .. code:: python
 
-	>>> # get identifiers with length > 600
+	>>> # get keys with length > 600
 	>>> ids.filter(ids > 600)
-	<Identifier> contains 48 identifiers
+	<FastaKeys> contains 48 keys
 
-	>>> # get identifiers with length >= 500 and <= 700
+	>>> # get keys with length >= 500 and <= 700
 	>>> ids.filter(ids>=500, ids<=700)
-	<Identifier> contains 48 identifiers
+	<FastaKeys> contains 48 keys
 
-	>>> # get identifiers with length > 500 and < 600
+	>>> # get keys with length > 500 and < 600
 	>>> ids.filter(500<ids<600)
-	<Identifier> contains 22 identifiers
+	<FastaKeys> contains 22 keys
 
-	>>> # get identifiers contain JZ8226
+	>>> # get keys contain JZ8226
 	>>> ids.filter(ids % 'JZ8226')
-	<Identifier> contains 90 identifiers
+	<FastaKeys> contains 90 keys
 
-	>>> # get identifiers contain JZ8226 with length > 550
+	>>> # get keys contain JZ8226 with length > 550
 	>>> ids.filter(ids % 'JZ8226', ids>550)
-	<Identifier> contains 17 identifiers
+	<FastaKeys> contains 17 keys
 
 	>>> # list a filtered result
 	>>> ids.filter(ids % 'JZ8226', ids>730)
@@ -673,3 +721,29 @@ Clear filter and sort order
 	>>> # clear sort order and filters
 	>>> ids.reset()
 	<Identifier> contains 211 identifiers
+
+FastqKeys
+=========
+
+Get fastq keys
+---------------
+
+Get all names of read as a list-like object
+
+.. code:: python
+
+	>>> ids = fq.keys()
+	>>> ids
+	<FastqKeys> contains 800 keys
+
+	>>> # get count of read
+	>>> len(ids)
+	800
+
+	>>> # get key by index
+	>>> ids[0]
+	'A00129:183:H77K2DMXX:1:1101:6804:1031'
+
+	>>> # check key whether in fasta
+	>>> 'A00129:183:H77K2DMXX:1:1101:14416:1031' in ids
+	True

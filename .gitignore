@@ -51,3 +51,7 @@ build/temp.linux-x86_64-3.6/src/fastx.o
 build/temp.linux-x86_64-3.6/src/fakeys.o
 build/temp.linux-x86_64-3.6/src/fqkeys.o
 tests/__pycache__/test_fakeys.cpython-36.pyc
+build/temp.win-amd64-3.7/Release/src/fakeys.o
+build/temp.win-amd64-3.7/Release/src/fastx.o
+build/temp.win-amd64-3.7/Release/src/fqkeys.o
+tests/__pycache__/test_fakeys.cpython-37.pyc
