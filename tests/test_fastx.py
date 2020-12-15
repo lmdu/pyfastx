@@ -16,6 +16,8 @@ class FastxTest(unittest.TestCase):
 		self.faidx = pyfaidx.Fasta(flat_fasta)
 
 	def tearDown(self):
+		del self.faidx
+
 		if os.path.exists('{}.fai'.format(flat_fasta)):
 			os.remove('{}.fai'.format(flat_fasta))
 
@@ -26,7 +28,7 @@ class FastxTest(unittest.TestCase):
 			self.assertEqual(' '.join(s.long_name.split()[1:]), comment)
 
 	def test_fasta_upper(self):
-		for name, seq, _ in pyfastx.Fastx(flat_fasta):
+		for name, seq, _ in pyfastx.Fastx(flat_fasta, uppercase=True):
 			self.assertEqual(str(self.faidx[name]), seq)
 
 	def test_fastq_iter(self):
@@ -54,3 +56,10 @@ class FastxTest(unittest.TestCase):
 	def test_fastx_repr(self):
 		fa = pyfastx.Fastx(gzip_fasta, "fasta")
 		self.assertEqual(repr(fa), "<Fastx> iterator for {}".format(gzip_fasta))
+
+	def test_exception(self):
+		with self.assertRaises(FileExistsError):
+			_ = pyfastx.Fastx('test_file')
+
+		with self.assertRaises(RuntimeError):
+			_ = pyfastx.Fastx(gzip_fasta, format="fastx")

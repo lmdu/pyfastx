@@ -77,3 +77,5 @@ tests/__pycache__/test_read.cpython-38.pyc
 tests/__pycache__/test_sequence.cpython-38.pyc
 tests/__pycache__/test_fastx.cpython-36.pyc
 tests/__pycache__/test_fqkeys.cpython-36.pyc
+tests/__pycache__/test_fastx.cpython-37.pyc
+tests/__pycache__/test_fqkeys.cpython-37.pyc
