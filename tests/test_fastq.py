@@ -132,6 +132,12 @@ class FastqTest(unittest.TestCase):
 	def test_repr(self):
 		self.assertEqual(repr(self.fastq), "<Fastq> {} contains {} reads".format(gzip_fastq, len(self.reads)))
 
+	def test_full_name(self):
+		fq = pyfastx.Fastq(flat_fastq, build_index=False, full_name=True)
+
+		for name, _, _ in fq:
+			self.assertTrue(name, self.fastq[name.split()[0]].description)
+
 	def test_exception(self):
 		with self.assertRaises(FileExistsError):
 			_ = pyfastx.Fastq('a_fastq_file_not_exists')

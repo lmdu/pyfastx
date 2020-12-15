@@ -12,7 +12,7 @@ When iterating over sequences on FASTX object, a tuple ``(name, seq, comment)`` 
 
 	>>> fa = pyfastx.Fastx('tests/data/test.fa')
 	>>> for name,seq,comment in fa:
-	>>>		print(name)
+	>>> 	print(name)
 	>>> 	print(seq)
 	>>> 	print(comment)
 
@@ -33,7 +33,7 @@ When iterating over reads on FASTX object, a tuple ``(name, seq, qual, comment)`
 
 	>>> fq = pyfastx.Fastx('tests/data/test.fq')
 	>>> for name,seq,qual,comment in fq:
-	>>>		print(name)
+	>>> 	print(name)
 	>>> 	print(seq)
 	>>> 	print(qual)
 	>>> 	print(comment)

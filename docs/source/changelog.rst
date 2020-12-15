@@ -6,6 +6,10 @@ Version 0.8.0 (2020-12-15)
 
 - Added Fastx object as a simple sequence iterator
 - Added FastqKeys object to obtain read names
+- Added full_name option to Fastq object
+- Added support for Python 3.9
+- Fixed Fasta object error identifier order
+- Optimized speed of containing test and iteration
 - Changed Identifier object to FastaKeys object
 
 Version 0.7.0 (2020-09-20)

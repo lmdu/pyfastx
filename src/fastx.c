@@ -11,8 +11,8 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	pyfastx_Fastx *obj;
 
-	static char* keywords[] = {"file_name", "uppercase", "format", NULL};
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|is", keywords, &file_name, &file_len, &uppercase, &format)) {
+	static char* keywords[] = {"file_name", "format", "uppercase", NULL};
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|si", keywords, &file_name, &file_len, &format, &uppercase)) {
 		return NULL;
 	}
 
