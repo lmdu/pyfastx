@@ -57,6 +57,7 @@ setup(
     ext_modules = [extension],
     description = description,
     long_description = long_description,
+    long_description_content_type = 'text/x-rst',
     author = 'Lianming Du',
     author_email = 'adullb@qq.com',
     url = 'https://github.com/lmdu/pyfastx',

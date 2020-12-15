@@ -103,7 +103,7 @@ New in ``pyfastx`` 0.8.0.
 Pyfastx provide a simple and fast python binding for kseq.h to iterate over sequences or reads in fasta/q file. The FASTX object will automatically detect the input sequence format (fasta or fastq) to return different tuple.
 
 FASTA sequences iteration
-------------------------
+-------------------------
 
 When iterating over sequences on FASTX object, a tuple ``(name, seq, comment)`` will be returned, the comment is the content of header line after the first white space character.
 
