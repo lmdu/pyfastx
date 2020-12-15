@@ -24,9 +24,9 @@ environment:
       PYTHON_VERSION: 3.8
       PYTHON_ARCH: 32
 
-    #- PYTHON: C:\Python39
-    #  PYTHON_VERSION: 3.9
-    #  PYTHON_ARCH: 32
+    - PYTHON: C:\Python39
+      PYTHON_VERSION: 3.9
+      PYTHON_ARCH: 32
 
     - PYTHON: C:\Python35-x64
       PYTHON_VERSION: 3.5
@@ -68,6 +68,7 @@ install:
   - python -m pip install pyfaidx==0.5.8
 
 build_script:
+  - python --version
   - python setup.py build -c mingw32
   - python setup.py test
   - pip wheel -v -w wheelhouse .
