@@ -6,8 +6,8 @@ import unittest
 join = os.path.join
 data_dir = join(os.path.dirname(__file__), 'data')
 
-gzip_fastq = join(data_dir, 'test.fq.gz')
-flat_fastq = join(data_dir, 'test.fq')
+gzip_fastq = join(data_dir, 'test.1.fq.gz')
+flat_fastq = join(data_dir, 'test.1.fq')
 
 class FastqTest(unittest.TestCase):
 	def setUp(self):

@@ -7,8 +7,8 @@ import unittest
 join = os.path.join
 data_dir = join(os.path.dirname(__file__), 'data')
 
-gzip_fastq = join(data_dir, 'test.fq.gz')
-flat_fastq = join(data_dir, 'test.fq')
+gzip_fastq = join(data_dir, 'test.1.fq.gz')
+flat_fastq = join(data_dir, 'test.1.fq')
 
 class ReadTest(unittest.TestCase):
 	def setUp(self):
@@ -126,9 +126,9 @@ class ReadTest(unittest.TestCase):
 		read = self.fastq[idx]
 
 		lines = []
-		with gzip.open(gzip_fastq, 'rt') as fh:
+		with gzip.open(gzip_fastq, 'rb') as fh:
 			for line in fh:
-				line = line.strip()
+				line = line.decode()
 				if line.startswith('@{}'.format(read.name)):
 					lines.append(line)
 					continue
@@ -139,8 +139,7 @@ class ReadTest(unittest.TestCase):
 
 					lines.append(line)
 
-		lines.append('')
-		raw = '\r\n'.join(lines)
+		raw = ''.join(lines)
 
 		self.assertEqual(raw, read.raw)
 
