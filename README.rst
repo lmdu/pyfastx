@@ -782,7 +782,7 @@ New in ``pyfastx`` 0.8.0.
 Get fastq keys
 ---------------
 
-Get all names of read as a list-like object.sz
+Get all names of read as a list-like object.
 
 .. code:: python
 

@@ -465,7 +465,7 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 	sqlite3_blob *blob;
 	sqlite3_stmt *stmt;
 	uint64_t bytes = 0;
-	uint64_t offset = 0;
+	uint64_t offset;
 	int64_t len;
 	FILE *fh;
 	char *temp_index;

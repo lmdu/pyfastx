@@ -199,7 +199,7 @@ PyObject *pyfastx_sequence_iter(pyfastx_Sequence* self){
 
 PyObject *pyfastx_sequence_next(pyfastx_Sequence* self){
 	//read length each time
-	uint32_t rlen;
+	int32_t rlen;
 
 	//real length
 	uint32_t len;
