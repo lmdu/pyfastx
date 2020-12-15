@@ -49,3 +49,7 @@ class FastxTest(unittest.TestCase):
 		#test negative index
 		neg = (self.count - idx) * -1
 		self.assertEqual(self.keys[neg], keys[neg])
+
+	def test_exception(self):
+		with self.assertRaises(IndexError):
+			_ = self.keys[self.count]
