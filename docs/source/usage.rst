@@ -1,3 +1,43 @@
+FASTX
+=====
+
+New in ``pyfastx`` 0.8.0.
+
+Iterate over sequences in FASTA
+-------------------------------
+
+When iterating over sequences on FASTX object, a tuple ``(name, seq, comment)`` will be returned, the comment is the content of header line after the first white space character.
+
+.. code:: python
+
+	>>> fa = pyfastx.Fastx('tests/data/test.fa')
+	>>> for name,seq,comment in fa:
+	>>>		print(name)
+	>>> 	print(seq)
+	>>> 	print(comment)
+
+	>>> #always output uppercase sequence
+	>>> for item in pyfastx.Fastx('tests/data/test.fa', uppercase=True):
+	>>> 	print(item)
+
+	>>> #Manually specify sequence format
+	>>> for item in pyfastx.Fastx('tests/data/test.fa', format="fasta"):
+	>>> 	print(item)
+
+Iterate over reads in FASTQ
+---------------------------
+
+When iterating over reads on FASTX object, a tuple ``(name, seq, qual, comment)`` will be returned, the comment is the content of header line after the first white space character.
+
+.. code:: python
+
+	>>> fq = pyfastx.Fastx('tests/data/test.fq')
+	>>> for name,seq,qual,comment in fq:
+	>>>		print(name)
+	>>> 	print(seq)
+	>>> 	print(qual)
+	>>> 	print(comment)
+
 FASTA
 =====
 
@@ -578,44 +618,6 @@ Get read information
 	>>> len(r)
 	150
 
-FASTX
-=====
-
-Iterate over sequences in FASTA
--------------------------------
-
-When iterating over sequences on FASTX object, a tuple ``(name, seq, comment)`` will be returned, the comment is the content of header line after the first white space character
-
-.. code:: python
-
-	>>> fa = pyfastx.Fastx('tests/data/test.fa')
-	>>> for name,seq,comment in fa:
-	>>>		print(name)
-	>>> 	print(seq)
-	>>> 	print(comment)
-
-	>>> #always output uppercase sequence
-	>>> for item in pyfastx.Fastx('tests/data/test.fa', uppercase=True):
-	>>> 	print(item)
-
-	>>> #Manually specify sequence format
-	>>> for item in pyfastx.Fastx('tests/data/test.fa', format="fasta"):
-	>>> 	print(item)
-
-Iterate over reads in FASTQ
----------------------------
-
-When iterating over reads on FASTX object, a tuple ``(name, seq, qual, comment)`` will be returned, the comment is the content of header line after the first white space character
-
-.. code:: python
-
-	>>> fq = pyfastx.Fastx('tests/data/test.fq')
-	>>> for name,seq,qual,comment in fq:
-	>>>		print(name)
-	>>> 	print(seq)
-	>>> 	print(qual)
-	>>> 	print(comment)
-
 FastaKeys
 =========
 
@@ -725,10 +727,12 @@ Clear filter and sort order
 FastqKeys
 =========
 
+New in ``pyfastx`` 0.8.0.
+
 Get fastq keys
 ---------------
 
-Get all names of read as a list-like object
+Get all names of read as a list-like object.
 
 .. code:: python
 

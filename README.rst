@@ -95,6 +95,48 @@ Update ``pyfastx`` module
 
 	pip install -U pyfastx
 
+FASTX
+=====
+
+New in ``pyfastx`` 0.8.0.
+
+Pyfastx provide a simple and fast python binding for kseq.h to iterate over sequences or reads in fasta/q file. The FASTX object will automatically detect the input sequence format (fasta or fastq) to return different tuple.
+
+FASTA sequences iteration
+------------------------
+
+When iterating over sequences on FASTX object, a tuple ``(name, seq, comment)`` will be returned, the comment is the content of header line after the first white space character.
+
+.. code:: python
+
+    >>> fa = pyfastx.Fastx('tests/data/test.fa.gz')
+    >>> for name,seq,comment in fa:
+    >>>     print(name)
+    >>>     print(seq)
+    >>>     print(comment)
+
+    >>> #always output uppercase sequence
+    >>> for item in pyfastx.Fastx('tests/data/test.fa', uppercase=True):
+    >>>     print(item)
+
+    >>> #Manually specify sequence format
+    >>> for item in pyfastx.Fastx('tests/data/test.fa', format="fasta"):
+    >>>     print(item)
+
+FASTQ reads iteration
+---------------------
+
+When iterating over reads on FASTX object, a tuple ``(name, seq, qual, comment)`` will be returned, the comment is the content of header line after the first white space character.
+
+.. code:: python
+
+    >>> fq = pyfastx.Fastx('tests/data/test.fq.gz')
+    >>> for name,seq,qual,comment in fq:
+    >>>     print(name)
+    >>>     print(seq)
+    >>>     print(qual)
+    >>>     print(comment)
+
 FASTA
 =====
 
@@ -459,6 +501,109 @@ Search for subsequence from given sequence and get one-based start position of t
     >>> fa[0].search('CCTCAAGT', '-')
     301
 
+FastaKeys
+=========
+
+New in ``pyfastx`` 0.8.0. We have changed ``Identifier`` object to ``FastaKeys`` object.
+
+Get keys
+--------------
+
+Get all names of sequence as a list-like object.
+
+.. code:: python
+
+    >>> ids = fa.keys()
+    >>> ids
+    <FastaKeys> contains 211 keys
+
+    >>> # get count of sequence
+    >>> len(ids)
+    211
+
+    >>> # get key by index
+    >>> ids[0]
+    'JZ822577.1'
+
+    >>> # check key whether in fasta
+    >>> 'JZ822577.1' in ids
+    True
+
+    >>> # iterate over keys
+    >>> for name in ids:
+    >>>     print(name)
+
+    >>> # convert to a list
+    >>> list(ids)
+
+Sort keys
+----------------
+
+Sort keys by sequence id, name, or length for iteration
+
+New in ``pyfastx`` 0.5.0
+
+.. code:: python
+
+    >>> # sort keys by length with descending order
+    >>> for name in ids.sort(by='length', reverse=True):
+    >>>     print(name)
+
+    >>> # sort keys by name with ascending order
+    >>> for name in ids.sort(by='name'):
+    >>>     print(name)
+
+    >>> # sort keys by id with descending order
+    >>> for name in ids.sort(by='id', reverse=True)
+    >>>     print(name)
+
+Filter keys
+------------------
+
+Filter keys by sequence length and name
+
+New in ``pyfastx`` 0.5.10
+
+.. code:: python
+
+    >>> # get keys with length > 600
+    >>> ids.filter(ids > 600)
+    <FastaKeys> contains 48 keys
+
+    >>> # get keys with length >= 500 and <= 700
+    >>> ids.filter(ids>=500, ids<=700)
+    <FastaKeys> contains 48 keys
+
+    >>> # get keys with length > 500 and < 600
+    >>> ids.filter(500<ids<600)
+    <FastaKeys> contains 22 keys
+
+    >>> # get keys contain JZ8226
+    >>> ids.filter(ids % 'JZ8226')
+    <FastaKeys> contains 90 keys
+
+    >>> # get keys contain JZ8226 with length > 550
+    >>> ids.filter(ids % 'JZ8226', ids>550)
+    <FastaKeys> contains 17 keys
+
+    >>> # clear sort order and filters
+    >>> ids.reset()
+    <FastaKeys> contains 211 keys
+
+    >>> # list a filtered result
+    >>> ids.filter(ids % 'JZ8226', ids>730)
+    >>> list(ids)
+    ['JZ822609.1', 'JZ822650.1', 'JZ822664.1', 'JZ822699.1']
+
+    >>> # list a filtered result with sort order
+    >>> ids.filter(ids % 'JZ8226', ids>730).sort('length', reverse=True)
+    >>> list(ids)
+    ['JZ822609.1', 'JZ822699.1', 'JZ822664.1', 'JZ822650.1']
+
+    >>> ids.filter(ids % 'JZ8226', ids>730).sort('name', reverse=True)
+    >>> list(ids)
+    ['JZ822699.1', 'JZ822664.1', 'JZ822650.1', 'JZ822609.1']
+
 FASTQ
 =====
 
@@ -629,106 +774,33 @@ Get read information
     >>> len(r)
     150
 
-Identifiers
-===========
+FastqKeys
+=========
 
-Get identifiers
+New in ``pyfastx`` 0.8.0.
+
+Get fastq keys
 ---------------
 
-Get all identifiers of sequence as a list-like object.
+Get all names of read as a list-like object.sz
 
 .. code:: python
 
-    >>> ids = fa.keys()
+    >>> ids = fq.keys()
     >>> ids
-    <Identifier> contains 211 identifiers
+    <FastqKeys> contains 800 keys
 
-    >>> # get count of sequence
+    >>> # get count of read
     >>> len(ids)
-    211
+    800
 
-    >>> # get identifier by index
+    >>> # get key by index
     >>> ids[0]
-    'JZ822577.1'
+    'A00129:183:H77K2DMXX:1:1101:6804:1031'
 
-    >>> # check identifier where in fasta
-    >>> 'JZ822577.1' in ids
+    >>> # check key whether in fasta
+    >>> 'A00129:183:H77K2DMXX:1:1101:14416:1031' in ids
     True
-
-    >>> # iter identifiers
-    >>> for name in ids:
-    >>>     print(name)
-
-    >>> # convert to a list
-    >>> list(ids)
-
-Sort identifiers
-----------------
-
-Sort identifiers by sequence id, name, or length for iteration
-
-New in ``pyfastx`` 0.5.0
-
-.. code:: python
-
-    >>> # sort identifiers by length with descending order
-    >>> for name in ids.sort(by='length', reverse=True):
-    >>>     print(name)
-
-    >>> # sort identifiers by name with ascending order
-    >>> for name in ids.sort(by='name'):
-    >>>     print(name)
-
-    >>> # sort identifiers by id with descending order
-    >>> for name in ids.sort(by='id', reverse=True)
-    >>>     print(name)
-
-Filter identifiers
-------------------
-
-Filter identifiers by sequence length and name
-
-New in ``pyfastx`` 0.5.10
-
-.. code:: python
-
-    >>> # get identifiers with length > 600
-    >>> ids.filter(ids > 600)
-    <Identifier> contains 48 identifiers
-
-    >>> # get identifiers with length >= 500 and <= 700
-    >>> ids.filter(ids>=500, ids<=700)
-    <Identifier> contains 48 identifiers
-
-    >>> # get identifiers with length > 500 and < 600
-    >>> ids.filter(500<ids<600)
-    <Identifier> contains 22 identifiers
-
-    >>> # get identifiers contain JZ8226
-    >>> ids.filter(ids % 'JZ8226')
-    <Identifier> contains 90 identifiers
-
-    >>> # get identifiers contain JZ8226 with length > 550
-    >>> ids.filter(ids % 'JZ8226', ids>550)
-    <Identifier> contains 17 identifiers
-
-    >>> # clear sort order and filters
-    >>> ids.reset()
-    <Identifier> contains 211 identifiers
-
-    >>> # list a filtered result
-    >>> ids.filter(ids % 'JZ8226', ids>730)
-    >>> list(ids)
-    ['JZ822609.1', 'JZ822650.1', 'JZ822664.1', 'JZ822699.1']
-
-    >>> # list a filtered result with sort order
-    >>> ids.filter(ids % 'JZ8226', ids>730).sort('length', reverse=True)
-    >>> list(ids)
-    ['JZ822609.1', 'JZ822699.1', 'JZ822664.1', 'JZ822650.1']
-
-    >>> ids.filter(ids % 'JZ8226', ids>730).sort('name', reverse=True)
-    >>> list(ids)
-    ['JZ822699.1', 'JZ822664.1', 'JZ822650.1', 'JZ822609.1']
 
 Command line interface
 ======================
