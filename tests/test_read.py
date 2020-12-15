@@ -126,7 +126,7 @@ class ReadTest(unittest.TestCase):
 		read = self.fastq[idx]
 
 		lines = []
-		with gzip.open(gzip_fastq, 'rb') as fh:
+		with gzip.open(gzip_fastq, 'rt') as fh:
 			for line in fh:
 				line = line.strip()
 				if line.startswith('@{}'.format(read.name)):
