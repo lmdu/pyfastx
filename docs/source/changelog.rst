@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.8.1 (2020-12-16)
+--------------------------
+
+- Fixed pip install error from source code
+- Removed support for python39 32bit due to dll load error
+
 Version 0.8.0 (2020-12-15)
 --------------------------
 
