@@ -54,9 +54,9 @@ install:
 script:
   - ls -l wheelhouse
   - if [ "$TRAVIS_TAG" != "" ]; then
-      python -m pip install keyring==21.4.0;
-      python -m pip install twine==3.2.0;
-      python -m twine upload --skip-existing wheelhouse/*;
+      python3 -m pip install keyring==21.4.0;
+      python3 -m pip install twine==3.2.0;
+      python3 -m twine upload --skip-existing wheelhouse/*;
     fi
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then
       rm -rf build;
