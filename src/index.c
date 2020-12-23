@@ -573,6 +573,11 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 	}
 }
 
+PyObject *pyfastx_index_next_null(pyfastx_Index *self) {
+	PyErr_SetString(PyExc_TypeError, "'Fasta' object is not an iterator");
+	return NULL;
+}
+
 PyObject *pyfastx_index_next_seq(pyfastx_Index *self) {
 	if (kseq_read(self->kseqs) >= 0) {
 		return Py_BuildValue("(ss)", self->kseqs->name.s, self->kseqs->seq.s);

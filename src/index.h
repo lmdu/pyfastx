@@ -78,6 +78,7 @@ void pyfastx_index_free(pyfastx_Index *self);
 void pyfastx_index_cache_clear(pyfastx_Index *self);
 //void pyfastx_index_continue_read(pyfastx_Index *self, char *buff, int64_t offset, uint32_t bytes);
 
+PyObject *pyfastx_index_next_null(pyfastx_Index *self);
 PyObject *pyfastx_index_next_seq(pyfastx_Index *self);
 PyObject *pyfastx_index_next_upper_seq(pyfastx_Index *self);
 PyObject *pyfastx_index_next_full_name_seq(pyfastx_Index *self);

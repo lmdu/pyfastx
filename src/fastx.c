@@ -2,6 +2,11 @@
 #include "fastx.h"
 #include "util.h"
 
+PyObject *pyfastx_fastx_null(kseq_t* kseqs) {
+	PyErr_SetString(PyExc_TypeError, "'Fastx' object is not an iterator");
+	return NULL;
+}
+
 PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
 	//fasta or fastq file path
 	Py_ssize_t file_len;
@@ -49,6 +54,9 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//initial kseq
 	obj->kseqs = kseq_init(obj->gzfd);
 
+	//iter function
+	obj->func = pyfastx_fastx_null;
+
 	return (PyObject *)obj;
 }
 
@@ -89,8 +97,6 @@ PyObject *pyfastx_fastx_iter(pyfastx_Fastx *self) {
 	return (PyObject *)self;
 }
 
-
-
 PyObject *pyfastx_fastx_next(pyfastx_Fastx *self) {
 	if (kseq_read(self->kseqs) >= 0) {
 		return self->func(self->kseqs);
@@ -100,7 +106,11 @@ PyObject *pyfastx_fastx_next(pyfastx_Fastx *self) {
 }
 
 PyObject *pyfastx_fastx_repr(pyfastx_Fastx *self) {
-	return PyUnicode_FromFormat("<Fastx> iterator for %s", self->file_name);
+	if (self->format == 1) {
+		return PyUnicode_FromFormat("<Fastx> fasta %s", self->file_name);
+	} else {
+		return PyUnicode_FromFormat("<Fastx> fastq %s", self->file_name);
+	}
 }
 
 PyTypeObject pyfastx_FastxType = {

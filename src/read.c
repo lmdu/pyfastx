@@ -104,41 +104,82 @@ void pyfastx_read_random_reader(pyfastx_Read *self, char *buff, int64_t offset, 
 }
 
 PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
-    if (self->middle->iterating) {
-        pyfastx_read_continue_reader(self);
-    }
-    else if (!self->raw) {
-        int64_t new_offset;
-        int64_t new_bytelen;
-        new_offset = self->seq_offset - self->desc_len - 1;
-        new_bytelen = self->qual_offset + self->read_len - new_offset + 1;
-
-        self->raw = (char *)malloc(new_bytelen + 2);
-
-        pyfastx_read_random_reader(self, self->raw, new_offset, new_bytelen);
-
-        if (self->raw[new_bytelen-1] == '\r') {
-            self->raw[new_bytelen] = '\n';
-            self->raw[new_bytelen+1] = '\0';
+    if (! self->raw) {
+        if (self->middle->iterating) {
+            pyfastx_read_continue_reader(self);
         } else {
-            self->raw[new_bytelen] = '\0';
+            int64_t new_offset;
+            int64_t new_bytelen;
+            new_offset = self->seq_offset - self->desc_len - 1;
+            new_bytelen = self->qual_offset + self->read_len - new_offset + 1;
+
+            self->raw = (char *)malloc(new_bytelen + 2);
+
+            pyfastx_read_random_reader(self, self->raw, new_offset, new_bytelen);
+
+            if (self->raw[new_bytelen-1] == '\r') {
+                self->raw[new_bytelen] = '\n';
+                self->raw[new_bytelen+1] = '\0';
+            } else {
+                self->raw[new_bytelen] = '\0';
+            }
         }
     }
 
     return Py_BuildValue("s", self->raw);
 }
 
-PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
-    if (self->middle->iterating) {
-        pyfastx_read_continue_reader(self);
+void pyfastx_read_get_seq(pyfastx_Read* self) {
+    if (! self->seq) {
+        if (self->middle->iterating) {
+            pyfastx_read_continue_reader(self);
+        } else {
+            self->seq = (char *)malloc(self->read_len + 1);
+            pyfastx_read_random_reader(self, self->seq, self->seq_offset, self->read_len);
+            self->seq[self->read_len] = '\0';
+        }
     }
-    else if (!self->seq) {
-        self->seq = (char *)malloc(self->read_len + 1);
-        pyfastx_read_random_reader(self, self->seq, self->seq_offset, self->read_len);
-        self->seq[self->read_len] = '\0';
-    }
+}
 
+PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
+    pyfastx_read_get_seq(self);
     return Py_BuildValue("s", self->seq);
+}
+
+PyObject* pyfastx_read_reverse(pyfastx_Read *self, void* closure) {
+    PyObject* ret;
+    char *data;
+    pyfastx_read_get_seq(self);
+    ret = PyUnicode_New(self->read_len, 127);
+    data = (char *)PyUnicode_1BYTE_DATA(ret);
+    memcpy(data, self->seq, self->read_len);
+    reverse_seq(data);
+
+    return ret;
+}
+
+PyObject* pyfastx_read_complement(pyfastx_Read *self, void* closure) {
+    PyObject* ret;
+    char *data;
+    pyfastx_read_get_seq(self);
+    ret = PyUnicode_New(self->read_len, 127);
+    data = (char *)PyUnicode_1BYTE_DATA(ret);
+    memcpy(data, self->seq, self->read_len);
+    complement_seq(data);
+
+    return ret;
+}
+
+PyObject* pyfastx_read_antisense(pyfastx_Read *self, void* closure) {
+    PyObject* ret;
+    char *data;
+    pyfastx_read_get_seq(self);
+    ret = PyUnicode_New(self->read_len, 127);
+    data = (char *)PyUnicode_1BYTE_DATA(ret);
+    memcpy(data, self->seq, self->read_len);
+    reverse_complement_seq(data);
+
+    return ret;
 }
 
 PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
@@ -209,6 +250,9 @@ PyObject* pyfastx_read_str(pyfastx_Read *self) {
 static PyGetSetDef pyfastx_read_getsets[] = {
     {"raw", (getter)pyfastx_read_raw, NULL, NULL, NULL},
     {"seq", (getter)pyfastx_read_seq, NULL, NULL, NULL},
+    {"reverse", (getter)pyfastx_read_reverse, NULL, NULL, NULL},
+    {"complement", (getter)pyfastx_read_complement, NULL, NULL, NULL},
+    {"antisense", (getter)pyfastx_read_antisense, NULL, NULL, NULL},
     {"qual", (getter)pyfastx_read_qual, NULL, NULL, NULL},
     {"quali", (getter)pyfastx_read_quali, NULL, NULL, NULL},
     {"description", (getter)pyfastx_read_description, NULL, NULL, NULL},

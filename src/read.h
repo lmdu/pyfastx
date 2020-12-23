@@ -4,6 +4,7 @@
 #include "zran.h"
 #include "kseq.h"
 #include "fastq.h"
+#include "util.h"
 #include "sqlite3.h"
 
 typedef struct {

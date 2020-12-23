@@ -64,6 +64,11 @@ PyObject *pyfastx_fasta_keys_next(pyfastx_FastaKeys *self){
 	char *name;
 	int ret;
 
+	if (!self->stmt) {
+		PyErr_SetString(PyExc_TypeError, "'FaKeys' object is not an iterator");
+		return NULL;
+	}
+
 	PYFASTX_SQLITE_CALL(ret=sqlite3_step(self->stmt));
 
 	if (ret == SQLITE_ROW){

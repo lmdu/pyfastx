@@ -27,6 +27,11 @@ PyObject *pyfastx_fastq_keys_next(pyfastx_FastqKeys *self){
 	char *name;
 	int ret;
 
+	if (!self->stmt) {
+		PyErr_SetString(PyExc_TypeError, "'FqKeys' object is not an iterator");
+		return NULL;
+	}
+
 	PYFASTX_SQLITE_CALL(ret=sqlite3_step(self->stmt));
 
 	if (ret == SQLITE_ROW){

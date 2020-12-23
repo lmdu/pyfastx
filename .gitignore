@@ -79,3 +79,4 @@ tests/__pycache__/test_fastx.cpython-36.pyc
 tests/__pycache__/test_fqkeys.cpython-36.pyc
 tests/__pycache__/test_fastx.cpython-37.pyc
 tests/__pycache__/test_fqkeys.cpython-37.pyc
+pyfastx_mp.py

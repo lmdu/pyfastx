@@ -36,7 +36,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	char *file_name;
 
 	//bool value for uppercase sequence
-	int uppercase = 1;
+	int uppercase = 0;
 
 	//build index or not
 	int build_index = 1;
@@ -94,6 +94,9 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//create index
 	obj->index = pyfastx_init_index(obj->file_name, (int)file_len, uppercase, full_name, memory_index, key_func);
 
+	//iter function
+	obj->func = pyfastx_index_next_null;
+
 	//check is correct fasta format
 	if (!fasta_validator(obj->index->gzfd)) {
 		PyErr_Format(PyExc_RuntimeError, "%s is not plain or gzip compressed fasta formatted file", file_name);
@@ -125,8 +128,12 @@ void pyfastx_fasta_dealloc(pyfastx_Fasta *self){
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self){
-	return PyUnicode_FromFormat("<Fasta> %s contains %ld sequences", self->file_name, self->seq_counts);
+PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self) {
+	if (self->has_index) {
+		return PyUnicode_FromFormat("<Fasta> %s contains %ld sequences", self->file_name, self->seq_counts);
+	} else {
+		return PyUnicode_FromFormat("<Fasta> %s", self->file_name);
+	}
 }
 
 PyObject *pyfastx_fasta_iter(pyfastx_Fasta *self){

@@ -234,6 +234,11 @@ PyObject *pyfastx_fastq_build_index(pyfastx_Fastq *self){
 	Py_RETURN_TRUE;
 }
 
+PyObject *pyfastx_fastq_next_null(pyfastx_FastqMiddleware *self) {
+	PyErr_SetString(PyExc_TypeError, "'Fastq' object is not an iterator");
+	return NULL;
+}
+
 PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
 	char *file_name;
 	Py_ssize_t file_len;
@@ -333,6 +338,9 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	if (build_index && full_index) {
 		pyfastx_fastq_calc_composition(obj);
 	}
+
+	//iter function
+	obj->func = pyfastx_fastq_next_null;
 
 	//initialize cache buffer
 	obj->middle->cache_buff = NULL;
@@ -503,7 +511,11 @@ PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
 }
 
 PyObject* pyfastx_fastq_repr(pyfastx_Fastq *self) {
-	return PyUnicode_FromFormat("<Fastq> %s contains %ld reads", self->file_name, self->read_counts);
+	if (self->has_index) {
+		return PyUnicode_FromFormat("<Fastq> %s contains %ld reads", self->file_name, self->read_counts);
+	} else {
+		return PyUnicode_FromFormat("<Fastq> %s", self->file_name);
+	}
 }
 
 int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
