@@ -599,9 +599,13 @@ PyObject *pyfastx_index_next_full_name_seq(pyfastx_Index *self) {
 	PyObject *fname;
 	PyObject *ret;
 	if (kseq_read(self->kseqs) >= 0) {
-		fname = PyUnicode_FromFormat("%s %s", self->kseqs->name.s, self->kseqs->comment.s);
-		ret = Py_BuildValue("(Os)", fname, self->kseqs->seq.s);
-		Py_DECREF(fname);
+		if (self->kseqs->comment.l) {
+			fname = PyUnicode_FromFormat("%s %s", self->kseqs->name.s, self->kseqs->comment.s);
+			ret = Py_BuildValue("(Os)", fname, self->kseqs->seq.s);
+			Py_DECREF(fname);
+		} else {
+			ret = Py_BuildValue("(ss)", self->kseqs->name.s, self->kseqs->seq.s);
+		}
 		return ret;
 	}
 
@@ -613,9 +617,13 @@ PyObject *pyfastx_index_next_full_name_upper_seq(pyfastx_Index *self) {
 	PyObject *ret;
 	if (kseq_read(self->kseqs) >= 0) {
 		upper_string(self->kseqs->seq.s, self->kseqs->seq.l);
-		fname = PyUnicode_FromFormat("%s %s", self->kseqs->name.s, self->kseqs->comment.s);
-		ret = Py_BuildValue("(Os)", fname, self->kseqs->seq.s);
-		Py_DECREF(fname);
+		if (self->kseqs->comment.l) {
+			fname = PyUnicode_FromFormat("%s %s", self->kseqs->name.s, self->kseqs->comment.s);
+			ret = Py_BuildValue("(Os)", fname, self->kseqs->seq.s);
+			Py_DECREF(fname);
+		} else {
+			ret = Py_BuildValue("(ss)", self->kseqs->name.s, self->kseqs->seq.s);
+		}
 		return ret;
 	}
 

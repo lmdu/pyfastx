@@ -55,7 +55,10 @@ class FastxTest(unittest.TestCase):
 
 	def test_fastx_repr(self):
 		fa = pyfastx.Fastx(gzip_fasta, "fasta")
-		self.assertEqual(repr(fa), "<Fastx> iterator for {}".format(gzip_fasta))
+		self.assertEqual(repr(fa), "<Fastx> fasta {}".format(gzip_fasta))
+
+		fq = pyfastx.Fastx(gzip_fastq, "fastq")
+		self.assertEqual(repr(fq), "<Fastx> fastq {}".format(gzip_fastq))
 
 	def test_exception(self):
 		with self.assertRaises(FileExistsError):

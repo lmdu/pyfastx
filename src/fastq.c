@@ -573,9 +573,13 @@ PyObject *pyfastx_fastq_next_full_name_read(pyfastx_FastqMiddleware *middle) {
 	PyObject *rname;
 	PyObject *ret;
 	if (kseq_read(middle->kseq) >= 0) {
-		rname = PyUnicode_FromFormat("%s %s", middle->kseq->name.s, middle->kseq->comment.s);
-		ret = Py_BuildValue("Oss", rname, middle->kseq->seq.s, middle->kseq->qual.s);
-		Py_DECREF(rname);
+		if (middle->kseq->comment.l) {
+			rname = PyUnicode_FromFormat("%s %s", middle->kseq->name.s, middle->kseq->comment.s);
+			ret = Py_BuildValue("Oss", rname, middle->kseq->seq.s, middle->kseq->qual.s);
+			Py_DECREF(rname);
+		} else {
+			ret = Py_BuildValue("sss", middle->kseq->name.s, middle->kseq->seq.s, middle->kseq->qual.s);
+		}
 		return ret;
 	}
 
