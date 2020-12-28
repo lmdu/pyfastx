@@ -369,27 +369,20 @@ ssize_t get_line(char **buf, FILE *fp) {
 
 //generate random file name according to given length
 char *generate_random_name(char* index_file) {
-	int i;
 	int file_len;
-	int suffix = 6;
-	const char *chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	char *result;
 	file_len = strlen(index_file);
-	char *result = (char *)malloc(sizeof(char)*(file_len+suffix+1));
-	memcpy(result, index_file, file_len);
-	srand((unsigned int)time(NULL));
-	for (i = 0; i < suffix; i++) {
-		result[file_len+i] = chars[rand() % 62];
-	}
-	result[file_len+suffix] = '\0';
+	result = (char *)malloc(file_len + 8);
+	sprintf(result, "%s.%s", index_file, ".XXXXXX");
 	return result;
 }
-
 
 void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db) {
 	sqlite3_stmt *stmt;
 	sqlite3_blob *blob;
 	char *temp_index;
-	FILE* fd;
+	FILE* fh;
+	int fd;
 	int64_t remain;
 	uint32_t offset;
 	uint32_t block;
@@ -407,16 +400,21 @@ void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite
 	}
 
 	temp_index = generate_random_name(index_file);
+	if ((fd = mkstemp(temp_index)) < 0) {
+		PyErr_SetString(PyExc_RuntimeError, "Failed to create temp file");
+		return;
+	}
 
-	fd = fopen(temp_index, "wb+");
-	if (zran_export_index(gzip_index, fd) != ZRAN_EXPORT_OK){
-		fclose(fd);
+	fh = fdopen(fd, "wb+");
+	if (zran_export_index(gzip_index, fh) != ZRAN_EXPORT_OK){
+		fclose(fh);
+		close(fd);
 		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
 		return;
 	}
 
-	remain = FTELL(fd);
-	rewind(fd);
+	remain = FTELL(fh);
+	rewind(fh);
 
 	buff = malloc(1048576);
 
@@ -439,7 +437,7 @@ void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite
 				chunk = block - offset;
 				if (chunk > 1048576) chunk = 1048576;
 
-				if ((len=fread(buff, 1, chunk, fd)) > 0) {
+				if ((len=fread(buff, 1, chunk, fh)) > 0) {
 					sqlite3_blob_write(blob, buff, len, offset);
 					offset += len;
 				} else {
@@ -456,7 +454,8 @@ void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite
 	}
 
 	free(buff);
-	fclose(fd);
+	fclose(fh);
+	close(fd);
 	remove(temp_index);
 	free(temp_index);
 }
@@ -468,6 +467,7 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 	uint64_t offset;
 	int64_t len;
 	FILE *fh;
+	int fd;
 	char *temp_index;
 	void *buff;
 	int i, rows;
@@ -485,7 +485,12 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 	}
 
 	temp_index = generate_random_name(index_file);
-	fh = fopen(temp_index, "wb");
+	if ((fd = mkstemp(temp_index)) < 0) {
+		PyErr_SetString(PyExc_RuntimeError, "Failed to create temp file");
+		return;
+	}
+
+	fh = fdopen(fd, "wb");
 	buff = malloc(1048576);
 
 	for (i = 1; i <= rows; i++) {
@@ -509,11 +514,12 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 	free(buff);
 	fclose(fh);
 
-	fh = fopen(temp_index, "rb");
+	fh = fdopen(fd, "rb");
 	if (zran_import_index(gzip_index, fh) != ZRAN_IMPORT_OK) {
 		PyErr_SetString(PyExc_RuntimeError, "failed to import gzip index");
 	}
 	fclose(fh);
+	close(fd);
 	remove(temp_index);
 	free(temp_index);
 }
