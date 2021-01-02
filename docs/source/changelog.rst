@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.8.2 (2021-01-02)
+--------------------------
+
+- Fixed sample segfault error caused by fastq iteration error
+- Fixed gzip index import error in multiple processes
+- Fixed fastq iteration segfault error with full_name=True
+- Fixed all objects iteration to support built-in next function
+
 Version 0.8.1 (2020-12-16)
 --------------------------
 
@@ -33,14 +41,17 @@ Version 0.6.17 (2020-08-31)
 
 - Fixed gzip index loading error when no write permission
 
+Older versions
+--------------
+
 Version 0.6.16 (2020-08-27)
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Increased the buff size of kseq to speedup sequence iteration
 - Removed warning message from fasta.c when building full index
 
 Version 0.6.15 (2020-08-25)
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed key_func error caused by free operation
 - Fixed full name error when reading sequence without whitespace in names
@@ -50,7 +61,7 @@ Version 0.6.15 (2020-08-25)
 - Reduced seek point span size to speedup random access from gzip file
 
 Version 0.6.14 (2020-07-31)
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Added support for using full header as identifier without building index
 - Improved the speed of fasta sequence iteration
@@ -58,7 +69,7 @@ Version 0.6.14 (2020-07-31)
 - Fixed a bug in fastq read reader
 
 Version 0.6.13 (2020-07-09)
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed fastq read iteration error
 - Fixed fastq cache buffer reader
@@ -66,16 +77,13 @@ Version 0.6.13 (2020-07-09)
 - Speedup fasta iteration by reduced seeks
 
 Version 0.6.12 (2020-06-14)
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed DeprecationWarning on py38 caused by '#' formats args
 - Fixed some memory leak bugs
 - Cached sequence name to speedup fetch method
 - Used random string as gzip index temp file to support multiple processes
 
-
-Older versions
---------------
 
 Version 0.6.11 (2020-05-18)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

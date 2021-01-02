@@ -5,7 +5,7 @@ You can install pyfastx via the Python Package Index (PyPI) (**recommended**) or
 
 Make sure you have installed both `pip <https://pip.pypa.io/en/stable/installing/>`_ and Python before starting.
 
-Currently, ``pyfastx`` supports Python 3.5, 3.6, 3.7 and can work on Windows, Linux, MacOS.
+Currently, ``pyfastx`` supports Python 3.5, 3.6, 3.7, 3.8, 3.9 and can work on Windows, Linux, MacOS.
 
 .. warning::
 	
