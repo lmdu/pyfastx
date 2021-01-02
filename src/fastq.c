@@ -596,6 +596,8 @@ PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 		if (!self->middle->cache_buff) {
 			self->middle->cache_buff = (char *)malloc(1048576);
 		}
+		self->middle->cache_soff = 0;
+		self->middle->cache_eoff = 0;
 
 		PYFASTX_SQLITE_CALL(
 			sqlite3_finalize(self->middle->iter_stmt);

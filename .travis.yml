@@ -47,7 +47,7 @@ before_install:
 
 install:
   - $PIP install -U setuptools
-  - $PIP install -U cibuildwheel
+  - $PIP install -U cibuildwheel==1.7.1
   - cibuildwheel --output-dir wheelhouse
   - python3 setup.py sdist --dist-dir wheelhouse
 

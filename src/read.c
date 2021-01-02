@@ -44,6 +44,7 @@ void pyfastx_read_continue_reader(pyfastx_Read *self) {
     //read raw string length
     residue_len = self->qual_offset + self->read_len - offset + 1;
     read_len = 0;
+    cache_len = 0;
 
     self->raw = (char *)malloc(residue_len + 2);
 
@@ -55,15 +56,17 @@ void pyfastx_read_continue_reader(pyfastx_Read *self) {
             if (slice_length >= residue_len) {
                 cache_len = residue_len;
             } else {
-                cache_len = self->middle->cache_eoff - self->middle->cache_soff;
+                //cache_len = self->middle->cache_eoff - self->middle->cache_soff;
+                cache_len = slice_length;
             }
-            
+
             memcpy(self->raw+read_len, self->middle->cache_buff+slice_offset, cache_len);
             read_len += cache_len;
             residue_len -= cache_len;
         }
 
         if (residue_len > 0) {
+            offset += cache_len;
             self->middle->cache_soff = self->middle->cache_eoff;
             gzread(self->middle->gzfd, self->middle->cache_buff, 1048576);
             self->middle->cache_eoff = gztell(self->middle->gzfd);
