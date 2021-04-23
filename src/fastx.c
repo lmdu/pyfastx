@@ -51,6 +51,8 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		return NULL;
 	}
 
+	obj->uppercase = uppercase;
+
 	//initial kseq
 	obj->kseqs = kseq_init(obj->gzfd);
 
