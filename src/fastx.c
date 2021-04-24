@@ -2,10 +2,10 @@
 #include "fastx.h"
 #include "util.h"
 
-PyObject *pyfastx_fastx_null(kseq_t* kseqs) {
+/*PyObject *pyfastx_fastx_null(kseq_t* kseqs) {
 	PyErr_SetString(PyExc_TypeError, "'Fastx' object is not an iterator");
 	return NULL;
-}
+}*/
 
 PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
 	//fasta or fastq file path
@@ -57,7 +57,17 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->kseqs = kseq_init(obj->gzfd);
 
 	//iter function
-	obj->func = pyfastx_fastx_null;
+	//obj->func = pyfastx_fastx_null;
+
+	if (obj->format == 1) {
+		if (obj->uppercase) {
+			obj->func = pyfastx_fastx_fasta_upper;
+		} else {
+			obj->func = pyfastx_fastx_fasta;
+		}
+	} else {
+		obj->func = pyfastx_fastx_fastq;
+	}
 
 	return (PyObject *)obj;
 }
@@ -84,17 +94,6 @@ PyObject *pyfastx_fastx_fastq(kseq_t* kseqs) {
 
 PyObject *pyfastx_fastx_iter(pyfastx_Fastx *self) {
 	gzrewind(self->gzfd);
-
-	if (self->format == 1) {
-		if (self->uppercase) {
-			self->func = pyfastx_fastx_fasta_upper;
-		} else {
-			self->func = pyfastx_fastx_fasta;
-		}
-	} else {
-		self->func = pyfastx_fastx_fastq;
-	}
-
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
