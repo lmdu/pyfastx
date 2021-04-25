@@ -67,6 +67,7 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->uppercase = uppercase;
 
 	//initial kseq
+	gzrewind(obj->gzfd);
 	obj->kseqs = kseq_init(obj->gzfd);
 
 	//iter function

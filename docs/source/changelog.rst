@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.8.3 (2021-04-25)
+--------------------------
+
+- Fixed Fastx iteration for next function
+- Fixed Fastx uppercase for reading fasta
+
 Version 0.8.2 (2021-01-02)
 --------------------------
 
@@ -36,13 +42,13 @@ Version 0.7.0 (2020-09-20)
 - Fixed sequence dealloc error cuasing no fasta delloc trigger
 - Fixed fastq max and min quality score return value
 
-Version 0.6.17 (2020-08-31)
----------------------------
-
-- Fixed gzip index loading error when no write permission
-
 Older versions
 --------------
+
+Version 0.6.17 (2020-08-31)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Fixed gzip index loading error when no write permission
 
 Version 0.6.16 (2020-08-27)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
