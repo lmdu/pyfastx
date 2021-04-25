@@ -7,6 +7,19 @@
 	return NULL;
 }*/
 
+PyObject *pyfastx_fastx_fasta(kseq_t* kseqs) {
+	return Py_BuildValue("sss", kseqs->name.s, kseqs->seq.s, kseqs->comment.s);
+}
+
+PyObject *pyfastx_fastx_fasta_upper(kseq_t* kseqs) {
+	upper_string(kseqs->seq.s, kseqs->seq.l);
+	return pyfastx_fastx_fasta(kseqs);
+}
+
+PyObject *pyfastx_fastx_fastq(kseq_t* kseqs) {
+	return Py_BuildValue("ssss", kseqs->name.s, kseqs->seq.s, kseqs->qual.s, kseqs->comment.s);
+}
+
 PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
 	//fasta or fastq file path
 	Py_ssize_t file_len;
@@ -77,19 +90,6 @@ void pyfastx_fastx_dealloc(pyfastx_Fastx *self) {
 	kseq_destroy(self->kseqs);
 	gzclose(self->gzfd);
 	Py_TYPE(self)->tp_free((PyObject *)self);
-}
-
-PyObject *pyfastx_fastx_fasta(kseq_t* kseqs) {
-	return Py_BuildValue("sss", kseqs->name.s, kseqs->seq.s, kseqs->comment.s);
-}
-
-PyObject *pyfastx_fastx_fasta_upper(kseq_t* kseqs) {
-	upper_string(kseqs->seq.s, kseqs->seq.l);
-	return pyfastx_fastx_fasta(kseqs);
-}
-
-PyObject *pyfastx_fastx_fastq(kseq_t* kseqs) {
-	return Py_BuildValue("ssss", kseqs->name.s, kseqs->seq.s, kseqs->qual.s, kseqs->comment.s);
 }
 
 PyObject *pyfastx_fastx_iter(pyfastx_Fastx *self) {
