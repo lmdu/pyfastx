@@ -11,29 +11,24 @@ typedef struct {
 	sqlite3* index_db;
 
 	//sqlite3 handle
-	sqlite3_stmt *stmt;
+	sqlite3_stmt *iter_stmt;
+	sqlite3_stmt *item_stmt;
+	sqlite3_stmt *in_stmt;
 
 	//sequence counts
 	uint64_t seq_counts;
-
-	//file format 1: fasta, 2: fastq
-	//uint16_t format;
-
-	//sort by 0: id, 1: name, 2: length
-	uint16_t sort;
-
-	//oder 0: asc, 1: desc
-	uint16_t order;
-
-	//need to update results
-	uint8_t update;
 
 	//filter string
 	char *temp_filter;
 	char *filter;
 
+	//order by
+	char *order;
+
 } pyfastx_FastaKeys;
 
 extern PyTypeObject pyfastx_FastaKeysType;
+
+PyObject *pyfastx_fasta_keys_create(sqlite3 *index_db, uint64_t seq_counts);
 
 #endif

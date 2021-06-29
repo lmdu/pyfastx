@@ -508,7 +508,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 
 PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self) {
 	//pyfastx_Identifier *ids = PyObject_New(pyfastx_Identifier, &pyfastx_IdentifierType);
-	pyfastx_FastaKeys *keys = (pyfastx_FastaKeys *)PyObject_CallObject((PyObject *)&pyfastx_FastaKeysType, NULL);
+	/*pyfastx_FastaKeys *keys = (pyfastx_FastaKeys *)PyObject_CallObject((PyObject *)&pyfastx_FastaKeysType, NULL);
 	
 	if (!keys) {
 		return NULL;
@@ -524,7 +524,8 @@ PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self) {
 	keys->temp_filter = NULL;
 
 	//Py_INCREF(keys);
-	return (PyObject *)keys;
+	return (PyObject *)keys;*/
+	return pyfastx_fasta_keys_create(self->index->index_db, self->seq_counts);
 }
 
 PyObject *pyfastx_fasta_subscript(pyfastx_Fasta *self, PyObject *item){

@@ -1009,12 +1009,7 @@ PyObject* pyfastx_fastq_isgzip(pyfastx_Fastq *self, void* closure) {
 }
 
 PyObject *pyfastx_fastq_keys(pyfastx_Fastq *self, void* closure) {
-	pyfastx_FastqKeys *keys = (pyfastx_FastqKeys *)PyObject_CallObject((PyObject *)&pyfastx_FastqKeysType, NULL);
-	keys->index_db = self->index_db;
-	keys->read_counts = self->read_counts;
-	keys->stmt = NULL;
-
-	return (PyObject *)keys;
+	return pyfastx_fastq_keys_create(self->index_db, self->read_counts);
 }
 
 static PySequenceMethods pyfastx_fastq_as_sequence = {

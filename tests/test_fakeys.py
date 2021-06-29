@@ -62,6 +62,18 @@ class IdentifierTest(unittest.TestCase):
 		#check contains
 		self.assertTrue(self.faidx[idx].name in keyobj)
 
+	def test_key_slice(self):
+		fikeys = list(self.faidx.keys())
+		fxkeys = self.fastx.keys()
+		idx = self.get_random_index()
+
+		#test positive
+		self.assertEqual(fikeys[idx:idx+10], fxkeys[idx:idx+10])
+
+		#test negative
+		idx = self.get_random_index() - self.count
+		self.assertEqual(fikeys[idx:idx+10], fxkeys[idx:idx+10])
+
 	def test_keys_sort(self):
 		#sort by id
 		keys = self.fastx.keys()

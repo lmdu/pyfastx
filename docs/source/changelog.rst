@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.8.4 (2021-06-29)
+--------------------------
+
+- Added slice feature to FastaKeys
+- Fixed FastaKeys and FastqKeys iteration memory leak
+- Optimized FastaKeys and FastqKeys creation
+
 Version 0.8.3 (2021-04-25)
 --------------------------
 
