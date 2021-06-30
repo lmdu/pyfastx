@@ -3,11 +3,11 @@ pyfastx
 
 .. image:: https://github.com/lmdu/pyfastx/actions/workflows/main.yml/badge.svg
    :target: https://github.com/lmdu/pyfastx/actions/workflows/main.yml
-   :alt: Github Action
+   :alt: Action
 
 .. image:: https://ci.appveyor.com/api/projects/status/7qeurb8wcl0bw993?svg=true
    :target: https://ci.appveyor.com/project/lmdu/pyfastx
-   :alt: Appveyor CI
+   :alt: Appveyor
 
 .. image:: https://readthedocs.org/projects/pyfastx/badge/?version=latest
    :target: https://pyfastx.readthedocs.io/en/latest/?badge=latest
@@ -27,7 +27,7 @@ pyfastx
 
 .. image:: https://img.shields.io/pypi/implementation/pyfastx
    :target: https://pypi.org/project/pyfastx
-   :alt: PyPI - Implementation
+   :alt: Language
 
 .. image:: https://img.shields.io/pypi/pyversions/pyfastx.svg
    :target: https://pypi.org/project/pyfastx
