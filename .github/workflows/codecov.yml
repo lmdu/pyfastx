@@ -17,6 +17,7 @@ jobs:
       - name: Generate coverage report
         run: |
           pip install coverage
+          pip install pyfaidx==0.5.8
           python setup.py build_ext --inplace
           coverage run -m unittest
       - name: Upload Coverage to CodeCov
