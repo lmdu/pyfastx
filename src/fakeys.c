@@ -19,6 +19,11 @@ void pyfastx_fasta_keys_prepare(pyfastx_FastaKeys *self) {
 		self->item_stmt = NULL;
 	}
 
+	if (self->in_stmt) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->in_stmt));
+		self->in_stmt = NULL;
+	}
+
 	iter_sql = sqlite3_mprintf("SELECT chrom FROM seq %s %s %s",
 		self->filter ? "WHERE" : "",
 		self->filter ? self->filter : "",
