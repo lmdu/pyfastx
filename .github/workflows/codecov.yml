@@ -20,4 +20,3 @@ jobs:
           coverage run -m unittest
       - name: Upload Coverage to CodeCov
         uses: codecov/codecov-action@v1
-        with:
