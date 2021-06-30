@@ -8,6 +8,7 @@ jobs:
     env:
       OS: ubuntu-latest
       PYTHON: '3.8'
+
     steps:
       - uses: actions/checkout@master
       - name: Setup Python
@@ -16,9 +17,11 @@ jobs:
           python-version: 3.8
       - name: Generate coverage report
         run: |
-          pip install coverage
           pip install pyfaidx==0.5.8
-          python setup.py build_ext --inplace
-          coverage run -m unittest
+          python setup.py test
+        env:
+          CPPFLAGS: -coverage
       - name: Upload Coverage to CodeCov
         uses: codecov/codecov-action@v1
+        with:
+          fail_ci_if_error: true
