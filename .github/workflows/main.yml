@@ -21,7 +21,7 @@ jobs:
           CIBW_SKIP: cp27-* pp*
           CIBW_BUILD_VERBOSITY: 0
           CIBW_BEFORE_BUILD: sqlite3 --version && curl -O http://zlib.net/zlib-1.2.11.tar.gz && tar xzf zlib-1.2.11.tar.gz && cd zlib-1.2.11 && ./configure && make && make install
-          CIBW_BEFORE_TEST: pwd
+          CIBW_BEFORE_TEST: pwd && ls -l && ls -l {package}
           CIBW_TEST_COMMAND: python {project}/setup.py test
           CIBW_TEST_REQUIRES: pyfaidx==0.5.8
           #CIBW_BUILD_VERBOSITY: 3 for debug
