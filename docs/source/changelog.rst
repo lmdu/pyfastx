@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 0.8.4 (2021-06-29)
+Version 0.8.4 (2021-06-30)
 --------------------------
 
 - Added slice feature to FastaKeys
