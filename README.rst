@@ -1,9 +1,9 @@
 pyfastx
 #######
 
-.. image:: https://travis-ci.org/lmdu/pyfastx.svg?branch=master
-   :target: https://travis-ci.org/lmdu/pyfastx
-   :alt: Travis CI
+.. image:: https://github.com/lmdu/pyfastx/actions/workflows/main.yml/badge.svg
+   :target: https://github.com/lmdu/pyfastx/actions/workflows/main.yml
+   :alt: Github Action
 
 .. image:: https://ci.appveyor.com/api/projects/status/7qeurb8wcl0bw993?svg=true
    :target: https://ci.appveyor.com/project/lmdu/pyfastx
@@ -16,10 +16,6 @@ pyfastx
 .. image:: https://codecov.io/gh/lmdu/pyfastx/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/lmdu/pyfastx
    :alt: Codecov
-
-.. image:: https://coveralls.io/repos/github/lmdu/pyfastx/badge.svg?branch=master
-   :target: https://coveralls.io/github/lmdu/pyfastx?branch=master
-   :alt: Coveralls
 
 .. image:: https://img.shields.io/pypi/v/pyfastx.svg
    :target: https://pypi.org/project/pyfastx
