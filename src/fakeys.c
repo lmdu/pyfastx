@@ -222,7 +222,7 @@ PyObject *pyfastx_fasta_keys_subscript(pyfastx_FastaKeys *self, PyObject *item) 
 		slice_len = PySlice_AdjustIndices(self->seq_counts, &slice_start, &slice_stop, slice_step);
 
 		if (slice_len <= 0) {
-			return NULL;
+			return PyList_New(0);
 		}
 
 		char *sql = sqlite3_mprintf("SELECT chrom FROM seq %s %s %s LIMIT %d OFFSET %d",
