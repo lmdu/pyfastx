@@ -45,13 +45,16 @@ class SequenceTest(unittest.TestCase):
 
 		self.assertEqual(expect.name, result.name)
 		self.assertEqual(expect.seq, result.seq)
+		# Test that calling Sequence.seq doesn't modify sequence
+		self.assertEqual(expect.seq, result.seq)
 
 		#test subseq
 		self.assertEqual(expect[0:10].seq, result[0:10].seq)
 
 		#test negative index
 		idx = (self.get_random_index() + 1) * -1
-		expect = self.faidx[idx][:]
+		faidx_idx = len(self.faidx.keys()) + idx
+		expect = self.faidx[faidx_idx][:]
 		result = self.fastx[idx]
 
 		self.assertEqual(expect.name, result.name)

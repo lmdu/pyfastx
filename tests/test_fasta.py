@@ -136,6 +136,14 @@ class FastaTest(unittest.TestCase):
 			expect = self.faidx[seq.name][:].seq
 			self.assertEqual(expect, seq.seq)
 
+		# Test that sequence objects made in a loop can be used stably outside the loop.
+		for seq in self.fastx:
+			loop_seq = seq
+			break
+		expect = self.faidx[seq.name][:].seq
+		self.assertEqual(expect, loop_seq.seq)
+		self.assertEqual(expect, loop_seq.seq)
+
 	def test_iter_tuple(self):
 		fa = pyfastx.Fasta(gzip_fasta, build_index=False)
 		

@@ -365,9 +365,9 @@ PyObject *pyfastx_sequence_seq(pyfastx_Sequence* self, void* closure){
 	char *seq;
 	PyObject *ret;
 
-	if (self->index->iterating) {
-		pyfastx_sequence_continue_read(self);
-	}
+	// if (self->index->iterating) {
+	// 	pyfastx_sequence_continue_read(self);
+	// }
 
 	seq = pyfastx_sequence_get_subseq(self);
 	//ret = Py_BuildValue("s", seq);
