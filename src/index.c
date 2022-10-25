@@ -534,6 +534,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, PyObject *sname){
 		);
 		return (PyObject *)obj;
 	} else {
+		PYFASTX_SQLITE_CALL(sqlite3_reset(self->seq_stmt));
 		PyErr_Format(PyExc_KeyError, "%s does not exist in fasta file", name);
 		return NULL;
 	}
@@ -568,6 +569,7 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 		);
 		return (PyObject *)obj;
 	} else { 
+		PYFASTX_SQLITE_CALL(sqlite3_reset(self->uid_stmt));
 		PyErr_SetString(PyExc_IndexError, "Index Error");
 		return NULL;
 	}
