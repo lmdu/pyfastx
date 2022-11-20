@@ -155,7 +155,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			boff INTEGER, --seq offset start\n \
 			blen INTEGER, --seq byte length\n \
 			slen INTEGER, --seq length\n \
-			llen INTEGER, --line lenght\n \
+			llen INTEGER, --line length\n \
 			elen INTEGER, --end length\n \
 			norm INTEGER, --line with the same length or not\n \
 			dlen INTEGER --description header line length\n \
