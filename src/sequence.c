@@ -158,6 +158,8 @@ void pyfastx_sequence_dealloc(pyfastx_Sequence* self) {
 	self->index = NULL;
 	self->cache_pos = NULL;
 
+	Py_DECREF(self->index->fasta);
+
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 

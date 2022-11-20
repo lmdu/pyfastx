@@ -9,7 +9,7 @@ create a index
 @param uppercase, uppercase sequence
 @param uppercase
 */
-pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, int full_name, int memory_index, PyObject* key_func){
+pyfastx_Index* pyfastx_init_index(PyObject *obj, char* file_name, int file_len, int uppercase, int full_name, int memory_index, PyObject* key_func){
 	pyfastx_Index* index;
 
 	index = (pyfastx_Index *)malloc(sizeof(pyfastx_Index));
@@ -44,7 +44,7 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, 
 	if(index->gzip_format){
 		index->gzip_index = (zran_index_t *)malloc(sizeof(zran_index_t));
 		//initial zran index
-		zran_init(index->gzip_index, index->fd, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
+		zran_init(index->gzip_index, index->fd, NULL, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
 	}
 
 	//cache name
@@ -70,6 +70,9 @@ pyfastx_Index* pyfastx_init_index(char* file_name, int file_len, int uppercase, 
 	//index->cache_seq = {0,0,0};
 	kstring_init(index->cache_name);
 	kstring_init(index->cache_seq);
+
+	//parent fasta
+	index->fasta = obj;
 
 	return index;
 }
@@ -462,6 +465,7 @@ pyfastx_Sequence* pyfastx_index_new_seq(pyfastx_Index *self) {
 
 	//index
 	seq->index = self;
+	Py_INCREF(self->fasta);
 
 	//buff
 	seq->line_cache = NULL;
@@ -497,7 +501,6 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 		seq->desc_len = sqlite3_column_int(stmt, 8);
 	);
 
-	//Py_INCREF(seq);
 	return (PyObject *)seq;
 }
 
@@ -532,6 +535,7 @@ PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, PyObject *sname){
 			obj->desc_len = sqlite3_column_int(self->seq_stmt, 8);
 			sqlite3_reset(self->seq_stmt);
 		);
+
 		return (PyObject *)obj;
 	} else {
 		PYFASTX_SQLITE_CALL(sqlite3_reset(self->seq_stmt));
@@ -567,6 +571,7 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t chrom){
 			obj->desc_len = sqlite3_column_int(self->uid_stmt, 8);
 			sqlite3_reset(self->uid_stmt);
 		);
+
 		return (PyObject *)obj;
 	} else { 
 		PYFASTX_SQLITE_CALL(sqlite3_reset(self->uid_stmt));

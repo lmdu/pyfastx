@@ -4,9 +4,7 @@
  * See zran.h for documentation.
  *
  * This module was originally based on the zran example, written by Mark
- * Alder, which ships with the zlib source code.
- *
- * Author: Paul McCarthy <pauldmccarthy@gmail.com>
+ * Adler, which ships with the zlib source code.
  */
 
 #include <math.h>
@@ -16,28 +14,30 @@
 #include <string.h>
 #include "zlib.h"
 
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+
 #ifdef _WIN32
-#define FSEEK _fseeki64
-#define FTELL _ftelli64
 #include "windows.h"
 #include "io.h"
-static int is_readonly(FILE *fd)
+static int is_readonly(FILE *fd, PyObject *f)
 {
-    /* Can't find a way to do this correctly under Windows and
-       the check is not required anyway since the underlying
-       Python module checks it already */
+    /* Can't find a way to do this correctly under
+       Windows and the check is not required anyway
+       since the underlying Python module checks it
+       already */
     return 1;
 }
 #else
 #include <fcntl.h>
-#define FSEEK fseeko
-#define FTELL ftello
 /* Check if file is read-only */
-static int is_readonly(FILE *fd)
+static int is_readonly(FILE *fd, PyObject *f)
 {
-    return (fcntl(fileno(fd), F_GETFL) & O_ACCMODE) == O_RDONLY;
+    /* Skip the test for python file-likes */
+    return fd != NULL
+      ? (fcntl(fileno(fd), F_GETFL) & O_ACCMODE) == O_RDONLY
+      : 1;
 }
-
 
 static uint32_t max(uint32_t a, uint32_t b) {
 
@@ -46,7 +46,10 @@ static uint32_t max(uint32_t a, uint32_t b) {
 }
 #endif
 
+
 #include "zran.h"
+#include "zran_file_util.h"
+
 
 #ifdef NO_C99
 static double round(double val)
@@ -69,11 +72,16 @@ static double round(double val)
 #define zran_log(...)
 #endif
 
-/* Define magic bytes and version for export format. */
-const char zran_magic_bytes[] = {'G', 'Z', 'I', 'D', 'X', 0, 0};
 
 /*
- * Discards all points in the index which come after the specfiied
+ * Identifier and version number for index files created by zran_export_index.
+ */
+const char    ZRAN_INDEX_FILE_ID[]    = {'G', 'Z', 'I', 'D', 'X'};
+const uint8_t ZRAN_INDEX_FILE_VERSION = 1;
+
+
+/*
+ * Discards all points in the index which come after the specified
  * compressed offset.
  *
  * Returns 0 on success, non-0 on failure.
@@ -85,7 +93,7 @@ static int _zran_invalidate_index(
 
 
 /*
- * Expands the capacity of the memory used to store the index ilst.
+ * Expands the capacity of the memory used to store the index list.
  *
  * Returns 0 on success, non-0 on failure.
  */
@@ -110,19 +118,20 @@ static int _zran_free_unused(
  */
 static uint64_t _zran_index_limit(
   zran_index_t *index,      /* The index */
-  uint8_t       compressed  /* Pass in non-0 to get the compressed stream limit,
-                               or 0 for the uncompressed limit. */
+  uint8_t       compressed  /* Pass in non-0 to get the compressed stream
+                               limit, or 0 for the uncompressed limit. */
 );
 
 
 /* Return codes for _zran_get_point_at */
+int ZRAN_GET_POINT_CRC_ERROR   =  -2;
 int ZRAN_GET_POINT_FAIL        =  -1;
-int ZRAN_GET_POINT_OK          =  0;
-int ZRAN_GET_POINT_NOT_COVERED =  1;
-int ZRAN_GET_POINT_EOF         =  2;
+int ZRAN_GET_POINT_OK          =   0;
+int ZRAN_GET_POINT_NOT_COVERED =   1;
+int ZRAN_GET_POINT_EOF         =   2;
 
 /*
- * Searches for the zran_point which preceeds the given offset. The offset
+ * Searches for the zran_point which precedes the given offset. The offset
  * may be specified as being relative to the start of the compressed data,
  * or the uncompressed data.
  *
@@ -161,9 +170,13 @@ static int _zran_get_point_at(
  * be expanded to encompass it.
  *
  * The input arguments and return values are identical to the
- * _zran_get_point_at function, however if the index has been initialised
- * with the ZRAN_AUTO_BUILD flag, this function will never return
- * ZRAN_GET_POINT_NOT_COVERED.
+ * _zran_get_point_at function, however:
+ *
+ *   - if the index has been initialised with the ZRAN_AUTO_BUILD flag, this
+ *     function will never return ZRAN_GET_POINT_NOT_COVERED.
+ *
+ *   - If a CRC validation error occurs while the index is being expanded,
+ *     ZRAN_GET_POINT_CRC_ERROR is returned.
  */
 static int _zran_get_point_with_expand(
     zran_index_t  *index,      /* The index                           */
@@ -200,22 +213,45 @@ static uint64_t _zran_estimate_offset(
 
 
 /*
- * Used by _zran_expand_index, and _zran_read. Seeks to the specified
- * compressed data offset, and initialises zlib to start
- * decompressing/inflating from said offset.
+ * Used by _zran_inflate. Initialises zlib to start decompressing/inflating
+ * from either:
  *
- * Returns 0 for success, non-0 on failure.
+ *  - the current seek location in the compressed data, or
+ *  - from a location denoted by a specific index point
+ *
+ * If an index point is provided, the function will seek to the specified
+ * compressed data offset before initialising zlib.
+ *
+ * Otherwise (no index point), inflation is initialised at the current seek
+ * location in the input data, and a GZIP header is expected at that location.
+ *
+ * The index->readbuf and readbuf_size, and the z_stream->avail_in, avail_out,
+ * next_in and next_out fields must all be set before this function is called.
+ *
+ * Returns the number of bytes over the input data that were read (which could
+ * be 0), or a negative value on failure.
  */
 static int _zran_init_zlib_inflate(
-    zran_index_t *index,      /* The index */
+    zran_index_t *index,        /* The index */
 
-    z_stream     *stream,     /* Pointer to a z_stream struct */
+    z_stream     *stream,       /* Pointer to a z_stream struct */
 
-    zran_point_t *point       /* Pass in NULL to initialise for inflation from
-                                 the beginning of the stream. Or pass a
-                                 pointer to the index point corresponding to
-                                 the location to start from. */
+    zran_point_t *point         /* Pass in NULL to initialise for inflation
+                                   from the current location in the input file.
+                                   Or pass a pointer to the index point
+                                   corresponding to the location to start
+                                   from. */
 );
+
+
+/*
+ * Return codes for _zran_expand_index. These are currently
+ * assumed to have identical values to the ZRAN_BUILD_INDEX
+ * return codes.
+ */
+int ZRAN_EXPAND_INDEX_OK        =  0;
+int ZRAN_EXPAND_INDEX_FAIL      = -1;
+int ZRAN_EXPAND_INDEX_CRC_ERROR = -2;
 
 
 /*
@@ -233,11 +269,14 @@ static int _zran_init_zlib_inflate(
  * be a long distance between block boundaries (longer than the desired index
  * point spacing).
  *
- * Returns 0 on success, non-0 on failure.
+ * Returns 0 on success. If a CRC check fails, returns
+ * ZRAN_EXPAND_INDEX_CRC_ERROR. For other types of failure, returns
+ * ZRAN_EXPAND_INDEX_FAIL.
  */
 static int _zran_expand_index(
-    zran_index_t *index, /* The index                      */
-    uint64_t      until  /* Expand the index to this point */
+    zran_index_t *index, /* The index */
+    uint64_t      until  /* Expand the index to this point. If 0,
+                            expand the index until EOF is reached. */
 );
 
 
@@ -266,7 +305,34 @@ static int _zran_add_point(
     uint32_t      data_size,    /* Number of bytes in data */
 
     uint8_t      *data          /* Pointer to data_size bytes of uncompressed
-                                   data preceeding this index point. */
+                                   data preceding this index point. */
+);
+
+
+/* _zran_read_data return codes */
+int ZRAN_READ_DATA_EOF   = -1;
+int ZRAN_READ_DATA_ERROR = -2;
+
+/*
+ * This function is a sub-function of _zran_inflate, used to read data from
+ * the input file to be passed to zlib:inflate for decompression.
+ *
+ * Up to index->readbuf_size bytes are read from the input file into
+ * index->readbuf, and the z_stream counters/pointers are updated accordingly.
+ *
+ * On success, returns 0.
+ *
+ * If there are no more bytes left to read from the input file (i.e. we are at
+ * EOF), ZRAN_READ_DATA_EOF is returned. If an error occurs, returns
+ * ZRAN_READ_DATA_ERROR.
+ */
+static int _zran_read_data_from_file(
+    zran_index_t *index,        /* The index                               */
+    z_stream     *stream,       /* The z_stream struct                     */
+    uint64_t      cmp_offset,   /* Current offset in the compressed data   */
+    uint64_t      uncmp_offset, /* Current offset in the uncompressed data */
+    uint32_t      need_atleast  /* Skip read if the read buffer already has
+                                   this many bytes */
 );
 
 
@@ -274,28 +340,61 @@ static int _zran_add_point(
 int ZRAN_FIND_STREAM_ERROR     = -2;
 int ZRAN_FIND_STREAM_NOT_FOUND = -1;
 
+
 /*
- * This function is used to search for concatenated compressed streams.  It
- * searches through the compressed data (pointed to by stream->next_in) to
- * find the location of the next compressed stream.
+ * This function is a sub-function of _zran_inflate, used to search for a new
+ * GZIP stream in a series of concatenated streams.  It searches through the
+ * compressed data (pointed to by stream->next_in) to find the location of the
+ * next compressed stream.
  *
  * If a new stream was found, the z_stream struct is re-initialised to
- * decompress data from the new stream. In this case, this function returns
- * the number of bytes in the compressed data that were read before the stream
- * was found.
+ * decompress data from the new stream, using _zran_init_zlib_inflate. In
+ * this case, the value returned by that function is returned.
  *
  * Otherwise (if a compressed stream was not found), this function returns
  * ZRAN_FIND_STREAM_NOT_FOUND.
  *
+ * The number of bytes that were skipped over before the new stream was found
+ * is added to the provided offset pointer.
+ *
  * If an error occurs, ZRAN_FIND_STREAM_ERROR is returned.
  */
 static int _zran_find_next_stream(
-    zran_index_t *index, /* The index           */
-    z_stream     *stream /* The z_stream struct */
+    zran_index_t *index,  /* The index                                      */
+    z_stream     *stream, /* The z_stream struct                            */
+    int          *offset  /* Used to store the number of bytes skipped over */
+);
+
+
+/* _zran_validate_stream return codes */
+int ZRAN_VALIDATE_STREAM_ERROR   = -2;
+int ZRAN_VALIDATE_STREAM_INVALID = -1;
+
+
+/*
+ * This function is a sub-function of _zran_inflate, called when the end of a
+ * gzip stream is reached. It reads the CRC32 and uncompressed file size from
+ * the end of the stream, and compares them to the CRC32 and size that was
+ * incrementally calculated by _zran_inflate (which are stored in
+ * index->stream_crc32 and index->stream_size),
+ *
+ * The number of bytes that were read before the new stream was found is
+ * added to the provided offset pointer.
+ *
+ * If ZRAN_SKIP_CRC_CHECK is active, this function returns immediately without
+ * doing anything.
+ *
+ * If an error occurs, ZRAN_VALIDATE_STREAM_ERROR is returned.
+ */
+static int _zran_validate_stream(
+    zran_index_t *index,  /* The index                                      */
+    z_stream     *stream, /* The z_stream struct                            */
+    int          *offset  /* Used to store the number of bytes skipped over */
 );
 
 
 /* _zran_inflate return codes */
+int ZRAN_INFLATE_CRC_ERROR      = -6;
 int ZRAN_INFLATE_ERROR          = -5;
 int ZRAN_INFLATE_NOT_COVERED    = -4;
 int ZRAN_INFLATE_OUTPUT_FULL    = -3;
@@ -337,6 +436,13 @@ uint32_t ZRAN_INFLATE_STOP_AT_BLOCK         = 64;
  * offset, inflates (a.k.a. decompresses) it, and copies the decompressed
  * data to the provided output buffer.
  *
+ * This function is complicated because it is used in three different
+ * situations:
+ *   - When generating the index (by zran_expand_index)
+ *   - When starting from an index seek point and discarding compressed data
+ *     to find a requested seek location (by zran_read)
+ *   - When actually reading and decompressing data (by zran_read).
+ *
  * This function may be used in a re-entrant or non-re-entrant manner,
  * depending on the flags which are used. In the latter (more likely) case,
  * various pieces of information representing the current inflation state are
@@ -346,29 +452,32 @@ uint32_t ZRAN_INFLATE_STOP_AT_BLOCK         = 64;
  *
  *   1. Figures out the starting offsets into the compressed/uncompressed
  *      streams. If the ZRAN_INFLATE_USE_OFFSET flag is active, the index
- *      point preceeding the specified offset is used as the starting point.
+ *      point preceding the specified offset is used as the starting point.
  *      If there is no such point, ZRAN_INFLATE_NOT_COVERED is returned.  If
  *      ZRAN_INFLATE_USE_OFFSET is not active, index->inflate_cmp_offset and
  *      index->inflate_uncmp_offset are used as the starting point.
  *
- *   2. Initialises the z_stream struct, if
- *      ZRAN_INFLATE_INIT_Z_STREAM is active. Otherwise, the function assumes
- *      that the z_stream struct is already initialised and ready to be used.
- *
- *   3. Create a read buffer, if ZRAN_INFLATE_INIT_READBUF is active. A
+ *   2. Create a read buffer, if ZRAN_INFLATE_INIT_READBUF is active. A
  *      reference to the read buffer is stored at index->readbuf.  If
  *      ZRAN_INFLATE_INIT_READBUF is not set, the function assumes that the
  *      read buffer already exists.
  *
- *   4. If the ZRAN_INFLATE_CLEAR_READBUF_OFFSETS flag is active, the read
+ *   3. If the ZRAN_INFLATE_CLEAR_READBUF_OFFSETS flag is active, the read
  *      buffer offset (index->readbuf_offset) and length (index->readbuf_end)
  *      fields are both set to 0. Otherwise, the function assumes that the
  *      current offset/length values are valid.
+
+ *   4. Initialises the z_stream struct, if ZRAN_INFLATE_INIT_Z_STREAM is
+ *      active. Otherwise, the function assumes that the z_stream struct is
+ *      already initialised and ready to be used.
  *
  *   5. Read some compressed data from the file into the read buffer as needed.
  *
  *   6. Pass that data to the zlib inflate function, and store the resulting
- *      uncompressed data in the provided data buffer.
+ *      uncompressed data in the provided data buffer. If the end of a GZIP
+ *      stream is reached for the first time, it is validated against the
+ *      CRC/file size stored in the GZIP footer (unless ZRAN_SKIP_CRC_CHECK
+ *      is active).
  *
  *   7. Repeat steps 5 and 6 until one of the following is true:
  *
@@ -440,36 +549,46 @@ uint32_t ZRAN_INFLATE_STOP_AT_BLOCK         = 64;
  *
  *   - ZRAN_INFLATE_EOF:            The end of file has been reached.
  *
+ *   - ZRAN_INFLATE_CRC_ERROR:      The CRC or uncompressed data size in the
+ *                                  GZIP footer does not match the CRC/size
+ *                                  that was calculated.
+ *
  *   - ZRAN_INFLATE_ERROR:          A critical error has occurred.
  */
 static int _zran_inflate(
-    zran_index_t *index,          /* Pointer to the index. */
+    zran_index_t *index,            /* Pointer to the index. */
 
-    z_stream     *strm,           /* Pointer to a z_stream struct. */
+    z_stream     *strm,             /* Pointer to a z_stream struct. */
 
-    uint64_t      offset,         /* Compressed data offset to start inflation
-                                     from. */
+    uint64_t      offset,           /* Compressed data offset to start
+                                       inflation from. */
 
-    uint16_t      flags,          /* Control flags. */
+    uint16_t      flags,            /* Control flags. */
 
-    uint32_t     *total_consumed, /* Pointer which is updated to contain the
-                                     total number of bytes that were read
-                                     from the input file. */
+    uint32_t     *total_consumed,   /* Pointer which is updated to contain the
+                                       total number of bytes that were read
+                                       from the input file. */
 
-    uint32_t     *total_output,   /* Pointer which is updated to contain the
-                                     total number of bytes that were inflated,
-                                     and stored in data. */
+    uint32_t     *total_output,     /* Pointer which is updated to contain the
+                                       total number of bytes that were
+                                       inflated, and stored in data. */
 
-    uint32_t      len,            /* Maximum number of bytes to inflate. May
-                                     be 0. */
+    uint32_t      len,              /* Maximum number of bytes to inflate. May
+                                       be 0. */
 
-    uint8_t      *data            /* Place to store the inflated bytes. */
+    uint8_t      *data,             /* Place to store the inflated bytes. */
+
+    int           add_stream_points /* Add index points at the beginning of
+                                       every gzip stream, including the first
+                                       one at the beginning of the input file
+                                     */
 );
 
 
 /* Initialise a zran_index_t struct for use with the given GZIP file. */
 int zran_init(zran_index_t *index,
               FILE         *fd,
+              PyObject     *f,
               uint32_t      spacing,
               uint32_t      window_size,
               uint32_t      readbuf_size,
@@ -487,38 +606,65 @@ int zran_init(zran_index_t *index,
     if (readbuf_size == 0) readbuf_size = 16384;
 
     /*
-     * The zlib manual specifies that a window size of 32KB is 'always enough'
-     * to initialise inflation/deflation with a set dictionary. Less than
-     * that is not guaranteed to be enough.
-    */
+     * The zlib manual specifies that a window
+     * size of 32KB is 'always enough' to
+     * initialise inflation/deflation with a
+     * set dictionary. Less than that is not
+     * guaranteed to be enough.
+     */
     if (window_size < 32768)
         goto fail;
 
     /*
-     * window_size bytes of uncompressed data are stored with each seek point
-     * in the index. So it's a bit silly to have the distance between
-     * consecutive points less than the window size.
+     * Small read-buffers make code complicated.
+     * The absolute minimum we need is enough to
+     * store a GZIP footer, null padding bytes at
+     * the end of a stream, and the subsequent
+     * GZIP header. There are no bounds on the
+     * number of padding bytes, or the size of a
+     * GZIP header, so this constraint is
+     * arbitrary (but should be good enough).
+     */
+    if (readbuf_size < 128)
+        goto fail;
+
+    /*
+     * window_size bytes of uncompressed data are
+     * stored with each seek point in the index.
+     * So it's a bit silly to have the distance
+     * between consecutive points less than the
+     * window size.
      */
     if (spacing <= window_size)
-      goto fail;
+        goto fail;
 
     /* The file must be opened in read-only mode */
-    if (!is_readonly(fd))
+    if (!is_readonly(fd, f))
         goto fail;
 
     /*
      * Calculate the size of the compressed file
      */
-    if (FSEEK(fd, 0, SEEK_END) != 0)
-        goto fail;
+    if (seekable_(fd, f)) {
+        if (fseek_(fd, f, 0, SEEK_END) != 0)
+            goto fail;
 
-    compressed_size = FTELL(fd);
+        compressed_size = ftell_(fd, f);
 
-    if (compressed_size < 0)
-        goto fail;
+        if (compressed_size < 0)
+            goto fail;
 
-    if (FSEEK(fd, 0, SEEK_SET) != 0)
-        goto fail;
+        if (fseek_(fd, f, 0, SEEK_SET) != 0)
+            goto fail;
+    } else {
+        /*
+         * File is not seekable, so don't calculate
+         * compressed_size.  It will be updated in
+         * _zran_read_data_from_file when the EOF
+         * is reached
+         */
+        compressed_size = 0;
+    }
 
     /*
      * Allocate some initial space
@@ -531,6 +677,7 @@ int zran_init(zran_index_t *index,
 
     /* initialise the index struct */
     index->fd                   = fd;
+    index->f                    = f;
     index->flags                = flags;
     index->compressed_size      = compressed_size;
     index->uncompressed_size    = 0;
@@ -546,6 +693,10 @@ int zran_init(zran_index_t *index,
     index->uncmp_seek_offset    = 0;
     index->inflate_cmp_offset   = 0;
     index->inflate_uncmp_offset = 0;
+    index->validating           = 0;
+    index->last_stream_ended    = 0;
+    index->stream_size          = 0;
+    index->stream_crc32         = 0;
     index->list                 = point_list;
 
     return 0;
@@ -623,12 +774,19 @@ void zran_free(zran_index_t *index) {
     for (i = 0; i < index->npoints; i++) {
         pt = &(index->list[i]);
 
-        free(pt->data);
+        /*
+         * points at compression stream boundaries
+         * have no data associated with them
+         */
+        if (pt->data != NULL) {
+            free(pt->data);
+        }
     }
 
     free(index->list);
 
     index->fd                = NULL;
+    index->f                 = NULL;
     index->spacing           = 0;
     index->window_size       = 0;
     index->readbuf_size      = 0;
@@ -675,10 +833,7 @@ int zran_build_index(zran_index_t *index, uint64_t from, uint64_t until)
 {
 
     if (_zran_invalidate_index(index, from) != 0)
-        return -1;
-
-    if (until == 0)
-      until = index->compressed_size;
+        return ZRAN_BUILD_INDEX_FAIL;
 
     return _zran_expand_index(index, until);
 }
@@ -703,9 +858,11 @@ int _zran_get_point_at(
 
     /*
      * Bad input - past the end of the compressed or
-     * uncompressed streams (if the latter is known).
+     * uncompressed streams (if their sizes are known).
      */
-    if (compressed && offset >= index->compressed_size)
+    if (compressed                 &&
+        index->compressed_size > 0 &&
+        offset >= index->compressed_size)
         goto eof;
 
     if (!compressed                  &&
@@ -713,28 +870,20 @@ int _zran_get_point_at(
         offset >= index->uncompressed_size)
         goto eof;
 
+    if (index->npoints == 0)
+        goto not_covered;
+
     zran_log("_zran_get_point_at(%llu, c=%u)\n", offset, compressed);
 
     /*
-     * Figure out how much of the compressed and
-     * uncompressed data the index currently covers.
-     *
-     * No points - no coverage.
+     * Figure out how much of the compressed
+     * and uncompressed data the index currently
+     * covers -  the offsets of the last point
+     * in the index.
      */
-    if (index->npoints == 0) {
-        cmp_max   = 0;
-        uncmp_max = 0;
-    }
-
-    /*
-     * Otherwise the offsets of the
-     * last point in the index.
-     */
-    else {
-        last      = &(index->list[index->npoints - 1]);
-        uncmp_max = last->uncmp_offset;
-        cmp_max   = last->cmp_offset;
-    }
+    last      = &(index->list[index->npoints - 1]);
+    uncmp_max = last->uncmp_offset;
+    cmp_max   = last->cmp_offset;
 
     if ( compressed && offset > cmp_max)   goto not_covered;
     if (!compressed && offset > uncmp_max) goto not_covered;
@@ -802,10 +951,6 @@ int _zran_get_point_with_expand(zran_index_t  *index,
              compressed,
              index->flags & ZRAN_AUTO_BUILD);
 
-    if ((index->flags & ZRAN_AUTO_BUILD) == 0) {
-        return _zran_get_point_at(index, offset, compressed, point);
-    }
-
     /*
      * See if there is an index point that
      * covers the specified offset. If there's
@@ -813,6 +958,14 @@ int _zran_get_point_with_expand(zran_index_t  *index,
      * until there is.
      */
     result = _zran_get_point_at(index, offset, compressed, point);
+
+    /*
+     * Don't expand the index if
+     * auto_build is not active
+     */
+    if ((index->flags & ZRAN_AUTO_BUILD) == 0) {
+        return result;
+    }
 
     while (result == ZRAN_GET_POINT_NOT_COVERED) {
 
@@ -840,12 +993,15 @@ int _zran_get_point_with_expand(zran_index_t  *index,
         if (expand <= limit)
             expand = limit + 10;
 
+        zran_log("Estimated mapping from uncompressed offset "
+                 "%lu into compressed data: %lu\n", offset, expand);
+
         /*
          * Expand the index
          */
-        if (_zran_expand_index(index, expand) != 0) {
-            goto fail;
-        }
+        result = _zran_expand_index(index, expand);
+        if      (result == ZRAN_EXPAND_INDEX_CRC_ERROR) { goto crcerror; }
+        else if (result != 0)                           { goto fail; }
 
         /*
          * Index has been expanded, so
@@ -870,6 +1026,8 @@ int _zran_get_point_with_expand(zran_index_t  *index,
 
     return result;
 
+crcerror:
+    return ZRAN_GET_POINT_CRC_ERROR;
 fail:
     return ZRAN_GET_POINT_FAIL;
 }
@@ -913,10 +1071,12 @@ uint64_t _zran_estimate_offset(
      * between the compressed/uncompressed data streams.
      */
     else if (compressed) {
-        estimate = round(offset * ((float)last->uncmp_offset / last->cmp_offset));
+        estimate = round(offset *
+                         ((float)last->uncmp_offset / last->cmp_offset));
     }
     else {
-        estimate = round(offset * ((float)last->cmp_offset / last->uncmp_offset));
+        estimate = round(offset *
+                         ((float)last->cmp_offset / last->uncmp_offset));
     }
 
 
@@ -941,7 +1101,6 @@ int _zran_add_point(zran_index_t  *index,
     zran_point_t *next       = NULL;
 
     #ifdef ZRAN_VERBOSE
-
     zran_log("_zran_add_point(%i, c=%lld + %i, u=%lld, data=%u / %u)\n",
              index->npoints,
              cmp_offset,
@@ -968,12 +1127,13 @@ int _zran_add_point(zran_index_t  *index,
     /*
      * Allocate memory to store the
      * uncompressed data (the "window")
-     * associated with this point. The
-     * first index point (where uncmp_offset == 0)
-     * has no data associated with it for
-     * obvious reasons.
+     * associated with this point. Index
+     * points corresponding to the beginning
+     * of a gzip stream (including at start
+     * of file) do not have any window data
+     * associated with them.
      */
-    if (uncmp_offset == 0) {
+    if (data == NULL) {
         point_data = NULL;
     }
     else {
@@ -997,10 +1157,12 @@ int _zran_add_point(zran_index_t  *index,
      * window from the beginning of data. Does
      * that make sense?
      */
-    if (uncmp_offset > 0) {
+    if (data != NULL) {
         if (data_offset >= index->window_size) {
 
-            memcpy(point_data, data + (data_offset - index->window_size), index->window_size);
+            memcpy(point_data,
+                   data + (data_offset - index->window_size),
+                   index->window_size);
 
             zran_log("Copy %u bytes from %u to %u\n",
                      index->window_size,
@@ -1026,7 +1188,6 @@ int _zran_add_point(zran_index_t  *index,
         }
     }
 
-
     index->npoints++;
 
     return 0;
@@ -1040,26 +1201,40 @@ fail:
 
 /* Initialise the given z_stream struct for decompression/inflation. */
 int _zran_init_zlib_inflate(zran_index_t *index,
-                            z_stream     *stream,
-                            zran_point_t *point)
-{
+                            z_stream     *strm,
+                            zran_point_t *point) {
 
-    int     ret;
-    int     windowBits;
-    int64_t seek_loc;
+    int           ret;
+    int           window;
+    int64_t       seek_loc;
+    unsigned long bytes_read;
 
-    windowBits        = index->log_window_size;
-    stream->zalloc    = Z_NULL;
-    stream->zfree     = Z_NULL;
-    stream->opaque    = Z_NULL;
-    stream->avail_in  = 0;
-    stream->avail_out = 0;
-    stream->next_in   = Z_NULL;
+    bytes_read   = strm->avail_in;
+    window       = index->log_window_size;
+    strm->zalloc = Z_NULL;
+    strm->zfree  = Z_NULL;
+    strm->opaque = Z_NULL;
 
     /*
-     * Seek to the required location in the compressed
-     * data stream. If the provided index point is NULL,
-     * we start from the beginning of the file.
+     * If we're starting from the the current location in
+     * the compressed data, we assume that there is a gzip
+     * header present. Initialise inflation, then read
+     * past the header.
+
+     * Below, we will re-initialise for raw inflation.
+     */
+    if (point == NULL) {
+
+        zran_log("_zran_init_zlib_inflate from current "
+                 "seek location (expecting GZIP header)\n");
+        if (inflateInit2(strm, window + 32) != Z_OK) { goto fail; }
+        if (inflate(strm, Z_BLOCK)          != Z_OK) { goto fail_free_strm; }
+        if (inflateEnd(strm)                != Z_OK) { goto fail; }
+    }
+
+    /*
+     * If starting from an index point, seek to the
+     * required location in the compressed data stream.
      *
      * The compressed offset for index points correspond
      * to the first full byte of compressed data. So if
@@ -1067,76 +1242,223 @@ int _zran_init_zlib_inflate(zran_index_t *index,
      * need to seek to the previous byte, and tell zlib
      * about it (via the inflatePrime call below).
      */
-    if (point == NULL) seek_loc = 0;
-    else               seek_loc = point->cmp_offset - (point->bits > 0);
+    else {
+        seek_loc = point->cmp_offset - (point->bits > 0);
 
-    if (FSEEK(index->fd, seek_loc, SEEK_SET) != 0)
-        goto fail;
+        zran_log("_zran_init_zlib_inflate from index point (%li, %li, %li)\n",
+                 seek_loc,
+                 point->cmp_offset,
+                 point->uncmp_offset);
 
-    /*
-     * If we're starting from the beginning
-     * of the file, we tell inflateInit2 to
-     * expect a file header
-     */
-    if (point == NULL) {
-
-        zran_log("zlib_init_zlib_inflate(0, n/a, n/a, %u + 32)\n", windowBits);
-        if (inflateInit2(stream, windowBits + 32) != Z_OK) {
+        if (fseek_(index->fd, index->f, seek_loc, SEEK_SET) != 0) {
             goto fail;
         }
     }
 
     /*
-     * Otherwise, we configure for raw inflation,
-     * and initialise the inflation dictionary
-     * from the uncompressed data associated with
-     * the index point.
+     * Now initialise for raw inflation. This tells zlib
+     * not to expect any GZIP headers, and not to read
+     * the GZIP footer (as we do our own CRC validation
+     * in _zran_inflate).
      */
-    else {
 
-        zran_log("_zran_init_zlib_inflate(%lld, %llu, %llu, -%u)\n",
-                 seek_loc,
-                 point->cmp_offset,
-                 point->uncmp_offset,
-                 windowBits);
+    if (inflateInit2(strm, -window) != Z_OK) {
+        goto fail;
+    }
 
-        if (inflateInit2(stream, -windowBits) != Z_OK) {
-            goto fail;
-        }
+    /*
+     * If starting from an index point, initialise
+     * the inflation dictionary from the uncompressed
+     * data associated with the index point.
+     */
+    if (point != NULL && point->data != NULL) {
 
-        /* The starting index point is not
-         * byte-aligned, so we'll insert
-         * the initial bits into the inflate
-         * stream using inflatePrime
+        /*
+         * The starting index point is not byte-aligned,
+         * so we'll insert the initial bits into the
+         * inflate stream using inflatePrime (above,
+         * we seeked one byte back to accommodate this).
          */
         if (point->bits > 0) {
 
-            ret = getc(index->fd);
+            ret = getc_(index->fd, index->f);
 
-            if (ret == -1)
-                goto fail;
+            if (ret == -1 && ferror_(index->fd, index->f)) {
+                goto fail_free_strm;
+            }
 
-            if (inflatePrime(stream,
+            if (inflatePrime(strm,
                              point->bits, ret >> (8 - point->bits)) != Z_OK)
-                goto fail;
+                goto fail_free_strm;
         }
 
         /*
          * Initialise the inflate stream
          * with the index point data.
          */
-        if (point->data != NULL) {
-            if (inflateSetDictionary(stream,
-                                     point->data,
-                                     index->window_size) != Z_OK)
-                goto fail;
+        if (inflateSetDictionary(strm,
+                                 point->data,
+                                 index->window_size) != Z_OK)
+            goto fail_free_strm;
+    }
+
+    /*
+     * Reset CRC/size validation counters when
+     * we start reading a new gzip stream
+     */
+    index->validating   = (point == NULL);
+    index->stream_size  = 0;
+    index->stream_crc32 = 0;
+
+    zran_log("_zran_zlib_init_inflate: initialised, read %i bytes\n",
+             bytes_read - strm->avail_in);
+
+    /*
+     * Return the number of bytes of compressed
+     * data, if any that were read over
+     */
+    return bytes_read - strm->avail_in;
+
+/*
+ * Something has gone wrong, but
+ * inflateInit2 has been called,
+ * so we need to call inflateEnd.
+ * Falls through to the fail:
+ * clause.
+ */
+fail_free_strm:
+    inflateEnd(strm);
+/* Something has gone wrong */
+fail:
+    return -1;
+}
+
+
+/*
+ * Read data from the GZIP file, and copy it into the read buffer for
+ * decompression.
+ */
+static int _zran_read_data_from_file(zran_index_t *index,
+                                     z_stream     *stream,
+                                     uint64_t      cmp_offset,
+                                     uint64_t      uncmp_offset,
+                                     uint32_t      need_atleast) {
+
+    size_t f_ret;
+
+    if (stream->avail_in >= need_atleast) {
+        return 0;
+    }
+
+    /*
+     * If there are any unprocessed bytes
+     * left over, put them at the beginning
+     * of the read buffer.
+     *
+     * TODO: In times gone by, we would only
+     * attempt to read data (and therefore
+     * rotate memory here) when the read
+     * buffer was empty. But now, to keep
+     * the code in _zran_inflate clean-ish,
+     * we do this repeatedly, even when we
+     * are at EOF, to ensure that there is
+     * enough data to validate one stream,
+     * and find the next. We could improve
+     * things here, by only rotating memory
+     * here if needed.
+     */
+    if (stream->avail_in > 0) {
+        memmove(index->readbuf, stream->next_in, stream->avail_in);
+    }
+
+    zran_log("Reading from file %llu "
+             "[into readbuf offset %u]\n",
+             cmp_offset + stream->avail_in,
+             stream->avail_in);
+
+    /*
+     * Read a block of compressed data
+     * (offsetting past any left over
+     * bytes that we may have copied to
+     * the beginning of the read buffer
+     * above).
+     */
+    f_ret = fread_(index->readbuf + stream->avail_in,
+                   1,
+                   index->readbuf_size - stream->avail_in,
+                   index->fd,
+                   index->f);
+
+    if (ferror_(index->fd, index->f)) {
+        goto fail;
+    }
+
+    /*
+     * No bytes left to read, and there are
+     * only 8 bytes left to process (size of
+     * gzip footer) - we've reached EOF.
+     */
+    if (f_ret == 0 && stream->avail_in <= 8) {
+        if (feof_(index->fd, index->f, f_ret)) {
+
+            zran_log("End of file, stopping inflation\n");
+
+            /*
+             * Reset next_in pointer to beginning of
+             * read buffer, as we rotated it above,
+             * and the area that next_in was pointing
+             * to may have been overwritten by memmove.
+             */
+            stream->next_in = index->readbuf;
+
+            /*
+             * we have uncompressed everything,
+             * so we now know its size.
+             */
+            if (index->uncompressed_size == 0) {
+                zran_log("Updating uncompressed data "
+                         "size: %llu\n", uncmp_offset);
+                index->uncompressed_size = uncmp_offset;
+            }
+            if (index->compressed_size == 0) {
+                zran_log("Updating compressed data "
+                         "size: %llu\n", cmp_offset);
+                index->compressed_size = cmp_offset + 8;
+            }
+            goto eof;
+        }
+        /*
+         * Or something went wrong (this
+         * should never happen if ferror
+         * does the right thing).
+         */
+        else {
+            goto fail;
         }
     }
 
-    return 0;
+    zran_log("Read %lu bytes from file [c=%llu, u=%llu] "
+             "[%02x %02x %02x %02x ...]\n",
+             f_ret, cmp_offset, uncmp_offset,
+             index->readbuf[stream->avail_in],
+             index->readbuf[stream->avail_in + 1],
+             index->readbuf[stream->avail_in + 2],
+             index->readbuf[stream->avail_in + 3]);
 
+    /*
+     * Tell zlib about the block
+     * of compressed data that we
+     * just read in.
+     */
+    index->readbuf_end = f_ret + stream->avail_in;
+    stream->avail_in  += f_ret;
+    stream->next_in    = index->readbuf;
+
+    return 0;
+eof:
+    return ZRAN_READ_DATA_EOF;
 fail:
-    return -1;
+    return ZRAN_READ_DATA_ERROR;
 }
 
 
@@ -1144,35 +1466,44 @@ fail:
  * Identify the location of the next compressed stream (if the file
  * contains concatenated streams).
  */
-int _zran_find_next_stream(zran_index_t *index, z_stream *stream) {
+int _zran_find_next_stream(zran_index_t *index,
+                           z_stream     *stream,
+                           int          *offset) {
+
+    int ret;
+    int found;
 
     /*
      * Search for the beginning of
      * the next stream. GZIP files
      * start with 0x1f8b.
      */
-    int offset = 0;
-    int found  = 0;
+    found = 0;
 
-    while (stream->avail_in >= 2) {
+    zran_log("Searching for a new stream [%u]\n", stream->avail_in);
 
-        if (stream->next_in[0] == 0x1f &&
+    while (stream->avail_in > 0) {
+
+        if (stream->avail_in   >= 2    &&
+            stream->next_in[0] == 0x1f &&
             stream->next_in[1] == 0x8b) {
             found = 1;
             break;
         }
 
-        offset           += 2;
-        stream->next_in  += 2;
-        stream->avail_in -= 2;
+        *offset          += 1;
+        stream->next_in  += 1;
+        stream->avail_in -= 1;
     }
 
     /*
      * No header found for
      * the next stream.
      */
-    if (found == 0)
+    if (found == 0) {
+        zran_log("Could not find another stream [%u]\n", stream->avail_in);
         goto not_found;
+    }
 
     zran_log("New stream found, re-initialising inflation\n");
 
@@ -1180,23 +1511,71 @@ int _zran_find_next_stream(zran_index_t *index, z_stream *stream) {
      * Re-configure for inflation
      * from the new stream.
      */
-    if (inflateEnd(stream) != Z_OK)
+    if (inflateEnd(stream) != Z_OK) {
         goto fail;
+    }
 
-    stream->zalloc = Z_NULL;
-    stream->zfree  = Z_NULL;
-    stream->opaque = Z_NULL;
+    ret = _zran_init_zlib_inflate(index, stream, NULL);
 
-    if (inflateInit2(stream, index->log_window_size + 32) != Z_OK)
+    if (ret < 0) {
         goto fail;
+    }
 
-    return offset;
+    *offset += ret;
+
+    return 0;
 
 fail:
     return ZRAN_FIND_STREAM_ERROR;
 
 not_found:
     return ZRAN_FIND_STREAM_NOT_FOUND;
+}
+
+
+/* Validate the CRC32 and size of a GZIP stream. */
+static int _zran_validate_stream(zran_index_t *index,
+                                 z_stream     *stream,
+                                 int          *offset) {
+
+    uint32_t crc;
+    uint32_t size;
+
+    /* CRC validation is disabled */
+    if (index->flags & ZRAN_SKIP_CRC_CHECK) {
+        return 0;
+    }
+
+    /*
+     * A gzip stream should end with an 8 byte footer,
+     * which contains the CRC32 of the uncompressed
+     * data, and the uncompressed size modulo 2^32.
+     */
+    if (stream->avail_in < 8) {
+        return ZRAN_VALIDATE_STREAM_ERROR;
+    }
+
+    crc  = ((stream->next_in[0] << 0)  +
+            (stream->next_in[1] << 8)  +
+            (stream->next_in[2] << 16) +
+            (stream->next_in[3] << 24));
+    size = ((stream->next_in[4] << 0)  +
+            (stream->next_in[5] << 8)  +
+            (stream->next_in[6] << 16) +
+            (stream->next_in[7] << 24));
+
+    zran_log("Validating CRC32 and size [%8x == %8x, %u == %u]\n",
+             crc, index->stream_crc32, size, index->stream_size);
+
+    stream->avail_in -= 8;
+    stream->next_in  += 8;
+    *offset          += 8;
+
+    if (index->stream_crc32 != crc || index->stream_size != size) {
+        return ZRAN_VALIDATE_STREAM_INVALID;
+    }
+
+    return 0;
 }
 
 
@@ -1208,18 +1587,21 @@ static int _zran_inflate(zran_index_t *index,
                          uint32_t     *total_consumed,
                          uint32_t     *total_output,
                          uint32_t      len,
-                         uint8_t      *data) {
+                         uint8_t      *data,
+                         int           add_stream_points) {
 
     /*
-     * Used to store and check return
-     * values. f_ret is for fread,
      * z_ret is for zlib/zran functions.
-     * return_val is the return value for
-     * this function.
+     * off is for storing offset of new
+     * stream (from _zran_validate_stream
+     * and _zran_find_next_stream).
+     * return_val/error_return_val is
+     * the return value for this function.
      */
-    size_t f_ret;
-    int    z_ret;
-    int    return_val = ZRAN_INFLATE_OK;
+    int z_ret;
+    int off;
+    int return_val       = ZRAN_INFLATE_OK;
+    int error_return_val = ZRAN_INFLATE_ERROR;
 
     /*
      * Offsets into the compressed
@@ -1233,11 +1615,26 @@ static int _zran_inflate(zran_index_t *index,
     uint32_t _total_output   = 0;
 
     /*
+     * Number of bytes input/decompressed
+     * during a single call to zlib:inflate.
+     */
+    uint32_t bytes_consumed = 0;
+    uint32_t bytes_output   = 0;
+
+    /*
      * Index point to start from
      * (if ZRAN_INFLATE_USE_OFFSET
      * is active).
      */
     zran_point_t *start = NULL;
+
+    /*
+     * Set all zstream_t fields to 0
+     * if we are initialising.
+     */
+    if (inflate_init_stream(flags)) {
+        memset(strm, 0, sizeof(z_stream));
+    }
 
     /*
      * If ZRAN_INFLATE_INIT_READBUF is not set,
@@ -1275,7 +1672,7 @@ static int _zran_inflate(zran_index_t *index,
      *    - Both set to 0
      *
      *    - Initialised according to an existing index
-     *      point that preceeds the requested offset.
+     *      point that precedes the requested offset.
      *
      * Otherwise, they are initialised from index->inflate_cmp_offset
      * and index->inflate_uncmp_offset, which are assumed to have been
@@ -1330,26 +1727,10 @@ static int _zran_inflate(zran_index_t *index,
         uncmp_offset = index->inflate_uncmp_offset;
     }
 
-    zran_log("initialising to inflate from c=%llu, u=%llu\n",
+    zran_log("initialising to inflate from "
+             "cmp_offset=%llu, uncmp_offset=%llu\n",
              cmp_offset,
              uncmp_offset);
-
-    /*
-     * If ZRAN_INFLATE_INIT_Z_STREAM is active,
-     * initialise the zlib struct for inflation.
-     * The _zran_init_zlib_inflate function
-     * seeks to the correct location in the file
-     * for us.
-     *
-     * If ZRAN_INFLATE_INIT_Z_STREAM is not
-     * active, we assume that the file is
-     * already at the correct spot.
-     */
-    if (inflate_init_stream(flags)) {
-        if (_zran_init_zlib_inflate(index, strm, start) != 0) {
-            goto fail;
-        }
-    }
 
     /*
      * If ZRAN_INFLATE_INIT_READBUF,
@@ -1379,7 +1760,7 @@ static int _zran_inflate(zran_index_t *index,
      * Otherwise, assume that there is already
      * some input (compressed) data in the
      * readbuf, and that index->readbuf_offset
-     * and index->readbuf_end were sert on a
+     * and index->readbuf_end were set on a
      * prior call.
      *
      *    - readbuf_offset tells us where in
@@ -1400,129 +1781,110 @@ static int _zran_inflate(zran_index_t *index,
     strm->next_out  = data;
 
     /*
+     * If ZRAN_INFLATE_INIT_Z_STREAM is active,
+     * initialise the zlib struct for inflation.
+     *
+     * If ZRAN_INFLATE_INIT_Z_STREAM is not
+     * active, we assume that the inflation is
+     * already initialised.
+     */
+    if (inflate_init_stream(flags)) {
+
+        /*
+         * No index point - we need to start reading
+         * from the beginning of the input file. If
+         * starting from an index point, the
+         * _zran_init_zlib_inflate function will seek
+         * to the correct location in the file for us.
+         */
+        if (start == NULL) {
+            /*
+             * If file is not seekable, assume that
+             * it is positioned at the beginning of
+             * the stream.
+             */
+            if (seekable_(index->fd, index->f)) {
+                if (fseek_(index->fd, index->f, 0, SEEK_SET) != 0) {
+                    goto fail;
+                }
+            }
+
+            /*
+             * In this situation, _zran_init_zlib_inflate
+             * is going to expect a GZIP header, so make
+             * sure we have some data for it to look at.
+             */
+            if (_zran_read_data_from_file(index,
+                                          strm,
+                                          cmp_offset,
+                                          uncmp_offset,
+                                          index->readbuf_size) != 0) {
+                goto fail;
+            }
+        }
+
+        /*
+         * If init_zlib_inflate skips over any input data
+         * (e.g. gzip header), it returns the number of
+         * bytes that were read.
+         */
+        z_ret = _zran_init_zlib_inflate(index, strm, start);
+        if (z_ret < 0) {
+            goto fail;
+        }
+        cmp_offset      += z_ret;
+        _total_consumed += z_ret;
+
+        if (start == NULL && add_stream_points) {
+            if (_zran_add_point(index, 0, cmp_offset, 0, 0, 0, NULL) != 0) {
+                goto fail;
+            }
+        }
+    }
+
+    /*
      * Keep going until we run out of space.
      */
     while (strm->avail_out > 0) {
 
         /*
-         * We need to read in more data. We read in more
-         * data when strm->avail_in < 2, because a GZIP
-         * header is 2 bytes long, and when searching for
-         * the next stream in a sequence of concatenated
-         * streams, the _zran_find_next_stream function
-         * might leave a byte in the input without
-         * finding a new stream.
+         * Make sure the input buffer contains
+         * some data to be decompressed.
          */
-        if (strm->avail_in < 2) {
+        z_ret = _zran_read_data_from_file(index,
+                                          strm,
+                                          cmp_offset,
+                                          uncmp_offset,
+                                          1);
 
-            /*
-             * If there are any unprocessed bytes
-             * left over, put them at the beginning
-             * of the read buffer
-             */
-            if (strm->avail_in > 0) {
-                memcpy(index->readbuf, strm->next_in, strm->avail_in);
-            }
-
-            zran_log("Reading from file %llu [ == %llu?]\n",
-                     FTELL(index->fd), cmp_offset);
-
-            /*
-             * Read a block of compressed data
-             * (offsetting past any left over
-             * bytes that we may have copied to
-             * the beginning of the read buffer
-             * above).
-             */
-            f_ret = fread(index->readbuf + strm->avail_in,
-                          1,
-                          index->readbuf_size - strm->avail_in,
-                          index->fd);
-
-            if (ferror(index->fd)) {
-                goto fail;
-            }
-
-            /*
-             * No bytes read - we've reached EOF
-             */
-            if (f_ret == 0) {
-                if (feof(index->fd)) {
-                    return_val = ZRAN_INFLATE_EOF;
-                    break;
-                }
-                /*
-                 * Or something went wrong (this
-                 * should never happen if ferror
-                 * does the right thing).
-                 */
-                else {
-                    goto fail;
-                }
-            }
-
-            zran_log("Read %lu bytes from file [c=%llu, u=%llu]\n",
-                     f_ret, cmp_offset, uncmp_offset);
-
-            /*
-             * Tell zlib about the block
-             * of compressed data that we
-             * just read in.
-             */
-            index->readbuf_end = f_ret + strm->avail_in;
-            strm->avail_in    += f_ret;
-            strm->next_in      = index->readbuf;
+        /* EOF - there is no more data left to read */
+        if (z_ret == ZRAN_READ_DATA_EOF) {
+            return_val = ZRAN_INFLATE_EOF;
+            break;
+        }
+        else if (z_ret != 0) {
+            goto fail;
         }
 
         /*
-         * Decompress the block until it is
-         * gone (or we've read enough bytes)
+         * Decompress data until there's no data
+         * left, or we've read enough bytes
          */
         z_ret = Z_OK;
         while (strm->avail_in > 0) {
 
             /*
-             * Re-initialise inflation if we have
-             * hit a new compressed stream.
+             * Initialise counters to calculate
+             * how many bytes are input/output
+             * during this call to inflate.
              */
-            if (z_ret == Z_STREAM_END) {
+            bytes_consumed = strm->avail_in;
+            bytes_output   = strm->avail_out;
 
-                zran_log("End of stream - searching for another stream\n");
-
-                z_ret = _zran_find_next_stream(index, strm);
-
-                /*
-                 * If _zran_find_next_stream can't find
-                 * a new stream, we are either out of
-                 * compressed input data, or at eof. In
-                 * either case, break and let the outer
-                 * loop deal with it.
-                 */
-                if      (z_ret == ZRAN_FIND_STREAM_NOT_FOUND) break;
-                else if (z_ret == ZRAN_FIND_STREAM_ERROR)     goto fail;
-
-                /*
-                 * _zran_find_next_stream has found a
-                 * new stream, and has told us how many
-                 * bytes it skipped over before finding
-                 * it.
-                 */
-                cmp_offset      += z_ret;
-                _total_consumed += z_ret;
-            }
-
-            /*
-             * Optimistically update offsets -
-             * we will adjust them after the
-             * inflate call.
-             */
-            cmp_offset      += strm->avail_in;
-            uncmp_offset    += strm->avail_out;
-            _total_consumed += strm->avail_in;
-            _total_output   += strm->avail_out;
-
-            zran_log("Before inflate - avail_in=%u, avail_out=%u\n",
-                     strm->avail_in, strm->avail_out);
+            zran_log("Before inflate - avail_in=%u, avail_out=%u, "
+                     "cmp_offset=%lu, uncmp_offset=%lu\n",
+                     strm->avail_in, strm->avail_out,
+                     cmp_offset, uncmp_offset);
 
             /*
              * Inflate the block - the decompressed
@@ -1535,20 +1897,29 @@ static int _zran_inflate(zran_index_t *index,
              * inflate stops when it comes to the end of a
              * stream, or it runs out of input or output.
              */
-            if (inflate_stop_at_block(flags)) z_ret = inflate(strm, Z_BLOCK);
-            else                              z_ret = inflate(strm, Z_NO_FLUSH);
-
-            zran_log("After inflate - avail_in=%u, avail_out=%u\n",
-                     strm->avail_in, strm->avail_out);
+            if (inflate_stop_at_block(flags)) {
+                z_ret = inflate(strm, Z_BLOCK);
+            }
+            else {
+                z_ret = inflate(strm, Z_NO_FLUSH);
+            }
 
             /*
              * Adjust our offsets according to what
              * was actually consumed/decompressed.
              */
-            cmp_offset      -= strm->avail_in;
-            uncmp_offset    -= strm->avail_out;
-            _total_consumed -= strm->avail_in;
-            _total_output   -= strm->avail_out;
+            bytes_consumed   = bytes_consumed - strm->avail_in;
+            bytes_output     = bytes_output   - strm->avail_out;
+            cmp_offset      += bytes_consumed;
+            _total_consumed += bytes_consumed;
+            uncmp_offset    += bytes_output;
+            _total_output   += bytes_output;
+
+            zran_log("After inflate - avail_in=%u, avail_out=%u, "
+                     "cmp_offset=%lu, uncmp_offset=%lu\n",
+                     strm->avail_in, strm->avail_out,
+                     cmp_offset, uncmp_offset);
+
 
             /*
              * Now we need to figure out what just happened.
@@ -1583,6 +1954,22 @@ static int _zran_inflate(zran_index_t *index,
             }
 
             /*
+             * If we have not yet validated the current
+             * GZIP stream, update its size and crc so
+             * we can validate them against the size
+             * recorded in the stream footer when we
+             * get to it.
+             */
+            if ((uncmp_offset > index->last_stream_ended) &&
+                index->validating                         &&
+                !(index->flags & ZRAN_SKIP_CRC_CHECK)) {
+                index->stream_size +=       bytes_output;
+                index->stream_crc32 = crc32(index->stream_crc32,
+                                            strm->next_out - bytes_output,
+                                            bytes_output);
+            }
+
+            /*
              * End of a block? If INFLATE_STOP_AT_BLOCK
              * is active, we want to stop at a compression
              * block boundary.
@@ -1602,8 +1989,146 @@ static int _zran_inflate(zran_index_t *index,
             }
 
             /*
-             * We've run out of space to
-             * store decompressed data
+             * We've found the end of file, or end of one
+             * gzip stream. Validate the uncompressed
+             * data (size/ CRC) against the gzip footer.
+             * Then search for a new stream and, if we
+             * find one, re-initialise inflation
+             */
+            if (z_ret == Z_STREAM_END) {
+
+                zran_log("End of gzip stream [%u]\n", strm->avail_in);
+
+                /*
+                 * Make sure we have data in the input buffer
+                 * to read and validate the gzip footer and,
+                 * in case we are reading concatenated
+                 * streams, to search for the next stream and
+                 * read its header.
+                 *
+                 * There is no way of knowing how much data we
+                 * need to read in here - there is no upper
+                 * bound on the amount of null padding bytes
+                 * that may be present in between, or at the
+                 * end of, a stream, and there is no upper
+                 * bound on the size of a gzip header.
+
+                 * So a critical assumption is made here, that
+                 * the size of the read buffer is large enough
+                 * to encompass all of:
+                 *
+                 *   - the footer of a gzip stream,
+                 *   - null padding after the end of a gzip
+                 *     stream, and
+                 *   - the header of the next gzip stream
+                 *
+                 * This assumption could be removed by changing
+                 * the way that data is loaded and buffered
+                 * from the file - e.g. we could load bytes in
+                 * one-by-one, skipping over null bytes, and
+                 * then parse the gzip header ourselves.  But
+                 * this is far too much work for what is a very
+                 * edge-casey scenario.
+                 */
+                z_ret = _zran_read_data_from_file(index,
+                                                  strm,
+                                                  cmp_offset,
+                                                  uncmp_offset,
+                                                  index->readbuf_size);
+                if (!((z_ret == 0) || (z_ret == ZRAN_READ_DATA_EOF))) {
+                    goto fail;
+                }
+
+                /*
+                 * If there is no more data, the footer is
+                 * missing, so the data must be corrupt.
+                 */
+                if (strm->avail_in < 8) {
+                    goto fail;
+                }
+
+                /*
+                 * _validate_stream reads and checks in the
+                 * gzip stream footer (the CRC32 and ISIZE
+                 * fields at the end of a gzip stream), and
+                 * _find_next_stream will skip over any
+                 * remaining bytes (e.g. null padding bytes)
+                 * until eof, or a new stream is found.
+                 *
+                 * The number of bytes that were read/
+                 * skipped over are accumulated into off.
+                 */
+                off = 0;
+
+                /*
+                 * If we have not yet validated this stream,
+                 * check that the CRC and uncompressed size in
+                 * the footer match what we have calculated
+                 */
+                if (uncmp_offset > index->last_stream_ended &&
+                    index->validating) {
+                    z_ret = _zran_validate_stream(index, strm, &off);
+
+                    if (z_ret == ZRAN_VALIDATE_STREAM_INVALID) {
+                        error_return_val = ZRAN_INFLATE_CRC_ERROR;
+                        goto fail;
+                    }
+                    else if (z_ret != 0) {
+                        goto fail;
+                    }
+                    index->last_stream_ended = uncmp_offset;
+                    index->validating        = 0;
+                }
+
+                /* Otherwise skip over the 8 byte GZIP footer */
+                else {
+                    strm->avail_in -= 8;
+                    strm->next_in  += 8;
+                    off            += 8;
+                }
+
+                /*
+                 * See if we have another concatenated gzip
+                 * stream.  If we run out of input data here,
+                 * bad things will happen. Refer to the long
+                 * comment regarding the input buffer, above.
+                 */
+                z_ret = _zran_find_next_stream(index, strm, &off);
+
+                cmp_offset      += off;
+                _total_consumed += off;
+
+                /*
+                 * If _zran_find_next_stream can't find
+                 * a new stream, we are either out of
+                 * compressed input data, or at eof. In
+                 * either case, break and let the outer
+                 * loop deal with it.
+                 */
+                if (z_ret == ZRAN_FIND_STREAM_NOT_FOUND) {
+                    break;
+                }
+                else if (z_ret != 0) {
+                    goto fail;
+                }
+
+                if (add_stream_points) {
+                    if (_zran_add_point(index,
+                                        0,
+                                        cmp_offset,
+                                        uncmp_offset,
+                                        0,
+                                        0,
+                                        NULL) != 0) {
+                        goto fail;
+                    }
+                }
+            }
+
+            /*
+             * We've run out of space to store decompressed
+             * data - this is the responsibility of the caller,
+             * so bail out.
              */
             if (strm->avail_out == 0) {
 
@@ -1619,53 +2144,14 @@ static int _zran_inflate(zran_index_t *index,
                 if (inflate_stop_at_block(flags) || _total_output < len) {
                     return_val = ZRAN_INFLATE_OUTPUT_FULL;
                 }
-
-                break;
-            }
-
-            /*
-             * End of file. The GZIP file
-             * footer takes up 8 bytes, which
-             * do not get processed by the
-             * inflate function.
-             *
-             * We use ftell rather than feof,
-             * as the EOF indicator only gets
-             * set on attempts to read past
-             * the end of a file, and this
-             * won't happen when the file
-             * size is an exact multiple of
-             # the read buffer size.
-             */
-            if ((FTELL(index->fd) >= index->compressed_size) &&
-                strm->avail_in <= 8) {
-
-                zran_log("End of file, stopping inflation\n");
-
-                return_val = ZRAN_INFLATE_EOF;
-
-                /*
-                 * We now know how big the
-                 * uncompressed data is.
-                 */
-                if (index->uncompressed_size == 0) {
-
-                    zran_log("Updating uncompressed data "
-                             "size: %llu\n", uncmp_offset);
-                    index->uncompressed_size = uncmp_offset;
-                }
-                break;
-            }
-
-            /*
-             * Some of the code above has decided that
-             * it wants this _zran_inflate call to return.
-             */
-            if (return_val != ZRAN_INFLATE_OK) {
                 break;
             }
         }
 
+        /*
+         * Some of the code above has decided that
+         * it wants this _zran_inflate call to return.
+         */
         if (return_val != ZRAN_INFLATE_OK) {
             break;
         }
@@ -1731,7 +2217,7 @@ fail:
         index->readbuf_end    = 0;
     }
 
-    return ZRAN_INFLATE_ERROR;
+    return error_return_val;
 }
 
 
@@ -1739,8 +2225,13 @@ fail:
  * Expands the index to encompass the
  * compressed offset specified by 'until'.
  */
-int _zran_expand_index(zran_index_t *index, uint64_t until)
-{
+int _zran_expand_index(zran_index_t *index, uint64_t until) {
+
+    /*
+     * Used to store return code when
+     * an error occurs.
+     */
+    int error_return_val = ZRAN_EXPAND_INDEX_FAIL;
 
     /*
      * Used to store and check return values
@@ -1761,7 +2252,7 @@ int _zran_expand_index(zran_index_t *index, uint64_t until)
     /*
      * Buffer to store uncompressed data,
      * size of said buffer, and current offset
-     * into said buffef. We wrap the buffer
+     * into said buffer. We wrap the buffer
      * around to the beginning when it is
      * filled.
      *
@@ -1828,7 +2319,7 @@ int _zran_expand_index(zran_index_t *index, uint64_t until)
          * The index already covers the requested
          * offset. Nothing needs to be done.
          */
-        if (until <= start->cmp_offset)
+        if (until != 0 && until <= start->cmp_offset)
             return 0;
     }
 
@@ -1845,10 +2336,10 @@ int _zran_expand_index(zran_index_t *index, uint64_t until)
 
     /*
      * If the caller passed until == 0,
-     * we force some data to be read.
+     * we expand to EOF.
      */
     if (until == 0) {
-      until = index->spacing;
+        until = UINT64_MAX;
     }
 
     /*
@@ -1858,7 +2349,6 @@ int _zran_expand_index(zran_index_t *index, uint64_t until)
      * points in the index.
      */
     if (start != NULL) {
-
         cmp_offset        = start->cmp_offset;
         uncmp_offset      = start->uncmp_offset;
         last_uncmp_offset = uncmp_offset;
@@ -1871,14 +2361,13 @@ int _zran_expand_index(zran_index_t *index, uint64_t until)
 
     /*
      * Don't finish until we're at the end of the
-     * file, or we've expanded the index past
-     * the requested offset (and have created at
-     * least one new index point -
-     * last_created == NULL tells us whether a
-     * point has been created).
+     * file (break at bottom of loop), or we've
+     * expanded the index past the requested
+     * offset (and have created at least one new
+     * index point - last_created == NULL tells
+     * us whether a point has been created).
      */
-    while ((cmp_offset < index->compressed_size) &&
-           (last_created == NULL || last_created->cmp_offset < until)) {
+    while (last_created == NULL || last_created->cmp_offset < until) {
 
         /*
          * On the first call to _zran_inflate, we
@@ -1927,11 +2416,21 @@ int _zran_expand_index(zran_index_t *index, uint64_t until)
                               &bytes_consumed,
                               &bytes_output,
                               data_size - data_offset,
-                              data      + data_offset);
+                              data      + data_offset,
+                              1);
 
         cmp_offset   += bytes_consumed;
         uncmp_offset += bytes_output;
         data_offset   = (data_offset + bytes_output) % data_size;
+
+        /*
+         * update the last created offset on every iteration,
+         * to catch any index points created by _zran_inflate
+         */
+        if (index->npoints > 0) {
+            last_created      = &index->list[index->npoints - 1];
+            last_uncmp_offset = last_created->uncmp_offset;
+        }
 
         /*
          * Has the output buffer been filled?
@@ -1951,28 +2450,29 @@ int _zran_expand_index(zran_index_t *index, uint64_t until)
          */
         else if (z_ret != ZRAN_INFLATE_EOF &&
                  z_ret != ZRAN_INFLATE_BLOCK_BOUNDARY) {
+            if (z_ret == ZRAN_INFLATE_CRC_ERROR) {
+                error_return_val = ZRAN_EXPAND_INDEX_CRC_ERROR;
+            }
             goto fail;
         }
 
         /*
-         * If we're at the beginning of the file
-         * (uncmp_offset == 0), or at the end of
-         * the file (z_ret == ZRAN_INFLATE_EOF),
-         * or at a compress block boundary,
-         * and index->spacing bytes have passed
-         * since the last index point that was
-         * created, we'll create a  new index
-         * point at this location.
+         * If we're at the end of the file (z_ret
+         * == ZRAN_INFLATE_EOF), or at a compress
+         * block boundary, and index->spacing bytes
+         * have passed since the last index point
+         * that was created, we'll create a new
+         * index point at this location.
+         *
+         * Note that the _zran_inflate function
+         * also adds index points at the beginning
+         * of the file, and at the beginning of all
+         * other gzip streams, in the case of
+         * concatenated streams (refer to its
+         * add_stream_points argument).
          */
         if (z_ret == ZRAN_INFLATE_EOF ||
-            uncmp_offset == 0         ||
             uncmp_offset - last_uncmp_offset >= index->spacing) {
-
-            // TODO If at start or EOF, you should
-            //      pass in  NULL for the window
-            //      data. You can then clean up
-            //      _zran_add_point a little bit.
-
             if (_zran_add_point(index,
                                 strm.data_type & 7,
                                 cmp_offset,
@@ -1982,14 +2482,14 @@ int _zran_expand_index(zran_index_t *index, uint64_t until)
                                 data) != 0) {
                 goto fail;
             }
-
             last_created      = &index->list[index->npoints - 1];
             last_uncmp_offset = uncmp_offset;
         }
 
         /* And if at EOF, we are done. */
-        if (z_ret == ZRAN_INFLATE_EOF)
+        if (z_ret == ZRAN_INFLATE_EOF) {
             break;
+        }
     }
 
     /*
@@ -2005,9 +2505,13 @@ int _zran_expand_index(zran_index_t *index, uint64_t until)
                           &bytes_consumed,
                           &bytes_output,
                           0,
-                          data);
+                          data,
+                          0);
 
     if (z_ret != ZRAN_INFLATE_OK && z_ret != ZRAN_INFLATE_EOF) {
+        if (z_ret == ZRAN_INFLATE_CRC_ERROR) {
+            error_return_val = ZRAN_EXPAND_INDEX_CRC_ERROR;
+        }
         goto fail;
     }
 
@@ -2024,12 +2528,11 @@ int _zran_expand_index(zran_index_t *index, uint64_t until)
              cmp_offset, last_created->cmp_offset);
 
     free(data);
-    return 0;
+    return ZRAN_EXPAND_INDEX_OK;
 
 fail:
     free(data);
-
-    return -1;
+    return error_return_val;
 }
 
 
@@ -2044,7 +2547,7 @@ int zran_seek(zran_index_t  *index,
 {
 
     int           result;
-    zran_point_t *seek_point;
+    zran_point_t *seek_point = NULL;
 
     zran_log("zran_seek(%lld, %i)\n", offset, whence);
 
@@ -2062,7 +2565,7 @@ int zran_seek(zran_index_t  *index,
      *
      * I am not currently taking into account
      * the overflow potential when converting
-     * from int64 to uint64.a
+     * from int64 to uint64.
      */
 
     /*
@@ -2087,24 +2590,40 @@ int zran_seek(zran_index_t  *index,
     }
 
     /*
-     * Get the index point that
-     * corresponds to this offset.
+     * We implicitly allow seek(0) - if
+     * not auto-building the index,
+     * seek(0) would otherwwise fail.
      */
-    result = _zran_get_point_with_expand(index, offset, 0, &seek_point);
+    if (offset == 0) {
+        index->uncmp_seek_offset = offset;
+    }
+    else {
 
-    if (result == ZRAN_GET_POINT_FAIL)        goto fail;
-    if (result == ZRAN_GET_POINT_NOT_COVERED) goto not_covered;
-    if (result == ZRAN_GET_POINT_EOF)         goto eof;
+        /*
+         * Get the index point that
+         * corresponds to this offset.
+         */
+        result = _zran_get_point_with_expand(index, offset, 0, &seek_point);
 
-    index->uncmp_seek_offset = offset;
-    offset                   = seek_point->cmp_offset;
+        if      (result == ZRAN_GET_POINT_EOF)         goto eof;
+        else if (result == ZRAN_GET_POINT_NOT_COVERED) goto not_covered;
+        else if (result == ZRAN_GET_POINT_CRC_ERROR)   goto crcerror;
+        else if (result != ZRAN_GET_POINT_OK)          goto fail;
 
-    /*
-     * This index point is not byte-aligned.
-     * Adjust the offset accordingly.
-     */
-    if (seek_point->bits > 0)
-        offset -= 1;
+        /*
+         * transform into an offset
+         * into the compressed stream
+         */
+        index->uncmp_seek_offset = offset;
+        offset                   = seek_point->cmp_offset;
+
+        /*
+         * This index point is not byte-aligned.
+         * Adjust the offset accordingly.
+         */
+        if (seek_point->bits > 0)
+            offset -= 1;
+    }
 
     /*
      * The caller wants a ref to the
@@ -2115,11 +2634,12 @@ int zran_seek(zran_index_t  *index,
         *point = seek_point;
     }
 
-    if (FSEEK(index->fd, offset, SEEK_SET) != 0)
+    if (fseek_(index->fd, index->f, offset, SEEK_SET) != 0)
         goto fail;
 
     return ZRAN_SEEK_OK;
 
+crcerror:        return ZRAN_SEEK_CRC_ERROR;
 fail:            return ZRAN_SEEK_FAIL;
 index_not_built: return ZRAN_SEEK_INDEX_NOT_BUILT;
 not_covered:     return ZRAN_SEEK_NOT_COVERED;
@@ -2127,6 +2647,7 @@ eof:
     index->uncmp_seek_offset = index->uncompressed_size;
     return ZRAN_SEEK_EOF;
 }
+
 
 /* Return the current seek position in the uncompressed data stream. */
 uint64_t zran_tell(zran_index_t *index) {
@@ -2144,6 +2665,12 @@ int64_t zran_read(zran_index_t *index,
     int ret;
 
     /*
+     * Used to store error code for return
+     *   if an error occurs
+     */
+    int error_return_val = ZRAN_READ_FAIL;
+
+    /*
      * Number of bytes we try to read, and
      * number of bytes actually read/output
      * on each call to _zran_inflate.
@@ -2154,7 +2681,7 @@ int64_t zran_read(zran_index_t *index,
 
     /*
      * _zran_inflate control flags. We need
-     * to pass different flags on thefirst
+     * to pass different flags on the first
      * call to _zran_inflate.
      */
     uint16_t inflate_flags;
@@ -2205,25 +2732,41 @@ int64_t zran_read(zran_index_t *index,
     if (len == 0)         return 0;
     if (len >  INT64_MAX) goto fail;
 
-    zran_log("zran_read(%llu)\n", len);
+    zran_log("zran_read(%llu, %lu)\n", len, index->uncmp_seek_offset);
 
     /*
-     * Search for the index point that
-     * corresponds to our current seek
-     * location in the uncompressed
-     * data stream.
+     * Search for the index point that corresponds to
+     * our current seek location in the uncompressed
+     * data stream. Reading from the start of file is
+     * always allowed, even if the index does not
+     * contain any points.
      */
-    ret = _zran_get_point_with_expand(index,
-                                      index->uncmp_seek_offset,
-                                      0,
-                                      &start);
+    if (index->uncmp_seek_offset == 0) {
+        cmp_offset   = 0;
+        uncmp_offset = 0;
+    }
+    else {
+        ret = _zran_get_point_with_expand(index,
+                                          index->uncmp_seek_offset,
+                                          0,
+                                          &start);
 
-    if (ret == ZRAN_GET_POINT_EOF)         goto eof;
-    if (ret == ZRAN_GET_POINT_NOT_COVERED) goto not_covered;
+        if      (ret == ZRAN_GET_POINT_EOF)         goto eof;
+        if      (ret == ZRAN_GET_POINT_NOT_COVERED) goto not_covered;
+        else if (ret != ZRAN_GET_POINT_OK) {
+            if (ret == ZRAN_GET_POINT_CRC_ERROR) {
+                error_return_val = ZRAN_READ_CRC_ERROR;
+            }
+            goto fail;
+        }
+
+        cmp_offset   = start->cmp_offset;
+        uncmp_offset = start->uncmp_offset;
+    }
 
     /*
      * We have to start decompressing from
-     * the index point that preceeds the seek
+     * the index point that precedes the seek
      * location, so we need to skip over bytes
      * until we get to that location. We use
      * the discard buffer to store those bytes.
@@ -2236,13 +2779,10 @@ int64_t zran_read(zran_index_t *index,
     /*
      * Inflate and discard data until we
      * reach the current seek location
-     * into the uncompresesd data stream.
+     * into the uncompressed data stream.
      */
-    cmp_offset      = start->cmp_offset;
-    uncmp_offset    = start->uncmp_offset;
     first_inflate   = 1;
     total_discarded = 0;
-
     while (uncmp_offset < index->uncmp_seek_offset) {
 
         /*
@@ -2288,7 +2828,8 @@ int64_t zran_read(zran_index_t *index,
                             &bytes_consumed,
                             &bytes_output,
                             to_discard,
-                            discard);
+                            discard,
+                            0);
 
         /*
          * _zran_inflate should return 0 if
@@ -2300,8 +2841,12 @@ int64_t zran_read(zran_index_t *index,
          */
         if (ret != ZRAN_INFLATE_OUTPUT_FULL &&
             ret != ZRAN_INFLATE_EOF         &&
-            ret != ZRAN_INFLATE_OK)
+            ret != ZRAN_INFLATE_OK) {
+            if (ret == ZRAN_INFLATE_CRC_ERROR) {
+                error_return_val = ZRAN_READ_CRC_ERROR;
+            }
             goto fail;
+        }
 
         cmp_offset      += bytes_consumed;
         uncmp_offset    += bytes_output;
@@ -2368,7 +2913,8 @@ int64_t zran_read(zran_index_t *index,
                             &bytes_consumed,
                             &bytes_output,
                             bytes_to_read,
-                            (uint8_t *)(buf) + total_read);
+                            (uint8_t *)(buf) + total_read,
+                            0);
 
         cmp_offset   += bytes_consumed;
         uncmp_offset += bytes_output;
@@ -2387,8 +2933,12 @@ int64_t zran_read(zran_index_t *index,
                 break;
             }
         }
-        else if (ret != ZRAN_INFLATE_OK)
+        else if (ret != ZRAN_INFLATE_OK) {
+            if (ret == ZRAN_INFLATE_CRC_ERROR) {
+                error_return_val = ZRAN_READ_CRC_ERROR;
+            }
             goto fail;
+        }
 
         zran_log("Read %u bytes (%llu / %llu)\n",
                  bytes_output,
@@ -2409,9 +2959,13 @@ int64_t zran_read(zran_index_t *index,
                         &bytes_consumed,
                         &bytes_output,
                         0,
-                        discard);
+                        discard,
+                        0);
 
     if (ret != ZRAN_INFLATE_OK && ret != ZRAN_INFLATE_EOF) {
+        if (ret == ZRAN_INFLATE_CRC_ERROR) {
+            error_return_val = ZRAN_READ_CRC_ERROR;
+        }
         goto fail;
     }
 
@@ -2423,7 +2977,7 @@ int64_t zran_read(zran_index_t *index,
 
     zran_log("Read succeeded - %llu bytes read [compressed offset: %ld]\n",
              total_read,
-             FTELL(index->fd));
+             ftell_(index->fd, index->f));
 
     free(discard);
 
@@ -2431,21 +2985,22 @@ int64_t zran_read(zran_index_t *index,
 
 not_covered: return ZRAN_READ_NOT_COVERED;
 eof:         return ZRAN_READ_EOF;
-
 fail:
 
     if (discard != NULL)
         free(discard);
 
-    return ZRAN_READ_FAIL;
+    return error_return_val;
 }
 
+
 /*
- * Store checkpoint information from index to file fd. File should be opened in
- * binary write mode.
+ * Store checkpoint information from index to file fd. File should be opened
+ * in binary write mode.
  */
 int zran_export_index(zran_index_t *index,
-                      FILE *fd) {
+                      FILE         *fd,
+                      PyObject     *f) {
 
     /*
      * TODO: Endianness check for fwrite calls. Prefer little-endian to be
@@ -2459,6 +3014,9 @@ int zran_export_index(zran_index_t *index,
     zran_point_t *point;
     zran_point_t *list_end;
 
+    /* File flags, currently not used. Also used as a temporary variable. */
+    uint8_t flags = 0;
+
     zran_log("zran_export_index: (%lu, %lu, %u, %u, %u)\n",
              index->compressed_size,
              index->uncompressed_size,
@@ -2466,43 +3024,51 @@ int zran_export_index(zran_index_t *index,
              index->window_size,
              index->npoints);
 
-    /* Write magic bytes, and check for errors. */
-    f_ret = fwrite(zran_magic_bytes, sizeof(zran_magic_bytes), 1, fd);
+    /* Write ID and version, and check for errors. */
+    f_ret = fwrite_(ZRAN_INDEX_FILE_ID, sizeof(ZRAN_INDEX_FILE_ID), 1, fd, f);
+    if (ferror_(fd, f)) goto fail;
+    if (f_ret != 1)     goto fail;
 
-    if (ferror(fd)) goto fail;
-    if (f_ret != 1) goto fail;
+    f_ret = fwrite_(&ZRAN_INDEX_FILE_VERSION, 1, 1, fd, f);
+    if (ferror_(fd, f)) goto fail;
+    if (f_ret != 1)     goto fail;
+
+    /* Write flags (currently unused) */
+    f_ret = fwrite_(&flags, 1, 1, fd, f);
+    if (ferror_(fd, f)) goto fail;
+    if (f_ret != 1)     goto fail;
 
     /* Write compressed size, and check for errors. */
-    f_ret = fwrite(&index->compressed_size,
-                   sizeof(index->compressed_size), 1, fd);
+    f_ret = fwrite_(&index->compressed_size,
+                   sizeof(index->compressed_size), 1, fd, f);
 
-    if (ferror(fd)) goto fail;
-    if (f_ret != 1) goto fail;
+    if (ferror_(fd, f)) goto fail;
+    if (f_ret != 1)     goto fail;
 
     /* Write uncompressed size, and check for errors. */
-    f_ret = fwrite(&index->uncompressed_size,
-                   sizeof(index->uncompressed_size), 1, fd);
+    f_ret = fwrite_(&index->uncompressed_size,
+                   sizeof(index->uncompressed_size), 1, fd, f);
 
-    if (ferror(fd)) goto fail;
-    if (f_ret != 1) goto fail;
+    if (ferror_(fd, f)) goto fail;
+    if (f_ret != 1)     goto fail;
 
     /* Write spacing, and check for errors. */
-    f_ret = fwrite(&index->spacing, sizeof(index->spacing), 1, fd);
+    f_ret = fwrite_(&index->spacing, sizeof(index->spacing), 1, fd, f);
 
-    if (ferror(fd)) goto fail;
-    if (f_ret != 1) goto fail;
+    if (ferror_(fd, f)) goto fail;
+    if (f_ret != 1)     goto fail;
 
     /* Write window size, and check for errors. */
-    f_ret = fwrite(&index->window_size, sizeof(index->window_size), 1, fd);
+    f_ret = fwrite_(&index->window_size, sizeof(index->window_size), 1, fd, f);
 
-    if (ferror(fd)) goto fail;
-    if (f_ret != 1) goto fail;
+    if (ferror_(fd, f)) goto fail;
+    if (f_ret != 1)     goto fail;
 
     /* Write number of points, and check for errors. */
-    f_ret = fwrite(&index->npoints, sizeof(index->npoints), 1, fd);
+    f_ret = fwrite_(&index->npoints, sizeof(index->npoints), 1, fd, f);
 
-    if (ferror(fd)) goto fail;
-    if (f_ret != 1) goto fail;
+    if (ferror_(fd, f)) goto fail;
+    if (f_ret != 1)     goto fail;
 
     /*
      * We will make two passes over points list now. In the first pass, offset
@@ -2511,64 +3077,61 @@ int zran_export_index(zran_index_t *index,
      * together, which enables user to read all offset mappings in one pass.
      */
 
-    /*
-     * Initialize point to the first element of the list, and list_end to the
-     * end of the list.
-     */
+    /* Write all points iteratively for checkpoint offset mapping. */
     point    = index->list;
     list_end = index->list + index->npoints;
-
-    /* Write all points iteratively for checkpoint offset mapping. */
     while (point < list_end) {
 
-        /*
-         * Below, it's preferred to write members of points elementwise to
-         * avoid handling struct alignment and padding issues.
-         */
-
         /* Write compressed offset, and check for errors. */
-        f_ret = fwrite(&point->cmp_offset, sizeof(point->cmp_offset), 1, fd);
-
-        if (ferror(fd)) goto fail;
-        if (f_ret != 1) goto fail;
+        f_ret = fwrite_(&point->cmp_offset,
+                        sizeof(point->cmp_offset), 1, fd, f);
+        if (ferror_(fd, f)) goto fail;
+        if (f_ret != 1)     goto fail;
 
         /* Write uncompressed offset, and check for errors. */
-        f_ret = fwrite(&point->uncmp_offset, sizeof(point->uncmp_offset), 1, fd);
-
-        if (ferror(fd)) goto fail;
-        if (f_ret != 1) goto fail;
+        f_ret = fwrite_(&point->uncmp_offset,
+                        sizeof(point->uncmp_offset), 1, fd, f);
+        if (ferror_(fd, f)) goto fail;
+        if (f_ret != 1)     goto fail;
 
         /* Write bit offset, and check for errors. */
-        f_ret = fwrite(&point->bits, sizeof(point->bits), 1, fd);
+        f_ret = fwrite_(&point->bits, sizeof(point->bits), 1, fd, f);
+        if (ferror_(fd, f)) goto fail;
+        if (f_ret != 1)     goto fail;
 
-        if (ferror(fd)) goto fail;
-        if (f_ret != 1) goto fail;
+        /* Write data flag, and check for errors. */
+        flags = (point->data != NULL) ? 1 : 0;
+        f_ret = fwrite_(&flags, 1, 1, fd, f);
+        if (ferror_(fd, f)) goto fail;
+        if (f_ret != 1)     goto fail;
 
-        zran_log("zran_export_index: (%lu, %lu, %lu, %u)\n",
+        zran_log("zran_export_index: (p%lu, %lu, %lu, %u, %u)\n",
                  (index->npoints - (list_end - point)), // point index
                  point->cmp_offset,
                  point->uncmp_offset,
-                 point->bits);
+                 point->bits,
+                 flags);
 
-        /* Done with this point. Proceed to next one. */
         point++;
     }
 
     /*
-     * Initialize point to the second element of the list (as first element has
-     * no data), and list_end to the end of the list.
+     * Now write out the window data for every point. No data is written for
+     * points which don't have any data (e.g. at stream boundaries).
      */
-    point    = index->list + 1;
+    point    = index->list;
     list_end = index->list + index->npoints;
-
-    /* Write all points iteratively for writing checkpoint data. */
     while (point < list_end) {
 
-        /* Write checkpoint data, and check for errors. */
-        f_ret = fwrite(point->data, index->window_size, 1, fd);
+        if (point->data == NULL) {
+            point++;
+            continue;
+        }
 
-        if (ferror(fd)) goto fail;
-        if (f_ret != 1) goto fail;
+        /* Write checkpoint data, and check for errors. */
+        f_ret = fwrite_(point->data, index->window_size, 1, fd, f);
+        if (ferror_(fd, f)) goto fail;
+        if (f_ret != 1)     goto fail;
 
         /* Print first and last three bytes of the checkpoint window. */
         zran_log("zran_export_index: "
@@ -2591,16 +3154,14 @@ int zran_export_index(zran_index_t *index,
      * It is important to flush written file when done, since underlying file
      * descriptor can be closed by Python code before having a chance to flush.
      */
-    f_ret = fflush(fd);
-
-    if (ferror(fd)) goto fail;
-    if (f_ret != 0) goto fail;
+    f_ret = fflush_(fd, f);
+    if (ferror_(fd, f)) goto fail;
+    if (f_ret != 0)     goto fail;
 
     return ZRAN_EXPORT_OK;
 
 fail:
     return ZRAN_EXPORT_WRITE_ERROR;
-
 }
 
 /*
@@ -2608,7 +3169,8 @@ fail:
  * binary read mode.
  */
 int zran_import_index(zran_index_t *index,
-                      FILE *fd) {
+                      FILE         *fd,
+                      PyObject     *f) {
 
     /* Used for checking return value of fread calls. */
     size_t f_ret;
@@ -2617,11 +3179,24 @@ int zran_import_index(zran_index_t *index,
     int fail_ret;
 
     /* Used for iterating over elements of zran_index_t.list. */
+    uint64_t      i;
     zran_point_t *point;
     zran_point_t *list_end;
 
-    /* Used for checking magic bytes in the beginning of the file. */
-    char magic_bytes[sizeof(zran_magic_bytes)];
+    /*
+     * Used to store flags for each point - allocated once we
+     * know how many points there are.
+     */
+    uint8_t *dataflags = NULL;
+
+    /*
+     * Used for checking file ID, version, and
+     * flags at the beginning of the file. Flags
+     * is also used as a temporary variable.
+     */
+    char    file_id[sizeof(ZRAN_INDEX_FILE_ID)];
+    uint8_t version;
+    uint8_t flags;
 
     /*
      * Data fields that will be read from the file. They aren't stored directly
@@ -2635,41 +3210,59 @@ int zran_import_index(zran_index_t *index,
     uint32_t      npoints;
     zran_point_t *new_list = NULL;
 
+    /* CRC validation is currently not possible on an imported index */
+    index->flags |= ZRAN_SKIP_CRC_CHECK;
+
     /* Check if file is read only. */
-    if (!is_readonly(fd)) goto fail;
+    if (!is_readonly(fd, f)) goto fail;
 
-    /* Read magic bytes, and check for file errors and EOF. */
-    f_ret = fread(magic_bytes, sizeof(magic_bytes), 1, fd);
+    /* Read ID, and check for file errors and EOF. */
+    f_ret = fread_(file_id, sizeof(file_id), 1, fd, f);
+    if (feof_(fd, f, f_ret)) goto eof;
+    if (ferror_(fd, f))      goto read_error;
+    if (f_ret != 1)          goto read_error;
 
-    if (feof(fd))   goto eof;
-    if (ferror(fd)) goto read_error;
-    if (f_ret != 1) goto read_error;
-
-    /* Verify magic bytes. */
-    if (memcmp(magic_bytes, zran_magic_bytes, sizeof(magic_bytes))) {
+    /* Verify file ID. */
+    if (memcmp(file_id, ZRAN_INDEX_FILE_ID, sizeof(file_id)))
         goto unknown_format;
-    }
+
+    /* Read file format version */
+    f_ret = fread_(&version, 1, 1, fd, f);
+    if (feof_(fd, f, f_ret)) goto eof;
+    if (ferror_(fd, f))      goto read_error;
+    if (f_ret != 1)          goto read_error;
+
+    /* This file is too new for us to cope */
+    if (version > ZRAN_INDEX_FILE_VERSION)
+        goto unsupported_version;
+
+    /* Read flags (currently unused) */
+    f_ret = fread_(&flags, 1, 1, fd, f);
+    if (feof_(fd, f, f_ret)) goto eof;
+    if (ferror_(fd, f))      goto read_error;
+    if (f_ret != 1)          goto read_error;
 
     /* Read compressed size, and check for file errors and EOF. */
-    f_ret = fread(&compressed_size, sizeof(compressed_size), 1, fd);
-
-    if (feof(fd))   goto eof;
-    if (ferror(fd)) goto read_error;
-    if (f_ret != 1) goto read_error;
+    f_ret = fread_(&compressed_size, sizeof(compressed_size), 1, fd, f);
+    if (feof_(fd, f, f_ret)) goto eof;
+    if (ferror_(fd, f))      goto read_error;
+    if (f_ret != 1)          goto read_error;
 
     /*
-     * Compare compressed_size in the index file  to the existing size in
+     * Compare compressed_size in the index file to the existing size in
      * the current index (set in zran_init), if they don't match this means
      * this index file is not created for this compressed file.
      */
-    if (compressed_size != index->compressed_size) goto inconsistent;
+    if (compressed_size != index->compressed_size)
+        goto inconsistent;
+
+    if (feof_(fd, f, f_ret)) goto eof;
 
     /* Read uncompressed size, and check for file errors and EOF. */
-    f_ret = fread(&uncompressed_size, sizeof(uncompressed_size), 1, fd);
-
-    if (feof(fd))   goto eof;
-    if (ferror(fd)) goto read_error;
-    if (f_ret != 1) goto read_error;
+    f_ret = fread_(&uncompressed_size, sizeof(uncompressed_size), 1, fd, f);
+    if (feof_(fd, f, f_ret)) goto eof;
+    if (ferror_(fd, f))      goto read_error;
+    if (f_ret != 1)          goto read_error;
 
     /*
      * Uncompressed size may not be set in either current index or exported
@@ -2680,18 +3273,16 @@ int zran_import_index(zran_index_t *index,
         index->uncompressed_size != uncompressed_size) goto inconsistent;
 
     /* Read spacing, and check for file errors and EOF. */
-    f_ret = fread(&spacing, sizeof(spacing), 1, fd);
-
-    if (feof(fd))   goto eof;
-    if (ferror(fd)) goto read_error;
-    if (f_ret != 1) goto read_error;
+    f_ret = fread_(&spacing, sizeof(spacing), 1, fd, f);
+    if (feof_(fd, f, f_ret)) goto eof;
+    if (ferror_(fd, f))      goto read_error;
+    if (f_ret != 1)          goto read_error;
 
     /* Read window size, and check for file errors and EOF. */
-    f_ret = fread(&window_size, sizeof(window_size), 1, fd);
-
-    if (feof(fd))   goto eof;
-    if (ferror(fd)) goto read_error;
-    if (f_ret != 1) goto read_error;
+    f_ret = fread_(&window_size, sizeof(window_size), 1, fd, f);
+    if (feof_(fd, f, f_ret)) goto eof;
+    if (ferror_(fd, f))      goto read_error;
+    if (f_ret != 1)          goto read_error;
 
     /*
      * Make sanity checks for window size and spacing. These are similar to
@@ -2701,13 +3292,14 @@ int zran_import_index(zran_index_t *index,
     if (spacing     < window_size) goto fail;
 
     /* Read number of points, and check for file errors and EOF. */
-    f_ret = fread(&npoints, sizeof(npoints), 1, fd);
+    f_ret = fread_(&npoints, sizeof(npoints), 1, fd, f);
 
-    if (feof(fd))   goto eof;
-    if (ferror(fd)) goto read_error;
-    if (f_ret != 1) goto read_error;
+    if (feof_(fd, f, f_ret)) goto eof;
+    if (ferror_(fd, f))      goto read_error;
+    if (f_ret != 1)          goto read_error;
 
-    zran_log("zran_import_index: (%lu, %lu, %u, %u, %u)\n",
+    zran_log("zran_import_index: (%u, %lu, %lu, %u, %u, %u)\n",
+             version,
              compressed_size,
              uncompressed_size,
              spacing,
@@ -2723,79 +3315,102 @@ int zran_import_index(zran_index_t *index,
      * initialise the point list to 8 (same as in zran_init).
      */
     new_list = calloc(1, sizeof(zran_point_t) * max(npoints, 8));
-
-    if (new_list == NULL) goto memory_error;
+    if (new_list == NULL)
+        goto memory_error;
 
     /*
-     * Initialize point to the first element of the list, and list_end to the
-     * end of the list.
+     * Allocate space for the data flag for each point - whether or not
+     * there is data associated with it
      */
-    point    = new_list;
-    list_end = new_list + npoints;
+    dataflags = calloc(npoints, 1);
+    if (dataflags == NULL)
+        goto memory_error;
 
     /* Read new points iteratively for reading offset mapping. */
-    while (point < list_end)
-    {
+    for (i = 0, point = new_list; i < npoints; i++, point++) {
 
         /* Read compressed offset, and check for errors. */
-        f_ret = fread(&point->cmp_offset, sizeof(point->cmp_offset), 1, fd);
-
-        if (feof(fd))   goto eof;
-        if (ferror(fd)) goto read_error;
-        if (f_ret != 1) goto read_error;
+        f_ret = fread_(&point->cmp_offset,
+                       sizeof(point->cmp_offset), 1, fd, f);
+        if (feof_(fd, f, f_ret)) goto eof;
+        if (ferror_(fd, f))      goto read_error;
+        if (f_ret != 1)          goto read_error;
 
         /* Read uncompressed offset, and check for errors. */
-        f_ret = fread(&point->uncmp_offset, sizeof(point->uncmp_offset), 1, fd);
-
-        if (feof(fd))   goto eof;
-        if (ferror(fd)) goto read_error;
-        if (f_ret != 1) goto read_error;
+        f_ret = fread_(&point->uncmp_offset,
+                       sizeof(point->uncmp_offset), 1, fd, f);
+        if (feof_(fd, f, f_ret)) goto eof;
+        if (ferror_(fd, f))      goto read_error;
+        if (f_ret != 1)          goto read_error;
 
         /* Read bit offset, and check for errors. */
-        f_ret = fread(&point->bits, sizeof(point->bits), 1, fd);
+        f_ret = fread_(&point->bits, sizeof(point->bits), 1, fd, f);
+        if (feof_(fd, f, f_ret)) goto eof;
+        if (ferror_(fd, f))      goto read_error;
+        if (f_ret != 1)          goto read_error;
 
-        if (feof(fd))   goto eof;
-        if (ferror(fd)) goto read_error;
-        if (f_ret != 1) goto read_error;
+        /* Read data flag (added in version 1), and check for errors. */
+        if (version >= 1) {
+            f_ret = fread_(&flags, 1, 1, fd, f);
+            if (feof_(fd, f, f_ret)) goto eof;
+            if (ferror_(fd, f))      goto read_error;
+            if (f_ret != 1)          goto read_error;
 
-        zran_log("zran_import_index: (%lu, %lu, %lu, %u)\n",
-                 (npoints - (list_end - point)), // point index
+            /*
+             * The data flag determines whether or not any window data
+             * is associated with this point. We set point->data to 1
+             * to indicate to the loop below that this point has data
+             * to be loaded.
+             */
+        }
+        /*
+         * In index file version 0, the first point
+         * has no data, but all other points do.
+         */
+        else {
+            flags = (point == new_list) ? 0 : 1;
+        }
+
+        dataflags[i] = flags;
+
+        zran_log("zran_import_index: (p%lu, %lu, %lu, %u, %u)\n",
+                 i,
                  point->cmp_offset,
                  point->uncmp_offset,
-                 point->bits);
-
-        /* Done with this point. Proceed to the next one. */
-        point++;
+                 point->bits,
+                 flags);
     }
 
     /*
-     * Initialize point to the second element of the list (as the first element
-     * has no data), and list_end to the end of the list.
+     * Now loop through and load the window data for all index points.
      */
-    point    = new_list + 1;
-    list_end = new_list + npoints;
+    for (i = 0, point = new_list; i < npoints; i++, point++) {
 
-    /* Read new points iteratively for reading checkpoint data. */
-    while (point < list_end) {
+        /*
+         * There is no data associated with this point - it is either
+         * at the beginning of the file, or on a stream boundary.
+         */
+        if (dataflags[i] == 0) {
+            continue;
+        }
 
         /*
          * Allocate space for checkpoint data. These pointers in each point
          * should be cleaned up in case of any failures.
          */
         point->data = calloc(1, window_size);
-
-        if (point->data == NULL) goto memory_error;
+        if (point->data == NULL)
+            goto memory_error;
 
         /*
          * Read checkpoint data, and check for errors. End of file can be
          * reached just after the last element, so it's not an error for
          * the last element.
          */
-        f_ret = fread(point->data, window_size, 1, fd);
-
-        if (feof(fd) && point < list_end - 1) goto eof;
-        if (ferror(fd))                       goto read_error;
-        if (f_ret != 1)                       goto read_error;
+        f_ret = fread_(point->data, window_size, 1, fd, f);
+        if (feof_(fd, f, f_ret) && i < npoints - 1) goto eof;
+        if (ferror_(fd, f))                         goto read_error;
+        if (f_ret != 1)                             goto read_error;
 
         /*
          * TODO: If there are still more data after importing is done, it
@@ -2805,16 +3420,13 @@ int zran_import_index(zran_index_t *index,
         /* Print first and last three bytes of the checkpoint window. */
         zran_log("zran_import_index:"
                      "(%lu, [%02x %02x %02x...%02x %02x %02x])\n",
-                 (npoints - (list_end - point)), // point index
+                 i,
                  point->data[0],
                  point->data[1],
                  point->data[2],
                  point->data[window_size - 3],
                  point->data[window_size - 2],
                  point->data[window_size - 1]);
-
-        /* Done with this point. Proceed to the next one. */
-        point++;
     }
 
     /* There are no errors, it's safe to overwrite existing index data now. */
@@ -2868,6 +3480,8 @@ int zran_import_index(zran_index_t *index,
 
     zran_log("zran_import_index: done\n");
 
+    free(dataflags);
+
     return ZRAN_IMPORT_OK;
 
     /* For each failure case, we assign return value and then clean up. */
@@ -2895,6 +3509,10 @@ unknown_format:
     fail_ret = ZRAN_IMPORT_UNKNOWN_FORMAT;
     goto cleanup;
 
+unsupported_version:
+    fail_ret = ZRAN_IMPORT_UNSUPPORTED_VERSION;
+    goto cleanup;
+
 cleanup:
     if (new_list != NULL) {
 
@@ -2917,6 +3535,10 @@ cleanup:
 
         /* Release the list itself. */
         free(new_list);
+    }
+
+    if (dataflags != NULL) {
+        free(dataflags);
     }
 
     return fail_ret;

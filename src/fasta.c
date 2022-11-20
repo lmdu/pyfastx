@@ -92,7 +92,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->has_index = build_index;
 
 	//create index
-	obj->index = pyfastx_init_index(obj->file_name, (int)file_len, uppercase, full_name, memory_index, key_func);
+	obj->index = pyfastx_init_index((PyObject *)obj, obj->file_name, (int)file_len, uppercase, full_name, memory_index, key_func);
 
 	//iter function
 	obj->func = pyfastx_index_next_null;

@@ -320,7 +320,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//is gzip file
 	if (obj->middle->gzip_format) {
 		obj->middle->gzip_index = (zran_index_t *)malloc(sizeof(zran_index_t));
-		zran_init(obj->middle->gzip_index, obj->middle->fd, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
+		zran_init(obj->middle->gzip_index, obj->middle->fd, NULL, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
 	}
 
 	if (file_exists(obj->index_file)) {
@@ -346,6 +346,8 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->middle->cache_buff = NULL;
 	obj->middle->cache_soff = 0;
 	obj->middle->cache_eoff = 0;
+
+	obj->middle->fastq = (PyObject *)obj;
 
 	return (PyObject *)obj;
 }
@@ -394,6 +396,8 @@ pyfastx_Read* pyfastx_fastq_new_read(pyfastx_FastqMiddleware *middle) {
 	read->qual = NULL;
 	read->raw = NULL;
 	read->desc = NULL;
+
+	Py_INCREF(middle->fastq);
 	return read;
 }
 
@@ -416,7 +420,6 @@ PyObject* pyfastx_fastq_make_read(pyfastx_FastqMiddleware *middle) {
 		//sqlite3_finalize(stmt);
 	);
 
-	//Py_INCREF(read);
 	return (PyObject *)read;
 }
 
@@ -444,6 +447,7 @@ PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint64_t read_id) {
 			obj->qual_offset = sqlite3_column_int64(self->id_stmt, 5);
 			sqlite3_reset(self->id_stmt);
 		);
+
 		return (PyObject *)obj;
 	} else {
 		PyErr_SetString(PyExc_IndexError, "Index Error");
@@ -478,6 +482,7 @@ PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, PyObject* rname) {
 			obj->qual_offset = sqlite3_column_int64(self->name_stmt, 5);
 			sqlite3_reset(self->name_stmt);
 		);
+		Py_INCREF(self);
 		return (PyObject *)obj;
 	} else {
 		PyErr_Format(PyExc_KeyError, "%s does not exist in fastq file", name);

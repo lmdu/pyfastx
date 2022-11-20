@@ -44,7 +44,10 @@ typedef struct {
 	//iteration mode
 	uint8_t iterating;
 
+	PyObject *fastq;
+
 } pyfastx_FastqMiddleware;
+
 
 typedef struct {
 	PyObject_HEAD
