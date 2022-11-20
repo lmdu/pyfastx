@@ -990,9 +990,11 @@ This will take a long time to finish. Becuase, pyfastx does not load the index i
 Testing
 =======
 
-The ``pyfaidx`` module was used to test ``pyfastx``. To run the tests:
+The ``pyfaidx`` module was used to test ``pyfastx``. First, make sure you have a suitable version installed::
 
-::
+    pip install '.[dev]'
+
+Then, to run the tests::
 
 	$ python setup.py test
 

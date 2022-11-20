@@ -86,5 +86,13 @@ setup(
         'console_scripts': ['pyfastx = pyfastxcli:main']
     },
     py_modules = ["pyfastxcli"],
-    test_suite = "tests"
+    test_suite = "tests",
+    extras_requires = {
+        "dev": [
+            # pyfaidx is used as ground truth for expected values.  Version
+            # 0.5.9 and newer don't support negative indexes, which are used in
+            # our tests.
+            "pyfaidx <=0.5.8",
+        ],
+    }
 )
