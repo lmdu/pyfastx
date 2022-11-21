@@ -25,10 +25,6 @@ if os.name == 'nt':
         comp_args.append('-D_LARGEFILE64_SOURCE=1')
         comp_args.append('-D_LFS64_LARGEFILE=1')
 
-#if sys.platform == 'darwin':
-#    link_args.append('-fPIC')
-#    comp_args.append('-fPIC')
-
 extension = Extension('pyfastx',
     sources = sources,
     libraries = libs,

@@ -251,23 +251,37 @@ class FastaTest(unittest.TestCase):
 		with self.assertRaises(TypeError):
 			pyfastx.Fasta(flat_fasta, key_func=1)
 
+		print('1')
+
 		with self.assertRaises(FileExistsError):
 			pyfastx.Fasta('a_file_not_exists')
+
+		print('2')
 
 		with self.assertRaises(ValueError):
 			self.fastx.fetch('seq1', {'a':1})
 
+		print('3')
+
 		with self.assertRaises(NameError):
 			self.fastx.fetch('seq1', (1,10))
+
+		print('4')
 
 		with self.assertRaises(ValueError):
 			self.fastx.fetch(self.fastx[0].name, (1,10,20))
 
+		print('5')
+
 		with self.assertRaises(ValueError):
 			self.fastx.fetch(self.fastx[0].name, (20, 10))
 
+		print('6')
+
 		with self.assertRaises(ValueError):
 			self.fastx.fetch(self.fastx[0].name, [20, 10])
+
+		print('7')
 
 		with self.assertRaises(IndexError):
 			_ = self.fastx[self.count]

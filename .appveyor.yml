@@ -8,10 +8,6 @@ environment:
     TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
 
   matrix:
-    - PYTHON: C:\Python35
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 32
-
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
@@ -24,13 +20,17 @@ environment:
       PYTHON_VERSION: 3.8
       PYTHON_ARCH: 32
 
-    #- PYTHON: C:\Python39
-    #  PYTHON_VERSION: 3.9
-    #  PYTHON_ARCH: 32
+    - PYTHON: C:\Python39
+      PYTHON_VERSION: 3.9
+      PYTHON_ARCH: 32
 
-    - PYTHON: C:\Python35-x64
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 64
+    - PYTHON: C:\Python310
+      PYTHON_VERSION: 3.10
+      PYTHON_ARCH: 32
+
+    - PYTHON: C:\Python311
+      PYTHON_VERSION: 3.11
+      PYTHON_ARCH: 32
 
     - PYTHON: C:\Python36-x64
       PYTHON_VERSION: 3.6
@@ -49,6 +49,14 @@ environment:
       PYTHON_VERSION: 3.9
       PYTHON_ARCH: 64
 
+    - PYTHON: C:\Python310-x64
+      PYTHON_VERSION: 3.10
+      PYTHON_ARCH: 64
+
+    - PYTHON: C:\Python311-x64
+      PYTHON_VERSION: 3.11
+      PYTHON_ARCH: 64
+
 install:
   #- if [%PYTHON_VERSION%] LSS [3.9] appveyor DownloadFile https://github.com/lmdu/mingw64/raw/master/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z -FileName mw32.7z
   #- if [%PYTHON_VERSION%] LSS [3.9] 7z x -oC:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0 mw32.7z > NUL
@@ -64,7 +72,7 @@ install:
   - if [%PYTHON_VERSION%] GTR [3.4] dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
   - if [%PYTHON_VERSION%] GTR [3.4] python ci\fix_compiler_error.py %PYTHON%
   - python -m pip install -U pip wheel twine
-  - python -m pip install setuptools==49.6.0
+  - python -m pip install setuptools
   - python -m pip install pyfaidx==0.5.8
 
 build_script:
