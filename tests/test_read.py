@@ -62,6 +62,7 @@ class ReadTest(unittest.TestCase):
 		idx = self.get_random_read()
 		read = self.flatq[idx]
 		read1 = self.reads[idx]
+
 		self.assertEqual(repr(read), "<Read> {} with length of {}".format(read1[0], len(read1[1])))
 
 	def test_read(self):

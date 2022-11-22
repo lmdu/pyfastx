@@ -155,10 +155,10 @@ void pyfastx_sequence_dealloc(pyfastx_Sequence* self) {
 		free(self->line_cache);
 	}
 
+	Py_DECREF(self->index->fasta);
+
 	self->index = NULL;
 	self->cache_pos = NULL;
-
-	Py_DECREF(self->index->fasta);
 
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -498,6 +498,8 @@ PyObject *pyfastx_sequence_subscript(pyfastx_Sequence* self, PyObject* item){
 		seq->line_cache = NULL;
 		seq->cache_pos = NULL;
 		kstring_init(seq->line);
+
+		Py_INCREF(self->index->fasta);
 
 		//check sequence is complete or not
 		if (self->complete && seq->seq_len == self->seq_len) {

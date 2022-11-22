@@ -377,6 +377,8 @@ void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
 		free(self->middle->cache_buff);
 	}
 
+	self->middle->fastq = NULL;
+
 	ks_destroy(self->ks);
 	kseq_destroy(self->middle->kseq);
 	fclose(self->middle->fd);
@@ -398,6 +400,7 @@ pyfastx_Read* pyfastx_fastq_new_read(pyfastx_FastqMiddleware *middle) {
 	read->desc = NULL;
 
 	Py_INCREF(middle->fastq);
+
 	return read;
 }
 
@@ -482,7 +485,7 @@ PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, PyObject* rname) {
 			obj->qual_offset = sqlite3_column_int64(self->name_stmt, 5);
 			sqlite3_reset(self->name_stmt);
 		);
-		Py_INCREF(self);
+
 		return (PyObject *)obj;
 	} else {
 		PyErr_Format(PyExc_KeyError, "%s does not exist in fastq file", name);

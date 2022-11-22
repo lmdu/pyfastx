@@ -23,6 +23,7 @@ void pyfastx_read_dealloc(pyfastx_Read *self) {
     }
 
     Py_DECREF(self->middle->fastq);
+    self->middle = NULL;
 
     Py_TYPE(self)->tp_free((PyObject *)self);
 }

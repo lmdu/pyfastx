@@ -449,6 +449,8 @@ void pyfastx_index_free(pyfastx_Index *self){
 		free(self->cache_name.s);
 	}
 
+	self->fasta = NULL;
+
 	kseq_destroy(self->kseqs);
 	fclose(self->fd);
 	gzclose(self->gzfd);

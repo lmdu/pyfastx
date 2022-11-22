@@ -66,6 +66,7 @@ typedef struct {
 	sqlite3_stmt *uid_stmt;
 	sqlite3_stmt *seq_stmt;
 
+	//parent fasta object
 	PyObject *fasta;
 
 } pyfastx_Index;
