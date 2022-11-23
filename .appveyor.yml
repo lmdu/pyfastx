@@ -2,76 +2,88 @@ image: Visual Studio 2019
 
 environment:
   global:
-    MINGW_32: C:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32
-    MINGW_64: C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64
+    #MINGW_32_8: C:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32
+    #MINGW_64_8: C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64
+    MINGW_32_12: C:\mingw-w64\i686-12.2.0-posix-dwarf-rt_v10-rev1\mingw32
+    MINGW_64_12: C:\mingw-w64\x86_64-12.2.0-posix-seh-rt_v10-rev1\mingw64
+    MINGW_32_URL: https://github.com/niXman/mingw-builds-binaries/releases/download/12.2.0-rt_v10-rev1/i686-12.2.0-release-posix-dwarf-rt_v10-rev1.7z
+    MINGW_64_URL: https://github.com/niXman/mingw-builds-binaries/releases/download/12.2.0-rt_v10-rev1/x86_64-12.2.0-release-posix-seh-rt_v10-rev1.7z
     TWINE_REPOSITORY: pypi
     TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
 
   matrix:
     - PYTHON: C:\Python36
-      PYTHON_VERSION: 3.6
+      PYTHON_VERSION: 36
       PYTHON_ARCH: 32
 
     - PYTHON: C:\Python37
-      PYTHON_VERSION: 3.7
+      PYTHON_VERSION: 37
       PYTHON_ARCH: 32
 
     - PYTHON: C:\Python38
-      PYTHON_VERSION: 3.8
+      PYTHON_VERSION: 38
       PYTHON_ARCH: 32
 
     # test error for 32bit py39,310,311
-    #- PYTHON: C:\Python39
-    #  PYTHON_VERSION: 3.9
-    #  PYTHON_ARCH: 32
+    - PYTHON: C:\Python39
+      PYTHON_VERSION: 39
+      PYTHON_ARCH: 32
 
-    #- PYTHON: C:\Python310
-    #  PYTHON_VERSION: 3.10
-    #  PYTHON_ARCH: 32
+    - PYTHON: C:\Python310
+      PYTHON_VERSION: 310
+      PYTHON_ARCH: 32
 
-    #- PYTHON: C:\Python311
-    #  PYTHON_VERSION: 3.11
-    #  PYTHON_ARCH: 32
+    - PYTHON: C:\Python311
+      PYTHON_VERSION: 311
+      PYTHON_ARCH: 32
 
     - PYTHON: C:\Python36-x64
-      PYTHON_VERSION: 3.6
+      PYTHON_VERSION: 36
       PYTHON_ARCH: 64
 
     - PYTHON: C:\Python37-x64
-      PYTHON_VERSION: 3.7
+      PYTHON_VERSION: 37
       PYTHON_ARCH: 64
 
     - PYTHON: C:\Python38-x64
-      PYTHON_VERSION: 3.8
+      PYTHON_VERSION: 38
       PYTHON_ARCH: 64
 
     #- APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     - PYTHON: C:\Python39-x64
-      PYTHON_VERSION: 3.9
+      PYTHON_VERSION: 39
       PYTHON_ARCH: 64
 
     - PYTHON: C:\Python310-x64
-      PYTHON_VERSION: 3.10
+      PYTHON_VERSION: 310
       PYTHON_ARCH: 64
 
     - PYTHON: C:\Python311-x64
-      PYTHON_VERSION: 3.11
+      PYTHON_VERSION: 311
       PYTHON_ARCH: 64
 
 install:
-  - if [%PYTHON_VERSION%] GEQ [3.9] appveyor DownloadFile https://github.com/lmdu/mingw64/raw/master/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z -FileName mw32.7z
-  - if [%PYTHON_VERSION%] GEQ [3.9] 7z x -oC:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0 mw32.7z > NUL
+  #- IF [%PYTHON_VERSION%] GEQ [3.9] appveyor DownloadFile % -FileName mw32.7z
+  #- IF [%PYTHON_VERSION%] GEQ [3.9] 7z x -oC:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0 mw32.7z > NUL
+  - IF [%PYTHON_ARCH%] == [32] appveyor DownloadFile %MINGW_32_URL% -FileName mingw32.7z
+  - IF [%PYTHON_ARCH%] == [32] 7z x -oC:\mingw-w64\i686-12.2.0-posix-dwarf-rt_v10-rev1 mingw32.7z > NUL
+  - IF [%PYTHON_ARCH%] == [64] appveyor DownloadFile %MINGW_64_URL% -FileName mingw64.7z
+  - IF [%PYTHON_ARCH%] == [64] 7z x -oC:\mingw-w64\x86_64-12.2.0-posix-seh-rt_v10-rev1 mingw64.7z > NUL
   - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
-  - if [%PYTHON_ARCH%] == [32] SET PATH=%MINGW_32%\bin;%PATH%
-  - if [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
-  - if [%PYTHON_ARCH%] == [64] COPY /Y ci\libz.a %MINGW_64%\x86_64-w64-mingw32\lib\libz.a
+  - IF [%PYTHON_ARCH%] == [32] SET MINGW_32=%MINGW_32_12%
+  - IF [%PYTHON_ARCH%] == [64] SET MINGW_64=%MINGW_64_12%
+  - IF [%PYTHON_ARCH%] == [32] SET PATH=%MINGW_32%\bin;%PATH%
+  - IF [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
+  - IF [%PYTHON_ARCH%] == [64] COPY /Y ci\libz.a %MINGW_64%\x86_64-w64-mingw32\lib\libz.a
   - COPY %MINGW_32%\opt\include\sqlite3.h %MINGW_32%\i686-w64-mingw32\include\sqlite3.h
   - COPY %MINGW_32%\opt\lib\libsqlite3.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.a
   - COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
   - COPY %MINGW_64%\opt\lib\libsqlite3.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.a
-  - if [%PYTHON_VERSION%] GTR [3.4] gendef %PYTHON%\vcruntime140.dll
-  - if [%PYTHON_VERSION%] GTR [3.4] dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
-  - if [%PYTHON_VERSION%] GTR [3.4] python ci\fix_compiler_error.py %PYTHON%
+  - gendef %PYTHON%\vcruntime140.dll
+  - dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
+  - gendef %PYTHON%\python%PYTHON_VERSION%.dll
+  - dlltool -D %PYTHON%\python%PYTHON_VERSION%.dll -d python%PYTHON_VERSION%.def -l %PYTHON%\libs\libpython%PYTHON_VERSION%.a
+  - python ci\fix_compiler_error.py %PYTHON%
   - python -m pip install -U pip wheel twine
   - python -m pip install setuptools
   - python -m pip install pyfaidx==0.5.8
