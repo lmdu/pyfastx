@@ -77,10 +77,10 @@ install:
   - IF [%PYTHON_ARCH%] == [32] SET PATH=%MINGW_32%\bin;%PATH%
   - IF [%PYTHON_ARCH%] == [64] SET PATH=%MINGW_64%\bin;%PATH%
   - IF [%PYTHON_ARCH%] == [64] COPY /Y ci\libz.a %MINGW_64%\x86_64-w64-mingw32\lib\libz.a
-  - COPY %MINGW_32%\opt\include\sqlite3.h %MINGW_32%\i686-w64-mingw32\include\sqlite3.h
-  - COPY %MINGW_32%\opt\lib\libsqlite3.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.a
-  - COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
-  - COPY %MINGW_64%\opt\lib\libsqlite3.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.a
+  - IF [%PYTHON_ARCH%] == [32] COPY %MINGW_32%\opt\include\sqlite3.h %MINGW_32%\i686-w64-mingw32\include\sqlite3.h
+  - IF [%PYTHON_ARCH%] == [32] COPY %MINGW_32%\opt\lib\libsqlite3.a %MINGW_32%\i686-w64-mingw32\lib\libsqlite3.a
+  - IF [%PYTHON_ARCH%] == [64] COPY %MINGW_64%\opt\include\sqlite3.h %MINGW_64%\x86_64-w64-mingw32\include\sqlite3.h
+  - IF [%PYTHON_ARCH%] == [64] COPY %MINGW_64%\opt\lib\libsqlite3.a %MINGW_64%\x86_64-w64-mingw32\lib\libsqlite3.a
   - gendef %PYTHON%\vcruntime140.dll
   - dlltool -D %PYTHON%\vcruntime140.dll -d vcruntime140.def -l %PYTHON%\libs\libvcruntime140.a
   - gendef %PYTHON%\python%PYTHON_VERSION%.dll
