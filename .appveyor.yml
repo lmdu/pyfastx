@@ -66,8 +66,10 @@ install:
   #- IF [%PYTHON_VERSION%] GEQ [3.9] appveyor DownloadFile % -FileName mw32.7z
   #- IF [%PYTHON_VERSION%] GEQ [3.9] 7z x -oC:\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0 mw32.7z > NUL
   - IF [%PYTHON_ARCH%] == [32] appveyor DownloadFile %MINGW_32_URL% -FileName mingw32.7z
+  - IF [%PYTHON_ARCH%] == [32] mkdir C:\mingw-w64\i686-12.2.0-posix-dwarf-rt_v10-rev1
   - IF [%PYTHON_ARCH%] == [32] 7z x -oC:\mingw-w64\i686-12.2.0-posix-dwarf-rt_v10-rev1 mingw32.7z > NUL
   - IF [%PYTHON_ARCH%] == [64] appveyor DownloadFile %MINGW_64_URL% -FileName mingw64.7z
+  - IF [%PYTHON_ARCH%] == [64] mkdir C:\mingw-w64\x86_64-12.2.0-posix-seh-rt_v10-rev1
   - IF [%PYTHON_ARCH%] == [64] 7z x -oC:\mingw-w64\x86_64-12.2.0-posix-seh-rt_v10-rev1 mingw64.7z > NUL
   - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
   - IF [%PYTHON_ARCH%] == [32] SET MINGW_32=%MINGW_32_12%
