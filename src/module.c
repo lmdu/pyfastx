@@ -67,25 +67,17 @@ static PyMethodDef module_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
-#if PY_MAJOR_VERSION >= 3
-	static struct PyModuleDef module_pyfastx = {
-		PyModuleDef_HEAD_INIT,
-		"pyfastx",
-		"A python C extension for parsing fasta and fastq file",
-		-1,
-		module_methods,
-	};
-#endif
+static struct PyModuleDef module_pyfastx = {
+	PyModuleDef_HEAD_INIT,
+	"pyfastx",
+	"A python C extension for parsing fasta and fastq file",
+	-1,
+	module_methods,
+};
+
 
 static PyObject* pyfastx_module_init(void){
-	PyObject *module;
-
-#if PY_MAJOR_VERSION >= 3
-	module = PyModule_Create(&module_pyfastx);
-
-#else
-	module = Py_InitModule("pyfastx", module_methods);
-#endif
+	PyObject *module = PyModule_Create(&module_pyfastx);
 
 	if (module == NULL){
 		return NULL;
@@ -114,7 +106,6 @@ static PyObject* pyfastx_module_init(void){
 	}
 	Py_INCREF((PyObject *)&pyfastx_SequenceType);
 	PyModule_AddObject(module, "Sequence", (PyObject *)&pyfastx_SequenceType);
-
 	
 	if(PyType_Ready(&pyfastx_ReadType) < 0){
 		return NULL;
@@ -137,12 +128,6 @@ static PyObject* pyfastx_module_init(void){
 	return module;
 }
 
-#if PY_MAJOR_VERSION >= 3
 PyMODINIT_FUNC PyInit_pyfastx() {
 	return pyfastx_module_init();
 }
-#else
-PyMODINIT_FUNC initpyfastx(void) {
-	pyfastx_module_init();
-}
-#endif

@@ -14,7 +14,9 @@ define_macros = []
 sources = glob.glob('src/*.c')
 
 if os.name == 'nt':
-    if '32' in platform.architecture()[0] and sys.version.startswith('3.8'):
+    major, minor, revise = sys.version.split()[0].split('.')
+
+    if '32' in platform.architecture()[0] and int(minor) >= 8:
         link_args.append('-static-libgcc')
         link_args.append('-static-libstdc++')
 
@@ -24,6 +26,7 @@ if os.name == 'nt':
         comp_args.append('-D_FILE_OFFSET_BITS=64')
         comp_args.append('-D_LARGEFILE64_SOURCE=1')
         comp_args.append('-D_LFS64_LARGEFILE=1')
+
 
 extension = Extension('pyfastx',
     sources = sources,
