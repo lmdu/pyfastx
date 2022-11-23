@@ -92,7 +92,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt);
 PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, PyObject *name);
 PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id);
 
-pyfastx_Index *pyfastx_init_index(PyObject* fasta, char* file_path, int file_len, int uppercase, int full_name, int memory_index, PyObject* key_func);
+pyfastx_Index *pyfastx_init_index(PyObject* obj, char* file_path, int file_len, int uppercase, int full_name, int memory_index, PyObject* key_func);
 //char *pyfastx_index_get_sub_seq(pyfastx_Index *self, pyfastx_Sequence *seq);
 //char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom);
 void pyfastx_index_random_read(pyfastx_Index* self, char* buff, int64_t offset, uint32_t bytes);

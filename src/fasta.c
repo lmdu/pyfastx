@@ -31,11 +31,10 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 }
 
 PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
+	printf("%s\n", "started");
 	//fasta file path
 	Py_ssize_t file_len;
 	char *file_name;
-
-	printf("%s\n", "started yes");
 
 	//bool value for uppercase sequence
 	int uppercase = 0;
@@ -93,12 +92,8 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->uppercase = uppercase;
 	obj->has_index = build_index;
 
-	printf("%s\n", "start build index");
-
 	//create index
 	obj->index = pyfastx_init_index((PyObject *)obj, obj->file_name, (int)file_len, uppercase, full_name, memory_index, key_func);
-
-	printf("%s\n", "end build index");
 
 	//iter function
 	obj->func = pyfastx_index_next_null;

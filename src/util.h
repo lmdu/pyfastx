@@ -2,7 +2,7 @@
 #define PYFASTX_UTIL_H
 #include <Python.h>
 #include <stdint.h>
-#include <unistd.h>
+#include "unistd.h"
 #include "sqlite3.h"
 #include "zran.h"
 #include "zlib.h"

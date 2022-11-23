@@ -27,7 +27,6 @@ if os.name == 'nt':
         comp_args.append('-D_LARGEFILE64_SOURCE=1')
         comp_args.append('-D_LFS64_LARGEFILE=1')
 
-
 extension = Extension('pyfastx',
     sources = sources,
     libraries = libs,
