@@ -473,7 +473,7 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 	int i, rows;
 
 	PYFASTX_SQLITE_CALL(
-		sqlite3_prepare_v2(index_db, "SELECT COUNT(*) FROM gzindex", -1, &stmt, NULL);
+		sqlite3_prepare_v2(index_db, "SELECT COUNT(1) FROM gzindex", -1, &stmt, NULL);
 		sqlite3_step(stmt);
 		rows = sqlite3_column_int(stmt, 0);
 		sqlite3_finalize(stmt);

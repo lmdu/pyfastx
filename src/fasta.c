@@ -31,7 +31,6 @@ void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self){
 }
 
 PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
-	printf("%s\n", "started");
 	//fasta file path
 	Py_ssize_t file_len;
 	char *file_name;
@@ -93,8 +92,9 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->has_index = build_index;
 
 	//create index
-	obj->index = pyfastx_init_index((PyObject *)obj, obj->file_name, (int)file_len, uppercase, full_name, memory_index, key_func);
 
+	obj->index = pyfastx_init_index((PyObject *)obj, obj->file_name, (int)file_len, uppercase, full_name, memory_index, key_func);
+	
 	//iter function
 	obj->func = pyfastx_index_next_null;
 
@@ -1123,61 +1123,27 @@ static PyMethodDef pyfastx_fasta_methods[] = {
 
 //as a list
 static PySequenceMethods seq_methods = {
-	0, /*sq_length*/
-	0, /*sq_concat*/
-	0, /*sq_repeat*/
-	0, /*sq_item*/
-	0, /*sq_slice */
-	0, /*sq_ass_item*/
-	0, /*sq_ass_splice*/
-	(objobjproc)pyfastx_fasta_contains, /*sq_contains*/
-	0, /*sq_inplace_concat*/
-	0, /*sq_inplace_repeat*/
+	.sq_contains = (objobjproc)pyfastx_fasta_contains,
 };
 
 static PyMappingMethods pyfastx_fasta_as_mapping = {
-	(lenfunc)pyfastx_fasta_length,
-	(binaryfunc)pyfastx_fasta_subscript,
-	0,
+	.mp_length = (lenfunc)pyfastx_fasta_length,
+	.mp_subscript = (binaryfunc)pyfastx_fasta_subscript,
 };
 
 PyTypeObject pyfastx_FastaType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "Fasta",                        /* tp_name */
-    sizeof(pyfastx_Fasta),          /* tp_basicsize */
-    0,                              /* tp_itemsize */
-    (destructor)pyfastx_fasta_dealloc,   /* tp_dealloc */
-    0,                              /* tp_print */
-    0,                              /* tp_getattr */
-    0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
-    (reprfunc)pyfastx_fasta_repr,                              /* tp_repr */
-    0,                              /* tp_as_number */
-    &seq_methods,                   /* tp_as_sequence */
-    &pyfastx_fasta_as_mapping,                   /* tp_as_mapping */
-    0,                              /* tp_hash */
-    0,                              /* tp_call */
-    0,                              /* tp_str */
-    0,                              /* tp_getattro */
-    0,                              /* tp_setattro */
-    0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,             /* tp_flags */
-    0,                              /* tp_doc */
-    0,                              /* tp_traverse */
-    0,                              /* tp_clear */
-    0,                              /* tp_richcompare */
-    0,                              /* tp_weaklistoffset */
-    (getiterfunc)pyfastx_fasta_iter,     /* tp_iter */
-    (iternextfunc)pyfastx_fasta_next,    /* tp_iternext */
-    pyfastx_fasta_methods,          /* tp_methods */
-    pyfastx_fasta_members,          /* tp_members */
-    pyfastx_fasta_getsets,                              /* tp_getset */
-    0,                              /* tp_base */
-    0,                              /* tp_dict */
-    0,                              /* tp_descr_get */
-    0,                              /* tp_descr_set */
-    0,                              /* tp_dictoffset */
-    0,                              /* tp_init */
-    PyType_GenericAlloc,            /* tp_alloc */
-    pyfastx_fasta_new,              /* tp_new */
+	PyVarObject_HEAD_INIT(NULL, 0)
+	.tp_name = "Fasta",
+	.tp_basicsize = sizeof(pyfastx_Fasta),
+	.tp_dealloc = (destructor)pyfastx_fasta_dealloc,
+	.tp_repr = (reprfunc)pyfastx_fasta_repr,
+	.tp_as_sequence = &seq_methods,
+	.tp_as_mapping = &pyfastx_fasta_as_mapping,
+	.tp_flags = Py_TPFLAGS_DEFAULT,
+	.tp_iter = (getiterfunc)pyfastx_fasta_iter,
+	.tp_iternext = (iternextfunc)pyfastx_fasta_next,
+	.tp_methods = pyfastx_fasta_methods,
+	.tp_members = pyfastx_fasta_members,
+	.tp_getset = pyfastx_fasta_getsets,
+	.tp_new = pyfastx_fasta_new,
 };

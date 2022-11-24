@@ -16,6 +16,9 @@ sources = glob.glob('src/*.c')
 if os.name == 'nt':
     major, minor, revise = sys.version.split()[0].split('.')
 
+    if int(minor) >= 10:
+        pass
+
     if '32' in platform.architecture()[0] and int(minor) >= 8:
         link_args.append('-static-libgcc')
         link_args.append('-static-libstdc++')

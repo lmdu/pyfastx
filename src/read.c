@@ -74,6 +74,8 @@ void pyfastx_read_continue_reader(pyfastx_Read *self) {
             gzread(self->middle->gzfd, self->middle->cache_buff, 1048576);
             self->middle->cache_eoff = gztell(self->middle->gzfd);
         }
+
+        //known error: fastq file without line ending in last line
     }
 
     self->desc = (char *)malloc(self->desc_len + 1);

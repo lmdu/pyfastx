@@ -29,13 +29,13 @@ environment:
       PYTHON_VERSION: 39
       PYTHON_ARCH: 32
 
-    - PYTHON: C:\Python310
-      PYTHON_VERSION: 310
-      PYTHON_ARCH: 32
+    #- PYTHON: C:\Python310
+    #  PYTHON_VERSION: 310
+    #  PYTHON_ARCH: 32
 
-    - PYTHON: C:\Python311
-      PYTHON_VERSION: 311
-      PYTHON_ARCH: 32
+    #- PYTHON: C:\Python311
+    #  PYTHON_VERSION: 311
+    #  PYTHON_ARCH: 32
 
     - PYTHON: C:\Python36-x64
       PYTHON_VERSION: 36
@@ -54,13 +54,13 @@ environment:
       PYTHON_VERSION: 39
       PYTHON_ARCH: 64
 
-    - PYTHON: C:\Python310-x64
-      PYTHON_VERSION: 310
-      PYTHON_ARCH: 64
+    #- PYTHON: C:\Python310-x64
+    #  PYTHON_VERSION: 310
+    #  PYTHON_ARCH: 64
 
-    - PYTHON: C:\Python311-x64
-      PYTHON_VERSION: 311
-      PYTHON_ARCH: 64
+    #- PYTHON: C:\Python311-x64
+    #  PYTHON_VERSION: 311
+    #  PYTHON_ARCH: 64
 
 install:
   #- IF [%PYTHON_VERSION%] GEQ [3.9] appveyor DownloadFile % -FileName mw32.7z

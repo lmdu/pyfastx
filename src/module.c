@@ -86,46 +86,53 @@ static PyObject* pyfastx_module_init(void){
 	if(PyType_Ready(&pyfastx_FastaType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_FastaType);
+	Py_INCREF(&pyfastx_FastaType);
 	PyModule_AddObject(module, "Fasta", (PyObject *)&pyfastx_FastaType);
 
 	if(PyType_Ready(&pyfastx_FastqType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_FastqType);
+	Py_INCREF(&pyfastx_FastqType);
 	PyModule_AddObject(module, "Fastq", (PyObject *)&pyfastx_FastqType);
 
 	if(PyType_Ready(&pyfastx_FastxType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_FastxType);
+	Py_INCREF(&pyfastx_FastxType);
 	PyModule_AddObject(module, "Fastx", (PyObject *)&pyfastx_FastxType);
 
 	if(PyType_Ready(&pyfastx_SequenceType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_SequenceType);
+	Py_INCREF(&pyfastx_SequenceType);
 	PyModule_AddObject(module, "Sequence", (PyObject *)&pyfastx_SequenceType);
 	
 	if(PyType_Ready(&pyfastx_ReadType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_ReadType);
+	Py_INCREF(&pyfastx_ReadType);
 	PyModule_AddObject(module, "Read", (PyObject *)&pyfastx_ReadType);
 
 	if(PyType_Ready(&pyfastx_FastaKeysType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_FastaKeysType);
+	Py_INCREF(&pyfastx_FastaKeysType);
 	PyModule_AddObject(module, "FastaKeys", (PyObject *)&pyfastx_FastaKeysType);
 
 	if (PyType_Ready(&pyfastx_FastqKeysType) < 0) {
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_FastqKeysType);
+	Py_INCREF(&pyfastx_FastqKeysType);
 	PyModule_AddObject(module, "FastqKeys", (PyObject *)&pyfastx_FastqKeysType);
 
-	return module;
+	PyModule_AddStringConstant(module, "__version__", PYFASTX_VERSION);
+
+	if (!PyErr_Occurred()) {
+		return module;
+	} else {
+		Py_XDECREF(module);
+		return NULL;
+	}
 }
 
 PyMODINIT_FUNC PyInit_pyfastx() {
