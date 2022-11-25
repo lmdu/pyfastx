@@ -284,41 +284,15 @@ static PyMemberDef pyfastx_read_members[] = {
 
 PyTypeObject pyfastx_ReadType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "Read",                        /* tp_name */
-    sizeof(pyfastx_Read),          /* tp_basicsize */
-    0,                              /* tp_itemsize */
-    (destructor)pyfastx_read_dealloc,   /* tp_dealloc */
-    0,                              /* tp_print */
-    0,                              /* tp_getattr */
-    0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
-    (reprfunc)pyfastx_read_repr,                              /* tp_repr */
-    0,                              /* tp_as_number */
-    0,                   /* tp_as_sequence */
-    &pyfastx_read_as_mapping,                   /* tp_as_mapping */
-    0,                              /* tp_hash */
-    0,                              /* tp_call */
-    (reprfunc)pyfastx_read_str,                              /* tp_str */
-    0,                              /* tp_getattro */
-    0,                              /* tp_setattro */
-    0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,             /* tp_flags */
-    0,                              /* tp_doc */
-    0,                              /* tp_traverse */
-    0,                              /* tp_clear */
-    0,                              /* tp_richcompare */
-    0,                              /* tp_weaklistoffset */
-    0,     /* tp_iter */
-    0,    /* tp_iternext */
-    0,          /* tp_methods */
-    pyfastx_read_members,          /* tp_members */
-    pyfastx_read_getsets,                              /* tp_getset */
-    0,                              /* tp_base */
-    0,                              /* tp_dict */
-    0,                              /* tp_descr_get */
-    0,                              /* tp_descr_set */
-    0,                              /* tp_dictoffset */
-    0,                              /* tp_init */
-    PyType_GenericAlloc,            /* tp_alloc */
-    PyType_GenericNew,              /* tp_new */
+    .tp_name = "Read",
+    .tp_basicsize = sizeof(pyfastx_Read),
+    .tp_dealloc = (destructor)pyfastx_read_dealloc,
+    .tp_repr = (reprfunc)pyfastx_read_repr,
+    .tp_as_mapping = &pyfastx_read_as_mapping,
+    .tp_str = (reprfunc)pyfastx_read_str,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_members = pyfastx_read_members,
+    .tp_getset = pyfastx_read_getsets,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = PyType_GenericNew,
 };

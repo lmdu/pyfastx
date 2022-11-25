@@ -17,6 +17,9 @@ typedef struct {
 	//file format fasta or fastq
 	uint8_t format;
 
+	//output comment or not
+	uint8_t comment;
+
 	//gzip open file handle
 	gzFile gzfd;
 

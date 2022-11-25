@@ -146,43 +146,15 @@ static PySequenceMethods fastq_keys_as_sequence = {
 };
 
 PyTypeObject pyfastx_FastqKeysType = {
-    //PyVarObject_HEAD_INIT(&PyType_Type, 0)
     PyVarObject_HEAD_INIT(NULL, 0)
-    "FastqKeys",                     /* tp_name */
-    sizeof(pyfastx_FastqKeys),       /* tp_basicsize */
-    0,                              /* tp_itemsize */
-    (destructor)pyfastx_fastq_keys_dealloc,                              /* tp_dealloc */
-    0,                              /* tp_print */
-    0,                              /* tp_getattr */
-    0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
-    (reprfunc)pyfastx_fastq_keys_repr,                              /* tp_repr */
-    0,                              /* tp_as_number */
-    &fastq_keys_as_sequence,                              /* tp_as_sequence */
-    0,   /* tp_as_mapping */
-    0,                              /* tp_hash */
-    0,                              /* tp_call */
-    0,                              /* tp_str */
-    0,                              /* tp_getattro */
-    0,                              /* tp_setattro */
-    0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,             /* tp_flags */
-    0,                              /* tp_doc */
-    0,                              /* tp_traverse */
-    0,                              /* tp_clear */
-    0,                              /* tp_richcompare */
-    0,                              /* tp_weaklistoffset */
-    (getiterfunc)pyfastx_fastq_keys_iter,                              /* tp_iter */
-    (iternextfunc)pyfastx_fastq_keys_next,                              /* tp_iternext */
-    0,       /* tp_methods */
-    0,       /* tp_members */
-    0,       /* tp_getset */
-    0,                              /* tp_base */
-    0,                              /* tp_dict */
-    0,                              /* tp_descr_get */
-    0,                              /* tp_descr_set */
-    0,                              /* tp_dictoffset */
-    0,                              /* tp_init */
-    PyType_GenericAlloc,            /* tp_alloc */
-    PyType_GenericNew,           /* tp_new */
+    .tp_name = "FastqKeys",
+    .tp_basicsize = sizeof(pyfastx_FastqKeys),
+    .tp_dealloc = (destructor)pyfastx_fastq_keys_dealloc,
+    .tp_repr = (reprfunc)pyfastx_fastq_keys_repr,
+    .tp_as_sequence = &fastq_keys_as_sequence,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_iter = (getiterfunc)pyfastx_fastq_keys_iter,
+    .tp_iternext = (iternextfunc)pyfastx_fastq_keys_next,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = PyType_GenericNew,
 };

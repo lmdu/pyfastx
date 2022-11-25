@@ -814,33 +814,47 @@ PyObject* pyfastx_fastq_guess_encoding_type(pyfastx_Fastq* self, void* closure) 
 	platforms = PyList_New(0);
 
 	//check fastq platform
-	if (minqs < 33 || maxqs > 104) {
-		return PyErr_Format(PyExc_TypeError, "Quality values corrupt. found [%d, %d] where [33, 104] was expected", minqs, maxqs);
+	if (minqs < 33 || maxqs > 126) {
+		//return PyErr_Format(PyExc_TypeError, "Quality values corrupt. found [%d, %d] where [33, 104] was expected", minqs, maxqs);
+		platform = Py_BuildValue("s", "Unknown");
+		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	if (minqs >= 33 && maxqs <= 73) {
 		platform = Py_BuildValue("s", "Sanger Phred+33");
 		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	if (minqs >= 33 && maxqs <= 74) {
 		platform = Py_BuildValue("s", "Illumina 1.8+ Phred+33");
 		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	if (minqs >= 59 && maxqs <= 104) {
 		platform = Py_BuildValue("s", "Solexa Solexa+64");
 		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	if (minqs >= 64 && maxqs <= 104) {
 		platform = Py_BuildValue("s", "Illumina 1.3+ Phred+64");
 		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	if (minqs >= 66 && maxqs <= 104) {
 		platform = Py_BuildValue("s", "Illumina 1.5+ Phred+64");
 		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
+	}
+
+	if (minqs >= 33 && maxqs <= 126) {
+		platform = Py_BuildValue("s", "PacBio HiFi Phred+33");
+		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	return platforms;
@@ -1070,41 +1084,17 @@ static PyMemberDef pyfastx_fastq_members[] = {
 
 PyTypeObject pyfastx_FastqType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "Fastq",                        /* tp_name */
-    sizeof(pyfastx_Fastq),          /* tp_basicsize */
-    0,                              /* tp_itemsize */
-    (destructor)pyfastx_fastq_dealloc,   /* tp_dealloc */
-    0,                              /* tp_print */
-    0,                              /* tp_getattr */
-    0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
-    (reprfunc)pyfastx_fastq_repr,                              /* tp_repr */
-    0,                              /* tp_as_number */
-    &pyfastx_fastq_as_sequence,                   /* tp_as_sequence */
-    &pyfastx_fastq_as_mapping,                   /* tp_as_mapping */
-    0,                              /* tp_hash */
-    0,                              /* tp_call */
-    0,                              /* tp_str */
-    0,                              /* tp_getattro */
-    0,                              /* tp_setattro */
-    0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,             /* tp_flags */
-    0,                              /* tp_doc */
-    0,                              /* tp_traverse */
-    0,                              /* tp_clear */
-    0,                              /* tp_richcompare */
-    0,                              /* tp_weaklistoffset */
-    (getiterfunc)pyfastx_fastq_iter,     /* tp_iter */
-    (iternextfunc)pyfastx_fastq_next,    /* tp_iternext */
-    pyfastx_fastq_methods,          /* tp_methods */
-    pyfastx_fastq_members,          /* tp_members */
-    pyfastx_fastq_getsets,                              /* tp_getset */
-    0,                              /* tp_base */
-    0,                              /* tp_dict */
-    0,                              /* tp_descr_get */
-    0,                              /* tp_descr_set */
-    0,                              /* tp_dictoffset */
-    0,                              /* tp_init */
-    PyType_GenericAlloc,            /* tp_alloc */
-    pyfastx_fastq_new,              /* tp_new */
+    .tp_name = "Fastq",
+    .tp_basicsize = sizeof(pyfastx_Fastq),
+    .tp_dealloc = (destructor)pyfastx_fastq_dealloc,
+    .tp_repr = (reprfunc)pyfastx_fastq_repr,
+    .tp_as_sequence = &pyfastx_fastq_as_sequence,
+    .tp_as_mapping = &pyfastx_fastq_as_mapping,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_iter = (getiterfunc)pyfastx_fastq_iter,
+    .tp_iternext = (iternextfunc)pyfastx_fastq_next,
+    .tp_methods = pyfastx_fastq_methods,
+    .tp_members = pyfastx_fastq_members,
+    .tp_getset = pyfastx_fastq_getsets,
+    .tp_new = pyfastx_fastq_new,
 };

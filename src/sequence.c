@@ -746,43 +746,20 @@ static PyMemberDef pyfastx_sequence_members[] = {
 };
 
 PyTypeObject pyfastx_SequenceType = {
-    //PyVarObject_HEAD_INIT(&PyType_Type, 0)
     PyVarObject_HEAD_INIT(NULL, 0)
-    "Sequence",                     /* tp_name */
-    sizeof(pyfastx_Sequence),       /* tp_basicsize */
-    0,                              /* tp_itemsize */
-    (destructor)pyfastx_sequence_dealloc,                              /* tp_dealloc */
-    0,                              /* tp_print */
-    0,                              /* tp_getattr */
-    0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
-    (reprfunc)pyfastx_sequence_repr,                              /* tp_repr */
-    0,                              /* tp_as_number */
-    &pyfastx_sequence_as_sequence,                              /* tp_as_sequence */
-    &pyfastx_sequence_as_mapping,   /* tp_as_mapping */
-    0,                              /* tp_hash */
-    0,                              /* tp_call */
-    (reprfunc)pyfastx_sequence_str,                              /* tp_str */
-    0,                              /* tp_getattro */
-    0,                              /* tp_setattro */
-    0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,             /* tp_flags */
-    0,                              /* tp_doc */
-    0,                              /* tp_traverse */
-    0,                              /* tp_clear */
-    0,                              /* tp_richcompare */
-    0,                              /* tp_weaklistoffset */
-    (getiterfunc)pyfastx_sequence_iter,                              /* tp_iter */
-    (iternextfunc)pyfastx_sequence_next,                              /* tp_iternext */
-    pyfastx_sequence_methods,       /* tp_methods */
-    pyfastx_sequence_members,       /* tp_members */
-    pyfastx_sequence_getsets,       /* tp_getset */
-    0,                              /* tp_base */
-    0,                              /* tp_dict */
-    0,                              /* tp_descr_get */
-    0,                              /* tp_descr_set */
-    0,                              /* tp_dictoffset */
-    0,                              /* tp_init */
-    PyType_GenericAlloc,            /* tp_alloc */
-    PyType_GenericNew,           /* tp_new */
+    .tp_name = "Sequence",
+    .tp_basicsize = sizeof(pyfastx_Sequence),
+    .tp_dealloc = (destructor)pyfastx_sequence_dealloc,
+    .tp_repr = (reprfunc)pyfastx_sequence_repr,
+    .tp_as_sequence = &pyfastx_sequence_as_sequence,
+    .tp_as_mapping = &pyfastx_sequence_as_mapping,
+    .tp_str = (reprfunc)pyfastx_sequence_str,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_iter = (getiterfunc)pyfastx_sequence_iter,
+    .tp_iternext = (iternextfunc)pyfastx_sequence_next,
+    .tp_methods = pyfastx_sequence_methods,
+    .tp_members = pyfastx_sequence_members,
+    .tp_getset = pyfastx_sequence_getsets,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = PyType_GenericNew,
 };
