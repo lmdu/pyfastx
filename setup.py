@@ -17,7 +17,7 @@ if os.name == 'nt':
     major, minor, revise = sys.version.split()[0].split('.')
 
     if int(minor) >= 10:
-        pass
+        comp_args.append('-std=gnu11')
 
     if '32' in platform.architecture()[0] and int(minor) >= 8:
         link_args.append('-static-libgcc')

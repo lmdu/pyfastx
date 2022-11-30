@@ -407,7 +407,7 @@ void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite
 	close(fd);
 
 	fh = fopen(temp_index, "wb+");
-	if (zran_export_index(gzip_index, fh, NULL) != ZRAN_EXPORT_OK){
+	if (zran_export_index(gzip_index, fh) != ZRAN_EXPORT_OK){
 		fclose(fh);
 		free(temp_index);
 		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
@@ -517,7 +517,7 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 	fclose(fh);
 
 	fh = fopen(temp_index, "rb");
-	if (zran_import_index(gzip_index, fh, NULL) != ZRAN_IMPORT_OK) {
+	if (zran_import_index(gzip_index, fh) != ZRAN_IMPORT_OK) {
 		PyErr_SetString(PyExc_RuntimeError, "failed to import gzip index");
 	}
 	fclose(fh);

@@ -320,7 +320,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//is gzip file
 	if (obj->middle->gzip_format) {
 		obj->middle->gzip_index = (zran_index_t *)malloc(sizeof(zran_index_t));
-		zran_init(obj->middle->gzip_index, obj->middle->fd, NULL, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
+		zran_init(obj->middle->gzip_index, obj->middle->fd, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
 	}
 
 	if (file_exists(obj->index_file)) {
@@ -819,6 +819,7 @@ PyObject* pyfastx_fastq_guess_encoding_type(pyfastx_Fastq* self, void* closure) 
 		platform = Py_BuildValue("s", "Unknown");
 		PyList_Append(platforms, platform);
 		Py_DECREF(platform);
+		return platforms;
 	}
 
 	if (minqs >= 33 && maxqs <= 73) {

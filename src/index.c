@@ -44,7 +44,7 @@ pyfastx_Index* pyfastx_init_index(PyObject *obj, char* file_name, int file_len, 
 	if(index->gzip_format){
 		index->gzip_index = (zran_index_t *)malloc(sizeof(zran_index_t));
 		//initial zran index
-		zran_init(index->gzip_index, index->fd, NULL, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
+		zran_init(index->gzip_index, index->fd, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
 	}
 
 	//cache name

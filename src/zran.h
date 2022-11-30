@@ -6,13 +6,13 @@
  * Alder, which ships with the zlib source code. It allows the creation
  * of an index into a compressed file, which is used to improve the speed
  * of random seek/read access to the uncompressed data.
+ *
+ * Author: Paul McCarthy <pauldmccarthy@gmail.com>
  */
 
 #include <stdlib.h>
 #include <stdint.h>
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
 
 struct _zran_index;
 struct _zran_point;
@@ -26,8 +26,8 @@ typedef struct _zran_point zran_point_t;
  * They are specified as bit-masks, rather than bit locations.
  */
 enum {
-  ZRAN_AUTO_BUILD     = 1,
-  ZRAN_SKIP_CRC_CHECK = 2,
+  ZRAN_AUTO_BUILD = 1,
+
 };
 
 
@@ -40,61 +40,55 @@ struct _zran_index {
     /*
      * Handle to the compressed file.
      */
-    FILE *fd;
-
-    /*
-     * Handle to the compressed file object.
-     */
-    PyObject *f;
+    FILE         *fd;
 
     /*
      * Size of the compressed file. This
      * is calculated in zran_init.
      */
-    uint64_t compressed_size;
+    uint64_t      compressed_size;
 
     /*
      * Size of the uncompressed data. This is
      * only updated when it becomes known.
      */
-    uint64_t uncompressed_size;
+    uint64_t      uncompressed_size;
 
     /*
      * Spacing size in bytes, relative to the
      * uncompressed data stream, between adjacent
      * index points.
      */
-    uint32_t spacing;
+    uint32_t      spacing;
 
     /*
      * Number of bytes of uncompressed data to store
      * for each index point. This must be a minimum
      * of 32768 bytes.
      */
-    uint32_t window_size;
+    uint32_t      window_size;
 
     /*
      * Base2 logarithm of the window size - it
      * is needed to initialise zlib inflation.
      */
-    uint32_t log_window_size;
+    uint32_t      log_window_size;
 
     /*
      * Size, in bytes, of buffer used to store
      * compressed data read from disk.
      */
-    uint32_t readbuf_size;
+    uint32_t      readbuf_size;
 
     /*
      * Number of index points that have been created.
      */
-    uint32_t npoints;
+    uint32_t      npoints;
 
     /*
-     * Number of index points that can be stored -
-     * i.e. the amount allocated to the "list" field.
+     * Number of index points that can be stored.
      */
-    uint32_t size;
+    uint32_t      size;
 
     /*
      * List of index points.
@@ -108,12 +102,12 @@ struct _zran_index {
      * of where the calling code thinks it
      * is in the (uncompressed) file.
      */
-    uint64_t uncmp_seek_offset;
+    uint64_t      uncmp_seek_offset;
 
     /*
      * Flags passed to zran_init
      */
-    uint16_t flags;
+    uint16_t      flags;
 
     /*
      * All of the fields after this point are used
@@ -124,51 +118,24 @@ struct _zran_index {
      * Reference to a file input
      * buffer of size readbuf_size.
      */
-    uint8_t *readbuf;
+    uint8_t      *readbuf;
 
     /*
      * An offset into readbuf.
      */
-    uint32_t readbuf_offset;
+    uint32_t      readbuf_offset;
 
     /*
      * The current end of the readbuf contents.
      */
-    uint32_t readbuf_end;
+    uint32_t      readbuf_end;
 
     /*
      * Current offsets into the uncompressed and
      * compressed data streams.
      */
-    uint64_t inflate_cmp_offset;
-    uint64_t inflate_uncmp_offset;
-
-    /*
-     * Uncompressed offset at the point that the
-     * last GZIP stream ended. This is updated as
-     * more data is read and uncompressed, and
-     * used to determine whether the CRC/size
-     * check for the current stream has already
-     * been performed.
-     */
-    uint64_t last_stream_ended;
-
-    /*
-     * CRC-32 checksum and size (number of
-     * bytes, modulo 2^32) of the uncompressed
-     * data in the current gzip stream, not
-     * used if ZRAN_SKIP_CRC_CHECK is active.
-     * The CRC and size are incrementally
-     * calculated as data is read in. When the
-     * end of a gzip stream is reached, the
-     * calculated CRC and size are compared
-     * against the CRC and size in the gzip
-     * footer, and an error is returned if
-     * they don't match.
-     */
-    uint32_t stream_crc32;
-    uint32_t stream_size;
-    uint8_t  validating;
+    uint64_t      inflate_cmp_offset;
+    uint64_t      inflate_uncmp_offset;
 };
 
 
@@ -202,9 +169,9 @@ struct _zran_point {
     uint8_t   bits;
 
     /*
-     * Chunk of uncompressed data preceding this point.
+     * Chunk of uncompressed data preceeding this point.
      * This is required to initialise decompression from
-     * this point onward.
+     * this point onwards.
      */
     uint8_t  *data;
 };
@@ -214,38 +181,25 @@ struct _zran_point {
  * Initialise a zran_index_t struct for use with the given file.
  *
  * Passing in 0 for the spacing, window_size and readbuf_size arguments
- * will result in the following values being used:
+ * will result in the follwoing values being used:
  *
  *    spacing:      1048576
  *    window_size:  32768
  *    readbuf_size: 16384
  *
- * The read buffer must be at least the maximum expected size of a GZIP
- * header. GZIP headers have a minimum size of 10 bytes, but there is no upper
- * bound on their size, so using a very small read buffer would be unwise.  In
- * the case of concatenated GZIP streams, the read buffer must be at least big
- * enough to accommodate a GZIP footer of one stream, padding bytes in between
- * two streams, and the GZIP header of the next stream.
- *
  * The flags argument is a bit mask used to control the following options:
  *
- *     ZRAN_AUTO_BUILD:     Build the index automatically on demand.
- *
- *     ZRAN_SKIP_CRC_CHECK: Do not perform a CRC32 and file size check
- *                          when the end of a GZIP stream is reached.
- *                          This flag is automatically set when an index
- *                          is imported from file using zran_import_index.
+ *     ZRAN_AUTO_BUILD: Build the index automatically on demand.
  */
 int  zran_init(
-  zran_index_t *index,        /* The index                                  */
-  FILE         *fd,           /* Open handle to the compressed file         */
-  PyObject     *f,            /* Open handle to the compressed file object  */
+  zran_index_t *index,        /* The index                          */
+  FILE         *fd,           /* Open handle to the compressed file */
   uint32_t      spacing,      /* Distance in bytes between
-                                 index seek points                          */
+                                 index seek points                  */
   uint32_t      window_size,  /* Number of uncompressed bytes
-                                 to store with each point                   */
-  uint32_t      readbuf_size, /* Number of bytes to read at a time          */
-  uint16_t      flags         /* Flags controlling index behaviour          */
+                                 to store with each point           */
+  uint32_t      readbuf_size, /* Number of bytes to read at a time  */
+  uint16_t      flags         /* Flags controlling index behaviour  */
 );
 
 
@@ -257,24 +211,13 @@ void zran_free(
   zran_index_t *index /* The index */
 );
 
-/*
- * Return codes for zran_build_index.
- */
-enum {
-    ZRAN_BUILD_INDEX_OK        =  0,
-    ZRAN_BUILD_INDEX_FAIL      = -1,
-    ZRAN_BUILD_INDEX_CRC_ERROR = -2,
-};
-
 
 /*
  * (Re-)Builds the index to cover the given range, which must be
  * specified relative to the compressed data stream. Pass in 0
  * for both offsets to re-build the full index.
  *
- * Returns ZRAN_BUILD_INDEX_OK on success, ZRAN_BUILD_INDEX_CRC_ERROR
- * if a CRC error is detected in a GZIP stream, or ZRAN_BUILD_INDEX_FAIL
- * if some other type of error occurs.
+ * Returns 0 on success, non-0 on failure.
  */
 int zran_build_index(
   zran_index_t *index, /* The index */
@@ -285,7 +228,6 @@ int zran_build_index(
 
 /* Return codes for zran_seek. */
 enum {
-    ZRAN_SEEK_CRC_ERROR       = -2,
     ZRAN_SEEK_FAIL            = -1,
     ZRAN_SEEK_OK              =  0,
     ZRAN_SEEK_NOT_COVERED     =  1,
@@ -316,10 +258,6 @@ enum {
  *    - ZRAN_SEEK_EOF to indicate that the requested offset
  *      is past the end of the uncompressed stream.
  *
- *    - ZRAN_SEEK_CRC_ERROR to indicate that the CRC or file size
- *      stored in the footer of a GZIP stream does not match the
- *      data.
- *
  *    - ZRAN_SEEK_FAIL to indicate failure of some sort.
  */
 int zran_seek(
@@ -343,8 +281,7 @@ uint64_t zran_tell(
 enum {
     ZRAN_READ_NOT_COVERED = -1,
     ZRAN_READ_EOF         = -2,
-    ZRAN_READ_FAIL        = -3,
-    ZRAN_READ_CRC_ERROR   = -4
+    ZRAN_READ_FAIL        = -3
 };
 
 /*
@@ -353,8 +290,7 @@ enum {
  * the ZRAN_AUTO_BUILD flag, it is expanded as needed.
  *
  * Returns:
- *   - Number of bytes read for success, or one of the following codes,
- *     all of which are negative.
+ *   - Number of bytes read for success.
  *
  *   - ZRAN_READ_NOT_COVERED to indicate that the index does not
  *     cover the requested region (will never happen if
@@ -362,10 +298,6 @@ enum {
  *
  *   - ZRAN_READ_EOF to indicate that the read could not be completed
  *     because the current uncompressed seek point is at EOF.
- *
- *   - ZRAN_SEEK_CRC_ERROR to indicate that the CRC or file size
- *     stored in the footer of a GZIP stream does not match the
- *     data.
  *
  *   - ZRAN_READ_FAIL to indicate that the read failed for some reason.
  */
@@ -375,12 +307,8 @@ int64_t zran_read(
   uint64_t       len    /* Number of bytes to read   */
 );
 
-/*
- * Identifier and version number for index files created by zran_export_index,
- * defined in zran.c.
- */
-extern const char    ZRAN_INDEX_FILE_ID[];
-extern const uint8_t ZRAN_INDEX_FILE_VERSION;
+/* Magic bytes for exported index type. Value is defined in zran.c. */
+extern const char zran_magic_bytes[];
 
 /* Return codes for zran_export_index. */
 enum {
@@ -398,15 +326,13 @@ enum {
  * structure. All fields are assumed to be stored with little-endian
  * ordering:
  *
- * | Offset | Length | Description                           |
- * | 0      | 5      | File header (ascii, GZIDX)            |
- * | 5      | 1      | Version (uint8, currently 1)          |
- * | 6      | 1      | Reserved (uint8, currently must be 0) |
- * | 7      | 8      | Compressed file size  (uint64)        |
- * | 15     | 8      | Uncompressed file size (uint64)       |
- * | 23     | 4      | Index point spacing (uint32)          |
- * | 27     | 4      | Index window size W (uint32)          |
- * | 31     | 4      | Number of index points (uint32)       |
+ * | Offset | Length | Description                     |
+ * | 0      | 7      | File header (GZIDX\00\00)       |
+ * | 7      | 8      | Compressed file size  (uint64)  |
+ * | 15     | 8      | Uncompressed file size (uint64) |
+ * | 23     | 4      | Index point spacing (uint32)    |
+ * | 27     | 4      | Index window size W (uint32)    |
+ * | 31     | 4      | Number of index points (uint32) |
  *
  * The header is followed by the offsets for each index point:
  *
@@ -414,20 +340,17 @@ enum {
  * | 0      | 8      | Compressed offset for point 0 (uint64)   |
  * | 8      | 8      | Uncompressed offset for point 0 (uint64) |
  * | 16     | 1      | Bit offset for point 0 (uint8)           |
- * | 17     | 1      | Data flag - 1 if point has window data,  |
- * |        |        | 0 otherwise (uint8, added in file format |
- * |        |        | version 1)                               |
  * | ...    | ...    | ...                                      |
- * | N*18   | 8      | Compressed offset for point N (uint64)   |
+ * | N*17   | 8      | Compressed offset for point N (uint64)   |
  * | ...    | ...    | ...                                      |
  *
- * Finally the window data for all index points that have data is
- * concatenated (W represents the index window size):
+ * Finally the window data for every index point is concatenated
+ * (W represents the index window size):
  *
- * | Offset | Length | Description                                 |
- * | 0      | W      | Window data for first index point with data |
- * | ...    | ...    | ...                                         |
- * | N*W    | W      | Window data for Nth index point with data   |
+ * | Offset | Length | Description                   |
+ * | 0      | W      | Window data for index point N |
+ * | ...    | ...    | ...                           |
+ * | N*W    | W      | Window data for index point N |
  *
  * Returns:
  *   - ZRAN_EXPORT_OK for success.
@@ -436,24 +359,20 @@ enum {
  *     file.
  */
 int zran_export_index(
-  zran_index_t  *index, /* The index                         */
-  FILE          *fd,    /* Open handle to export file        */
-  PyObject      *f      /* Open handle to export file object */
+  zran_index_t  *index, /* The index                  */
+  FILE          *fd     /* Open handle to export file */
 );
-
 
 /* Return codes for zran_import_index. */
 enum {
-    ZRAN_IMPORT_OK                  =  0,
-    ZRAN_IMPORT_FAIL                = -1,
-    ZRAN_IMPORT_EOF                 = -2,
-    ZRAN_IMPORT_READ_ERROR          = -3,
-    ZRAN_IMPORT_INCONSISTENT        = -4,
-    ZRAN_IMPORT_MEMORY_ERROR        = -5,
-    ZRAN_IMPORT_UNKNOWN_FORMAT      = -6,
-    ZRAN_IMPORT_UNSUPPORTED_VERSION = -7
+    ZRAN_IMPORT_OK             =  0,
+    ZRAN_IMPORT_FAIL           = -1,
+    ZRAN_IMPORT_EOF            = -2,
+    ZRAN_IMPORT_READ_ERROR     = -3,
+    ZRAN_IMPORT_INCONSISTENT   = -4,
+    ZRAN_IMPORT_MEMORY_ERROR   = -5,
+    ZRAN_IMPORT_UNKNOWN_FORMAT = -6
 };
-
 
 /*
  * Import current index from the given file.  index must have been initialized
@@ -464,10 +383,6 @@ enum {
  *
  * Updating an index file is not supported currently. To update an index file,
  * first import it, create new checkpoints, and then export it again.
- *
- * CRC validation of uncompressed data from an imported index is not currently
- * supported - this function will enable the ZRAN_SKIP_CRC_CHECK flag on the
- * given zran_index_t struct.
  *
  * See zran_export_index for exporting.
  *
@@ -492,14 +407,10 @@ enum {
  *     index. This typically result from out-of-memory.
  *
  *   - ZRAN_IMPORT_UNKNOWN_FORMAT to indicate given file is of unknown format.
- *
- *   - ZRAN_IMPORT_UNSUPPORTED_VERSION to indicate that the file has a version
- *     which is too new for this version of indexed_gzip to parse.
  */
 int zran_import_index(
-  zran_index_t  *index, /* The index                         */
-  FILE          *fd,    /* Open handle to import file        */
-  PyObject      *f      /* Open handle to import file object */
+  zran_index_t  *index, /* The index                  */
+  FILE          *fd     /* Open handle to import file */
 );
 
 #endif /* __ZRAN_H__ */

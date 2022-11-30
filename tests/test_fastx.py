@@ -22,13 +22,13 @@ class FastxTest(unittest.TestCase):
 			os.remove('{}.fai'.format(flat_fasta))
 
 	def test_fasta_iter(self):
-		for name, seq, comment in pyfastx.Fastx(gzip_fasta):
+		for name, seq, comment in pyfastx.Fastx(gzip_fasta, comment=True):
 			s = self.faidx[name]
 			self.assertEqual(str(seq), seq)
 			self.assertEqual(' '.join(s.long_name.split()[1:]), comment)
 
 	def test_fasta_upper(self):
-		for name, seq, _ in pyfastx.Fastx(flat_fasta, uppercase=True):
+		for name, seq in pyfastx.Fastx(flat_fasta, uppercase=True):
 			self.assertEqual(str(self.faidx[name]), seq)
 
 	def test_fastq_iter(self):
@@ -46,7 +46,7 @@ class FastxTest(unittest.TestCase):
 				else:
 					reads[name].append(line)
 
-		for name, seq, qual, comment in pyfastx.Fastx(gzip_fastq, "fastq"):
+		for name, seq, qual, comment in pyfastx.Fastx(gzip_fastq, "fastq", comment=True):
 			r = reads[name]
 
 			self.assertEqual(r[0], comment)
