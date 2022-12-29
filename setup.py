@@ -33,9 +33,9 @@ def prepare_sqlite3():
     global include_dirs
     global sources
 
-    sqlite_dir = os.path.join(root_dir, "sqlite-amalgamation-3400000")
-    sqlite_file = os.path.join(root_dir, "sqlite-amalgamation-3400000.zip")
-    url = "https://www.sqlite.org/2022/{}".format(sqlite_file)
+    sqlite_dir = os.path.join(root_dir, "sqlite-amalgamation-3400100")
+    sqlite_file = os.path.join(root_dir, "sqlite-amalgamation-3400100.zip")
+    url = "https://www.sqlite.org/2022/sqlite-amalgamation-3400100.zip"
 
     if not os.path.exists(sqlite_dir):
         urllib.request.urlretrieve(url, sqlite_file)
