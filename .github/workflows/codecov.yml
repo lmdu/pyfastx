@@ -23,7 +23,7 @@ jobs:
         env:
           CPPFLAGS: -fprofile-arcs -ftest-coverage -O0
       - name: Generate coverage report
-        run: pytest --cov tests
+        run: pytest --cov=./ ./tests
       - name: Upload Coverage to CodeCov
         uses: codecov/codecov-action@v3
         with:
