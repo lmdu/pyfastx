@@ -6,7 +6,9 @@ import zipfile
 import urllib.request
 from setuptools import setup, Extension
 
-sources = glob.glob('src/*.c')
+root_dir = os.path.dirname(os.path.abspath(__file__))
+
+sources = glob.glob(os.path.join(root_dir, 'src', '*.c'))
 link_args = []
 comp_args = []
 include_dirs = []
@@ -15,8 +17,8 @@ def prepare_zlib():
     global include_dirs
     global sources
 
-    zlib_dir = "zlib-1.2.13"
-    zlib_file = "zlib-1.2.13.zip"
+    zlib_dir = os.path.join(root_dir, "zlib-1.2.13")
+    zlib_file = os.path.join(root_dir, "zlib-1.2.13.zip")
     url = "https://zlib.net/zlib1213.zip"
 
     if not os.path.exists(zlib_dir):
@@ -31,8 +33,8 @@ def prepare_sqlite3():
     global include_dirs
     global sources
 
-    sqlite_dir = "sqlite-amalgamation-3400000"
-    sqlite_file = "sqlite-amalgamation-3400000.zip"
+    sqlite_dir = os.path.join(root_dir, "sqlite-amalgamation-3400000")
+    sqlite_file = os.path.join(root_dir, "sqlite-amalgamation-3400000.zip")
     url = "https://www.sqlite.org/2022/{}".format(sqlite_file)
 
     if not os.path.exists(sqlite_dir):
@@ -47,8 +49,8 @@ def prepare_indexed_gzip():
     global include_dirs
     global sources
 
-    igzip_dir = os.path.join("indexed_gzip-1.7.0", "indexed_gzip")
-    igzip_file = "indexed_gzip-1.7.0.zip"
+    igzip_dir = os.path.join(root_dir, "indexed_gzip-1.7.0", "indexed_gzip")
+    igzip_file = os.path.join(root_dir, "indexed_gzip-1.7.0.zip")
     url = "https://github.com/pauldmccarthy/indexed_gzip/archive/refs/tags/v1.7.0.zip"
 
     if not os.path.exists(igzip_dir):
@@ -99,10 +101,10 @@ description = (
     "FASTA/Q file"
 )
 
-with open('README.rst') as fh:
+with open(os.path.join(root_dir, 'README.rst')) as fh:
     long_description = fh.read()
 
-with open(os.path.join('src', 'version.h')) as fh:
+with open(os.path.join(root_dir, 'src', 'version.h')) as fh:
     version = fh.read().split()[2].strip('"')
 
 setup(
