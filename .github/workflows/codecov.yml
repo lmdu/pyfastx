@@ -19,7 +19,7 @@ jobs:
           pip install pyfaidx==0.5.8
           python setup.py test
         env:
-          CPPFLAGS: -coverage
+          CPPFLAGS: -fprofile-arcs -ftest-coverage -O0
       - name: Upload Coverage to CodeCov
         uses: codecov/codecov-action@v3
         with:
