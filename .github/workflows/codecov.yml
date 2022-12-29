@@ -17,7 +17,7 @@ jobs:
       - name: Install requirements
         run: |
           pip install pyfaidx==0.5.8
-          python install pytest
+          pip install pytest
       - name: Build extension
         run: python setup.py build_ext -i
         env:
