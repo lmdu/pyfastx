@@ -1,43 +1,96 @@
 import os
 import sys
 import glob
-import platform
+import tarfile
+#import platform
+import urllib.request
 from setuptools import setup, Extension
 
-link_args = ['-lz', '-lsqlite3']
-comp_args = ['-Wno-unused-result']
-include_dirs = []
-libs = []
-lib_dirs = []
-define_macros = []
-
 sources = glob.glob('src/*.c')
+link_args = []
+comp_args = []
+include_dirs = []
 
-if os.name == 'nt':
-    major, minor, revise = sys.version.split()[0].split('.')
+def prepare_zlib():
+    global include_dirs
+    global sources
 
-    if int(minor) >= 10:
-        comp_args.append('-std=gnu11')
+    zlib_dir = "zlib-1.2.13"
+    zlib_file = "zlib-1.2.13.zip"
+    url = "https://zlib.net/zlib1213.zip"
 
-    if '32' in platform.architecture()[0] and int(minor) >= 8:
-        link_args.append('-static-libgcc')
-        link_args.append('-static-libstdc++')
+    if not os.path.exists(zlib_dir):
+        urllib.request.urlretrieve(url, zlib_file)
+        with zipfile.ZipFile(zlib_file) as _zip:
+            _zip.extractall()
 
-    if '64' in platform.architecture()[0]:
-        link_args.append('-DMS_WIN64')
-        comp_args.append('-DMS_WIN64')
-        comp_args.append('-D_FILE_OFFSET_BITS=64')
-        comp_args.append('-D_LARGEFILE64_SOURCE=1')
-        comp_args.append('-D_LFS64_LARGEFILE=1')
+    include_dirs.append(zlib_dir)
+    sources.extend(glob.glob(os.path.join(zlib_dir, '*.c')))
+
+def prepare_sqlite3():
+    global include_dirs
+    global sources
+
+    sqlite_dir = "sqlite-amalgamation-3400000"
+    sqlite_file = "sqlite-amalgamation-3400000.zip"
+    url = "https://www.sqlite.org/2022/{}".format(sqlite_file)
+
+    if not os.path.exists(sqlite_dir):
+        urllib.request.urlretrieve(url, sqlite_file)
+        with zipfile.ZipFile(sqlite_file) as _zip:
+            _zip.extractall()
+
+    include_dirs.append(sqlite_dir)
+    sources.append(os.path.join(sqlite_dir, 'sqlite3.c'))
+
+def prepare_indexed_gzip():
+    global include_dirs
+    global sources
+
+    igzip_dir = os.path.join("indexed_gzip-1.7.0", "indexed_gzip")
+    igzip_file = "indexed_gzip-1.7.0.zip"
+    url = "https://github.com/pauldmccarthy/indexed_gzip/archive/refs/tags/v1.7.0.zip"
+
+    if not os.path.exists(igzip_dir):
+        urllib.request.urlretrieve(url, igzip_file)
+        with zipfile.ZipFile(igzip_file) as _zip:
+            _zip.extractall()
+
+    include_dirs.append(igzip_dir)
+    sources.extend(glob.glob(os.path.join(igzip_dir, 'zran*.c')))
+
+
+if sys.platform.startswith('win'):
+    prepare_zlib()
+    prepare_sqlite3()
+else:
+    link_args.extend(['-lz', '-lsqlite3'])
+    comp_args.append('-Wno-unused-result')
+
+prepare_indexed_gzip()
+
+#if os.name == 'nt':
+#    major, minor, revise = sys.version.split()[0].split('.')
+
+#    if int(minor) >= 10:
+#        comp_args.append('-std=gnu11')
+
+#    if '32' in platform.architecture()[0] and int(minor) >= 8:
+#        link_args.append('-static-libgcc')
+#        link_args.append('-static-libstdc++')
+
+#    if '64' in platform.architecture()[0]:
+#        link_args.append('-DMS_WIN64')
+#        comp_args.append('-DMS_WIN64')
+#        comp_args.append('-D_FILE_OFFSET_BITS=64')
+#        comp_args.append('-D_LARGEFILE64_SOURCE=1')
+#        comp_args.append('-D_LFS64_LARGEFILE=1')
 
 extension = Extension('pyfastx',
     sources = sources,
-    libraries = libs,
-    library_dirs = lib_dirs,
     include_dirs = include_dirs,
     extra_compile_args = comp_args,
-    extra_link_args = link_args,
-    define_macros = define_macros
+    extra_link_args = link_args
 )
 
 description = (

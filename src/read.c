@@ -1,3 +1,5 @@
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "read.h"
 #include "util.h"
 #include "time.h"
@@ -28,18 +30,18 @@ void pyfastx_read_dealloc(pyfastx_Read *self) {
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-int pyfastx_read_length(pyfastx_Read *self) {
+Py_ssize_t pyfastx_read_length(pyfastx_Read *self) {
     return self->read_len;
 }
 
 //read content from buff or file
 void pyfastx_read_continue_reader(pyfastx_Read *self) {
-    int32_t slice_offset;
-    int32_t slice_length;
-    int32_t residue_len;
-    int32_t read_len;
-    int32_t cache_len;
-    int64_t offset;
+    Py_ssize_t slice_offset;
+    Py_ssize_t slice_length;
+    Py_ssize_t residue_len;
+    Py_ssize_t read_len;
+    Py_ssize_t cache_len;
+    Py_ssize_t offset;
 
     //read raw string offset
     offset = self->seq_offset - self->desc_len - 1;
@@ -99,25 +101,24 @@ void pyfastx_read_continue_reader(pyfastx_Read *self) {
     self->qual[self->read_len] = '\0';
 }
 
-void pyfastx_read_random_reader(pyfastx_Read *self, char *buff, int64_t offset, uint32_t bytes) {
+void pyfastx_read_random_reader(pyfastx_Read *self, char *buff, Py_ssize_t offset, Py_ssize_t bytes) {
     if (self->middle->gzip_format) {
         zran_seek(self->middle->gzip_index, offset, SEEK_SET, NULL);
         zran_read(self->middle->gzip_index, buff, bytes);
     } else {
-        /*gzseek(self->middle->gzfd, offset, SEEK_SET);
-        gzread(self->middle->gzfd, buff, bytes);*/
         FSEEK(self->middle->fd, offset, SEEK_SET);
         fread(buff, bytes, 1, self->middle->fd);
     }
 }
 
 PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
+    Py_ssize_t new_offset;
+    Py_ssize_t new_bytelen;
+
     if (! self->raw) {
         if (self->middle->iterating) {
             pyfastx_read_continue_reader(self);
         } else {
-            int64_t new_offset;
-            int64_t new_bytelen;
             new_offset = self->seq_offset - self->desc_len - 1;
             new_bytelen = self->qual_offset + self->read_len - new_offset + 1;
 
@@ -155,48 +156,56 @@ PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
 }
 
 PyObject* pyfastx_read_reverse(pyfastx_Read *self, void* closure) {
-    PyObject* ret;
     char *data;
+    PyObject* ret;
+
     pyfastx_read_get_seq(self);
+
     ret = PyUnicode_New(self->read_len, 127);
     data = (char *)PyUnicode_1BYTE_DATA(ret);
     memcpy(data, self->seq, self->read_len);
+ 
     reverse_seq(data);
 
     return ret;
 }
 
 PyObject* pyfastx_read_complement(pyfastx_Read *self, void* closure) {
-    PyObject* ret;
     char *data;
+    PyObject* ret;
+
     pyfastx_read_get_seq(self);
+
     ret = PyUnicode_New(self->read_len, 127);
     data = (char *)PyUnicode_1BYTE_DATA(ret);
     memcpy(data, self->seq, self->read_len);
+
     complement_seq(data);
 
     return ret;
 }
 
 PyObject* pyfastx_read_antisense(pyfastx_Read *self, void* closure) {
-    PyObject* ret;
     char *data;
+    PyObject* ret;
+
     pyfastx_read_get_seq(self);
+
     ret = PyUnicode_New(self->read_len, 127);
     data = (char *)PyUnicode_1BYTE_DATA(ret);
     memcpy(data, self->seq, self->read_len);
+
     reverse_complement_seq(data);
 
     return ret;
 }
 
 PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
+    Py_ssize_t new_offset;
+
     if (self->middle->iterating) {
         pyfastx_read_continue_reader(self);
-    }
-    else if (!self->desc) {
-        int64_t new_offset;
-
+    } else if (!self->desc) {
         new_offset = self->seq_offset - self->desc_len - 1;
         self->desc = (char *)malloc(self->desc_len + 1);
 
@@ -215,8 +224,7 @@ PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
 PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
     if (self->middle->iterating) {
         pyfastx_read_continue_reader(self);
-    }
-    else if (!self->qual) {
+    } else if (!self->qual) {
         self->qual = (char *)malloc(self->read_len + 1);
         pyfastx_read_random_reader(self, self->qual, self->qual_offset, self->read_len);
         self->qual[self->read_len] = '\0';
@@ -226,8 +234,9 @@ PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
 }
 
 PyObject* pyfastx_read_quali(pyfastx_Read *self, void* closure) {
-    int phred;
     int i;
+    int phred;
+
     PyObject *quals;
     PyObject *q;
 
@@ -268,17 +277,12 @@ static PyGetSetDef pyfastx_read_getsets[] = {
 };
 
 static PyMappingMethods pyfastx_read_as_mapping = {
-	(lenfunc)pyfastx_read_length,
-	//(binaryfunc)pyfastx_fasta_subscript,
-	0,
+	.mp_length = (lenfunc)pyfastx_read_length,
 };
 
 static PyMemberDef pyfastx_read_members[] = {
-    {"id", T_ULONGLONG, offsetof(pyfastx_Read, id), READONLY},
+    {"id", T_PYSSIZET, offsetof(pyfastx_Read, id), READONLY},
 	{"name", T_STRING, offsetof(pyfastx_Read, name), READONLY},
-	//{"size", T_LONG, offsetof(pyfastx_Read, seq_length), READONLY},
-	//{"gc_content", T_FLOAT, offsetof(pyfastx_Read, gc_content), READONLY},
-	//{"composition", T_OBJECT, offsetof(pyfastx_Read, composition), READONLY},
 	{NULL}
 };
 

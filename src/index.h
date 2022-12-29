@@ -1,11 +1,11 @@
 #ifndef PYFASTX_INDEX_H
 #define PYFASTX_INDEX_H
-#include "Python.h"
-#include <stdint.h>
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "sqlite3.h"
 #include "zlib.h"
-#include "zran.h"
 #include "kseq.h"
+#include "zran.h"
 
 typedef struct {
 	PyObject_HEAD
@@ -14,15 +14,15 @@ typedef struct {
 	char* index_file;
 
 	//always output uppercase
-	uint8_t uppercase;
+	int uppercase;
 
 	//full name
-	uint8_t full_name;
+	int full_name;
 
 	//is gzip compressed file
 	//0 not gzip file
 	//1 is gzip file
-	uint8_t gzip_format;
+	int gzip_format;
 
 	//open file handle
 	FILE* fd;
@@ -40,14 +40,14 @@ typedef struct {
 	zran_index_t* gzip_index;
 
 	//cahce seq id
-	uint32_t cache_chrom;
+	Py_ssize_t cache_chrom;
 
 	//cache seq start and end position
-	uint32_t cache_start;
-	uint32_t cache_end;
+	Py_ssize_t cache_start;
+	Py_ssize_t cache_end;
 
 	//cache seq is complete or not
-	uint8_t cache_full;
+	int cache_full;
 
 	//cache seq name string
 	kstring_t cache_name;
@@ -59,7 +59,7 @@ typedef struct {
 	PyObject* key_func;
 
 	//enter iterating loop
-	uint8_t iterating;
+	int iterating;
 
 	//prepared sql
 	sqlite3_stmt *iter_stmt;
@@ -90,12 +90,12 @@ PyObject *pyfastx_index_next_with_index_seq(pyfastx_Index *self);
 
 PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt);
 PyObject *pyfastx_index_get_seq_by_name(pyfastx_Index *self, PyObject *name);
-PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, uint32_t id);
+PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, Py_ssize_t id);
 
 pyfastx_Index *pyfastx_init_index(PyObject* obj, char* file_path, int file_len, int uppercase, int full_name, int memory_index, PyObject* key_func);
 //char *pyfastx_index_get_sub_seq(pyfastx_Index *self, pyfastx_Sequence *seq);
 //char *pyfastx_index_get_full_seq(pyfastx_Index *self, uint32_t chrom);
-void pyfastx_index_random_read(pyfastx_Index* self, char* buff, int64_t offset, uint32_t bytes);
-void pyfastx_index_fill_cache(pyfastx_Index* self, int64_t offset, uint32_t size);
+void pyfastx_index_random_read(pyfastx_Index* self, char* buff, Py_ssize_t offset, Py_ssize_t bytes);
+void pyfastx_index_fill_cache(pyfastx_Index* self, Py_ssize_t offset, Py_ssize_t size);
 
 #endif

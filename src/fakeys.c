@@ -1,5 +1,8 @@
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "fakeys.h"
 #include "util.h"
+#include "sqlite3.h"
 
 char SORTS[][6] = {"ID", "chrom", "slen"};
 char ORDERS[][5] = {"ASC", "DESC"};
@@ -82,7 +85,7 @@ void pyfastx_fasta_keys_count(pyfastx_FastaKeys *self) {
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 }
 
-PyObject *pyfastx_fasta_keys_create(sqlite3 *index_db, uint64_t seq_counts) {
+PyObject *pyfastx_fasta_keys_create(sqlite3 *index_db, Py_ssize_t seq_counts) {
 	pyfastx_FastaKeys *keys = PyObject_New(pyfastx_FastaKeys, &pyfastx_FastaKeysType);
 	keys->index_db = index_db;
 	keys->iter_stmt = NULL;
@@ -143,24 +146,19 @@ PyObject *pyfastx_fasta_keys_iter(pyfastx_FastaKeys *self) {
 
 PyObject *pyfastx_fasta_keys_next(pyfastx_FastaKeys *self) {
 	int ret;
+	char *name;
 
 	PYFASTX_SQLITE_CALL(ret=sqlite3_step(self->iter_stmt));
 
 	if (ret == SQLITE_ROW) {
-		char *p;
-		int nbytes;
-		PYFASTX_SQLITE_CALL(nbytes = sqlite3_column_bytes(self->iter_stmt, 0));
-		PyObject *name = PyUnicode_New(nbytes, 255);
-		Py_UCS1 *s = PyUnicode_1BYTE_DATA(name);
-		PYFASTX_SQLITE_CALL(p = (char *)sqlite3_column_text(self->iter_stmt, 0));
-		memcpy(s, p, nbytes);
-		return name;
+		PYFASTX_SQLITE_CALL(name = (char *)sqlite3_column_text(self->iter_stmt, 0));
+		return Py_BuildValue("s", name);
 	}
 
 	return NULL;
 }
 
-uint64_t pyfastx_fasta_keys_length(pyfastx_FastaKeys *self) {
+Py_ssize_t pyfastx_fasta_keys_length(pyfastx_FastaKeys *self) {
 	return self->seq_counts;
 }
 
@@ -170,10 +168,17 @@ PyObject *pyfastx_fasta_keys_repr(pyfastx_FastaKeys *self) {
 
 PyObject *pyfastx_fasta_keys_subscript(pyfastx_FastaKeys *self, PyObject *item) {
 	int ret;
+	char *name;
+
+	sqlite3_stmt *stmt;
+
+	Py_ssize_t i;
+	Py_ssize_t slice_start;
+	Py_ssize_t slice_stop;
+	Py_ssize_t slice_step;
+	Py_ssize_t slice_len;
 
 	if (PyIndex_Check(item)) {
-		Py_ssize_t i;
-
 		i = PyNumber_AsSsize_t(item, PyExc_IndexError);
 		if (i == -1 && PyErr_Occurred()) {
 			return NULL;
@@ -201,24 +206,17 @@ PyObject *pyfastx_fasta_keys_subscript(pyfastx_FastaKeys *self, PyObject *item) 
 		);
 
 		if (ret == SQLITE_ROW) {
-			char *p;
-			int nbytes;
-			PYFASTX_SQLITE_CALL(nbytes = sqlite3_column_bytes(self->item_stmt, 0));
-			PyObject *name = PyUnicode_New(nbytes, 255);
-			Py_UCS1 *s = PyUnicode_1BYTE_DATA(name);
-			PYFASTX_SQLITE_CALL(p = (char *)sqlite3_column_text(self->item_stmt, 0));
-			memcpy(s, p, nbytes);
-			return name;
+			PYFASTX_SQLITE_CALL(name = (char *)sqlite3_column_text(self->item_stmt, 0));
+			return Py_BuildValue("s", name);
 		} else {
 			PyErr_Format(PyExc_ValueError, "get item error, code: %d", ret);
 			return NULL;
 		}
 	} else if (PySlice_Check(item)) {
-		Py_ssize_t slice_start, slice_stop, slice_step, slice_len;
-
 		if (PySlice_Unpack(item, &slice_start, &slice_stop, &slice_step) < 0) {
 			return NULL;
 		}
+
 		slice_len = PySlice_AdjustIndices(self->seq_counts, &slice_start, &slice_stop, slice_step);
 
 		if (slice_len <= 0) {
@@ -232,16 +230,15 @@ PyObject *pyfastx_fasta_keys_subscript(pyfastx_FastaKeys *self, PyObject *item) 
 			slice_len, slice_start
 		);
 
-		sqlite3_stmt *stmt;
-		char *p;
 		PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL));
 		sqlite3_free(sql);
 
 		PyObject *chroms = PyList_New(0);
 		PYFASTX_SQLITE_CALL(ret = sqlite3_step(stmt));
+
 		while (ret == SQLITE_ROW) {
-			PYFASTX_SQLITE_CALL(p = (char *)sqlite3_column_text(stmt, 0));
-			PyObject *chrom = Py_BuildValue("s", p);
+			PYFASTX_SQLITE_CALL(name = (char *)sqlite3_column_text(stmt, 0));
+			PyObject *chrom = Py_BuildValue("s", name);
 			PyList_Append(chroms, chrom);
 			Py_DECREF(chrom);
 			PYFASTX_SQLITE_CALL(ret = sqlite3_step(stmt));
@@ -256,8 +253,8 @@ PyObject *pyfastx_fasta_keys_subscript(pyfastx_FastaKeys *self, PyObject *item) 
 }
 
 int pyfastx_fasta_keys_contains(pyfastx_FastaKeys *self, PyObject *key) {
-	char *name;
 	int ret;
+	char *name;
 
 	if (!PyUnicode_CheckExact(key)) {
 		return 0;
@@ -274,9 +271,10 @@ int pyfastx_fasta_keys_contains(pyfastx_FastaKeys *self, PyObject *key) {
 }
 
 PyObject *pyfastx_fasta_keys_sort(pyfastx_FastaKeys *self, PyObject *args, PyObject *kwargs) {
-	char *by = "id";
 	int reverse = 0;
 	int sort = 0;
+
+	char *by = "id";
 	
 	static char* kwlist[] = {"by", "reverse", NULL};
 
@@ -308,10 +306,10 @@ PyObject *pyfastx_fasta_keys_sort(pyfastx_FastaKeys *self, PyObject *args, PyObj
 }
 
 PyObject *pyfastx_fasta_keys_richcompare(pyfastx_FastaKeys *self, PyObject *other, int op) {
-	char *when;
-	long slen;
-	char signs[][3] = {"<", "<=", "=", "<>", ">", ">="};
 	int signt = 0;
+	long slen;
+	char *when;
+	char signs[][3] = {"<", "<=", "=", "<>", ">", ">="};
 
 	if (!PyLong_Check(other)) {
 		PyErr_SetString(PyExc_ValueError, "the compared item must be an integer");
@@ -333,13 +331,13 @@ PyObject *pyfastx_fasta_keys_richcompare(pyfastx_FastaKeys *self, PyObject *othe
 		when = sqlite3_mprintf(" AND slen %s %ld", signs[signt], slen);
 		self->temp_filter = (char *)realloc(self->temp_filter, strlen(self->temp_filter) + strlen(when) + 1);
 		strcat(self->temp_filter, when);
-		sqlite3_free(when);
 	} else {
 		when = sqlite3_mprintf("slen %s %ld", signs[signt], slen);
 		self->temp_filter = (char *)malloc(strlen(when) + 1);
-		strcpy(self->temp_filter, when);
-		sqlite3_free(when);
+		strcpy(self->temp_filter, when);	
 	}
+
+	sqlite3_free(when);
 
 	return Py_BuildValue("s", self->temp_filter);
 }
@@ -354,6 +352,8 @@ PyObject *pyfastx_fasta_keys_like(pyfastx_FastaKeys *self, PyObject *tag) {
 }
 
 PyObject *pyfastx_fasta_keys_filter(pyfastx_FastaKeys *self, PyObject *args) {
+	char *tmp;
+
 	Py_ssize_t l;
 	Py_ssize_t c = PyTuple_Size(args);
 
@@ -364,7 +364,8 @@ PyObject *pyfastx_fasta_keys_filter(pyfastx_FastaKeys *self, PyObject *args) {
 
 	PyObject *sep = Py_BuildValue("s", " AND ");
 	PyObject *cat = PyUnicode_Join(sep, args);
-	char *tmp = (char *)PyUnicode_AsUTF8AndSize(cat, &l);
+
+	tmp = (char *)PyUnicode_AsUTF8AndSize(cat, &l);
 
 	if (self->filter) {
 		self->filter = (char *)realloc(self->filter, l+1);
@@ -389,8 +390,8 @@ PyObject *pyfastx_fasta_keys_filter(pyfastx_FastaKeys *self, PyObject *args) {
 }
 
 PyObject *pyfastx_fasta_keys_reset(pyfastx_FastaKeys *self) {
-	sqlite3_stmt *stmt;
 	int ret;
+	sqlite3_stmt *stmt;
 
 	if (self->filter) {
 		free(self->filter);
@@ -438,32 +439,18 @@ static PyMethodDef pyfastx_fasta_keys_methods[] = {
 
 //as a number
 static PyNumberMethods fasta_keys_as_number = {
-	0,
-	0,
-	0,
-	(binaryfunc)pyfastx_fasta_keys_like,
-	0,
+	.nb_remainder = (binaryfunc)pyfastx_fasta_keys_like,
 };
 
 //as a mapping
 static PyMappingMethods fasta_keys_as_mapping = {
-	0, /* mp_length */
-	(binaryfunc)pyfastx_fasta_keys_subscript, /* mp_subscript */
-	0, /* mp_ass_subscript */
+	.mp_subscript = (binaryfunc)pyfastx_fasta_keys_subscript,
 };
 
 //as a list
 static PySequenceMethods fasta_keys_as_sequence = {
-	(lenfunc)pyfastx_fasta_keys_length, /*sq_length*/
-	0, /*sq_concat*/
-	0, /*sq_repeat*/
-	0, /*sq_item*/
-	0, /* sq_slice */
-	0, /* sq_ass_item*/
-	0, /* sq_ass_slice */
-	(objobjproc)pyfastx_fasta_keys_contains, /*sq_contains*/
-	0, /*sq_inplace_concat*/
-	0, /*sq_inplace_repeat*/
+	.sq_length = (lenfunc)pyfastx_fasta_keys_length,
+	.sq_contains = (objobjproc)pyfastx_fasta_keys_contains,
 };
 
 PyTypeObject pyfastx_FastaKeysType = {

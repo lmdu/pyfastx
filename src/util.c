@@ -1,18 +1,36 @@
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "util.h"
 
+#ifdef _WIN32
+#include "fcntl.h"
+#include "stdio.h"
+
+int mkstemp(char *template) {
+	if (_mktemp_s(template, strlen(template) + 1) != 0) {
+		return -1;
+	}
+
+	return open(template, _O_CREAT | _O_EXCL, _S_IWRITE);
+}
+#endif
+
 //check file is whether exists in disk
-uint16_t file_exists(char *file_name){
+int file_exists(char *file_name){
 	FILE *file;
+
 	if((file = fopen(file_name, "r"))){
 		fclose(file);
 		return 1;
 	}
+
 	return 0;
 }
 
 //check file is fasta file
 int fasta_validator(gzFile fd) {
 	int c;
+
 	while ((c=gzgetc(fd)) != -1) {
 		if (isspace(c)) {
 			continue;
@@ -30,6 +48,7 @@ int fasta_validator(gzFile fd) {
 
 int fastq_validator(gzFile fd) {
 	int c;
+
 	while ((c=gzgetc(fd)) != -1) {
 		if (isspace(c)) {
 			continue;
@@ -48,6 +67,7 @@ int fastq_validator(gzFile fd) {
 //check file is fasta or fastq file
 int fasta_or_fastq(gzFile fd) {
 	int c;
+
 	while ((c=gzgetc(fd)) != -1) {
 		if (isspace(c)) {
 			continue;
@@ -70,7 +90,7 @@ remove space using jump table
 Reference:
 https://github.com/lemire/despacer/blob/master/include/despacer.h
 */
-const uint8_t jump_table[128] = {
+int jump_table[128] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -79,51 +99,40 @@ const uint8_t jump_table[128] = {
     1, 1, 1, 1, 1, 1, 1, 1,
 };
 
-uint32_t remove_space(char *str, uint32_t len) {
-	uint32_t i = 0, j = 0;
+Py_ssize_t remove_space(char *str, Py_ssize_t len) {
+	unsigned char c;
+	Py_ssize_t i = 0, j = 0;
+
 	while (i < len) {
-		const char c = str[i++];
+		c = str[i++];
 		str[j] = c;
-		j += jump_table[(unsigned char)c];
+		j += jump_table[c];
 	}
+
 	str[j] = '\0';
+
 	return j;
 }
 
-uint32_t remove_space_uppercase(char *str, uint32_t len) {
-	uint32_t i = 0, j = 0;
+Py_ssize_t remove_space_uppercase(char *str, Py_ssize_t len) {
+	unsigned char c;
+	Py_ssize_t i = 0, j = 0;
+
 	while (i < len) {
-		const char c = str[i++];
+		c = str[i++];
 		str[j] = Py_TOUPPER(Py_CHARMASK(c));
-		j += jump_table[(unsigned char)c];
+		j += jump_table[c];
 	}
+
 	str[j] = '\0';
+
 	return j;
 }
 
-/*void remove_space(char *str) {
-	uint32_t i, j = 0;
-	for(i = 0; str[i]; i++){
-		if(!Py_ISSPACE(str[i])){
-			str[j++] = str[i];
-		}
-	}
-	str[j] = '\0';
-}
+void upper_string(char *str, Py_ssize_t len) {
+	Py_ssize_t i;
 
-void remove_space_uppercase(char *str) {
-	uint32_t i, j = 0;
-	for(i = 0; str[i]; i++){
-		if(!Py_ISSPACE(str[i])){
-			str[j++] = Py_TOUPPER(Py_CHARMASK(str[i]));
-		}
-	}
-	str[j] = '\0';
-}*/
-
-void upper_string(char *str, uint32_t len) {
-	uint32_t i;
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < len; ++i) {
 		str[i] = Py_TOUPPER(Py_CHARMASK(str[i]));
 	}
 }
@@ -152,7 +161,7 @@ https://droog.gs.washington.edu/parc/images/iupac.html
 http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html
 https://github.com/samtools/samtools/blob/f6bd3b22ea4c9e4897cda455e786180fe650e494/faidx.c
 */
-const uint8_t comp_map[128] = {
+int comp_map[128] = {
 	  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
 	 16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
 	 32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,
@@ -164,20 +173,21 @@ const uint8_t comp_map[128] = {
 };
 
 void reverse_complement_seq(char *seq) {
+	char c;
 	char *p1 = seq;
 	char *p2 = seq + strlen(seq) - 1;
 
 	while (p1 <= p2) {
-		const char c = comp_map[Py_CHARMASK(*p1)];
+		c = comp_map[Py_CHARMASK(*p1)];
 		*p1++ = comp_map[Py_CHARMASK(*p2)];
 		*p2-- = c;
 	}
 }
 
 void reverse_seq(char *seq) {
+	int c;
 	char *p1 = seq;
 	char *p2 = seq + strlen(seq) - 1;
-	int c;
 
 	while (p1 < p2) {
 		c = *p1;
@@ -194,111 +204,37 @@ void complement_seq(char *seq) {
 	}
 }
 
-uint32_t sum_array(uint32_t arr[], int num) {
-	int i, sum=0;
-	for (i = 0; i < num; i++) {
+Py_ssize_t sum_array(Py_ssize_t arr[], int num) {
+	int i;
+	Py_ssize_t sum=0;
+
+	for (i = 0; i < num; ++i) {
 		sum += arr[i];
 	}
 
 	return sum;
 }
 
-/*
-char *int_to_str(int c) {
-	char *str = (char *)malloc(2);
-	str[0] = c;
-	str[1] = '\0';
-	return str;
-}*/
-
 int is_subset(char *seq1, char *seq2) {
-	int i, j, m, n;
+	size_t i, j, m, n;
+
 	m = strlen(seq1);
 	n = strlen(seq2);
+
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < m; j++) {
 			if (seq2[i] == seq1[j]) {
 				break;
 			}
 		}
+
 		if (j == m) {
 			return 0;
 		}
 	}
+
 	return 1;
 }
-
-/*
-PyObject *clean_seq(PyObject *self, PyObject *args){
-	char *seq;
-	if (!PyArg_ParseTuple(args, "s", &seq)){
-		return NULL;
-	}
-	uint32_t i;
-	uint32_t j = 0;
-	for(i=0; seq[i]; i++){
-		if(!isspace(seq[i])){
-			seq[j++] = toupper(seq[i]);
-		}
-	}
-	seq[j] = '\0';
-	return Py_BuildValue("s", seq);
-}
-
-void truncate_seq(char *seq, uint32_t start, uint32_t end){
-	uint32_t len;
-	uint32_t i = 0;
-	uint32_t j = 0;
-	len = end - start + 1;
-
-	for(i=0; i<strlen(seq); i++){
-		if(isspace(seq[i])){
-			continue;
-		}
-
-		seq[j++] = toupper(seq[i]);
-
-		if(j > len){
-			break;
-		}
-	}
-	seq[j] = '\0';
-}
-
-
-PyObject *sub_seq(PyObject *self, PyObject *args){
-	char *seq;
-	uint32_t start;
-	uint32_t end;
-
-	if (!PyArg_ParseTuple(args, "sii", &seq, &start, &end)){
-		return NULL;
-	}
-	uint32_t i;
-	uint32_t j = 0;
-	uint32_t real_pos = 0;
-	uint16_t flag;
-	for(i=0; seq[i]; i++){
-		flag = isspace(seq[i]);
-
-		if(!flag){
-			real_pos++;
-		}
-
-		if(real_pos > end){
-			break;
-		}
-
-		if(real_pos >= start){
-			if(!flag){
-				seq[j++] = toupper(seq[i]);
-			}
-		}
-	}
-	seq[j] = '\0';
-	return Py_BuildValue("s", seq);
-}
-*/
 
 /*check input file is whether gzip file
 @para file_name str, input file path string
@@ -324,93 +260,56 @@ int is_gzip_format(char* file_name){
 	return 1;
 }
 
-// read line from file
-// extracted from https://github.com/lattera/freebsd/blob/master/contrib/file/getline.c
-/*ssize_t get_until_delim(char **buf, int delimiter, FILE *fp) {
-	char *ptr, *eptr;
-
-	size_t bufsiz = 100;
-
-	if (*buf == NULL) {
-		if ((*buf = malloc(bufsiz)) == NULL)
-			return -1;
-	}
-
-	for (ptr = *buf, eptr = *buf + bufsiz;;) {
-		int c = fgetc(fp);
-		if (c == -1) {
-			if (feof(fp))
-				return ptr == *buf ? -1 : ptr - *buf;
-			else
-				return -1;
-		}
-		*ptr++ = c;
-		if (c == delimiter) {
-			*ptr = '\0';
-			return ptr - *buf;
-		}
-		if (ptr + 2 >= eptr) {
-			char *nbuf;
-			size_t nbufsiz = bufsiz * 2;
-			ssize_t d = ptr - *buf;
-			if ((nbuf = realloc(*buf, nbufsiz)) == NULL)
-				return -1;
-			*buf = nbuf;
-			bufsiz = nbufsiz;
-			eptr = nbuf + nbufsiz;
-			ptr = nbuf + d;
-		}
-	}
-}
-
-ssize_t get_line(char **buf, FILE *fp) {
-	return get_until_delim(buf, '\n', fp);
-}*/
-
 //generate random file name according to given length
 char *generate_random_name(char* index_file) {
 	int file_len;
 	char *result;
+
 	file_len = strlen(index_file);
 	result = (char *)malloc(file_len + 8);
 	sprintf(result, "%s.XXXXXX", index_file);
+
 	return result;
 }
 
 void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db) {
-	sqlite3_stmt *stmt;
-	sqlite3_blob *blob;
-	char *temp_index;
-	FILE* fh;
 	int fd;
-	int64_t remain;
-	uint32_t offset;
-	uint32_t block;
-	int32_t len;
-	void *buff;
 	int ret;
 	int rowid;
-	int32_t chunk;
+
+	char *temp_index;
+	void *buff;
+
+	FILE* fh;
+
+	sqlite3_stmt *stmt;
+	sqlite3_blob *blob;
+	
+	Py_ssize_t remain;
+	Py_ssize_t offset;
+	Py_ssize_t block;
+	Py_ssize_t len;
+	Py_ssize_t chunk;
 
 	ret = zran_build_index(gzip_index, 0, 0);
 
 	if (ret != 0) {
-		PyErr_SetString(PyExc_RuntimeError, "Failed to build gzip index");
+		PyErr_SetString(PyExc_RuntimeError, "failed to build gzip index");
 		return;
 	}
 
 	temp_index = generate_random_name(index_file);
 	if ((fd = mkstemp(temp_index)) < 0) {
-		PyErr_SetString(PyExc_RuntimeError, "Failed to create temp file");
+		PyErr_SetString(PyExc_RuntimeError, "failed to create temp file");
 		return;
 	}
 	close(fd);
 
 	fh = fopen(temp_index, "wb+");
-	if (zran_export_index(gzip_index, fh) != ZRAN_EXPORT_OK){
+	if (zran_export_index(gzip_index, fh, NULL) != ZRAN_EXPORT_OK){
 		fclose(fh);
 		free(temp_index);
-		PyErr_SetString(PyExc_RuntimeError, "Failed to export gzip index.");
+		PyErr_SetString(PyExc_RuntimeError, "failed to export gzip index");
 		return;
 	}
 
@@ -461,16 +360,20 @@ void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite
 }
 
 void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db) {
-	sqlite3_blob *blob;
-	sqlite3_stmt *stmt;
-	uint64_t bytes = 0;
-	uint64_t offset;
-	int64_t len;
-	FILE *fh;
 	int fd;
+	int i, rows;
+
 	char *temp_index;
 	void *buff;
-	int i, rows;
+
+	FILE *fh;
+
+	sqlite3_blob *blob;
+	sqlite3_stmt *stmt;
+
+	Py_ssize_t bytes = 0;
+	Py_ssize_t offset;
+	Py_ssize_t len;
 
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(index_db, "SELECT COUNT(1) FROM gzindex", -1, &stmt, NULL);
@@ -487,7 +390,7 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 	temp_index = generate_random_name(index_file);
 	if ((fd = mkstemp(temp_index)) < 0) {
 		free(temp_index);
-		PyErr_SetString(PyExc_RuntimeError, "Failed to create temp file");
+		PyErr_SetString(PyExc_RuntimeError, "failed to create temp file");
 		return;
 	}
 	close(fd);
@@ -504,7 +407,11 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 
 			while (offset < bytes) {
 				len = bytes - offset;
-				if (len > 1048576) len = 1048576;
+
+				if (len > 1048576) {
+					len = 1048576;
+				}
+
 				sqlite3_blob_read(blob, buff, len, offset);
 				fwrite(buff, 1, len, fh);
 				offset += len;
@@ -517,7 +424,7 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 	fclose(fh);
 
 	fh = fopen(temp_index, "rb");
-	if (zran_import_index(gzip_index, fh) != ZRAN_IMPORT_OK) {
+	if (zran_import_index(gzip_index, fh, NULL) != ZRAN_IMPORT_OK) {
 		PyErr_SetString(PyExc_RuntimeError, "failed to import gzip index");
 	}
 	fclose(fh);
@@ -525,36 +432,10 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 	free(temp_index);
 }
 
-//return large string and release memory
-/*PyObject* make_large_sequence(char *seq) {
-	PyObject *obj = Py_BuildValue("s", seq);
-	free(seq);
-	return obj;
-}*/
-
-//integer check and coversion
-/*int integer_check(PyObject* num) {
-	if (PyInt_Check(num) || PyLong_Check(num)) {
-		return 1;
-	}
-
-	return 0;
-}
-
-int64_t integer_to_long(PyObject* num) {
-	if (PyInt_Check(num)) {
-		return PyInt_AsLong(num);
-	} else if (PyLong_Check(num)) {
-		return PyLong_AsLong(num);
-	}
-
-	PyErr_SetString(PyExc_ValueError, "the object is not an integer");
-	return 0;
-}*/
-
-char *str_n_str(char *haystack, char *needle, uint32_t len, uint32_t size) {
+char *str_n_str(char *haystack, char *needle, Py_ssize_t len, Py_ssize_t size) {
 	char *result;
-	uint32_t pos;
+	Py_ssize_t pos;
+
 	result = strstr(haystack, needle);
 
 	if (result) {

@@ -1,9 +1,8 @@
 #ifndef PYFASTX_FASTX_H
 #define PYFASTX_FASTX_H
-#include "Python.h"
+#include <Python.h>
 #include "zlib.h"
 #include "kseq.h"
-#include "stdint.h"
 
 typedef struct {
 	PyObject_HEAD
@@ -12,13 +11,13 @@ typedef struct {
 	char* file_name;
 
 	//always output uppercase sequence
-	uint8_t uppercase;
+	int uppercase;
 
 	//file format fasta or fastq
-	uint8_t format;
+	int format;
 
 	//output comment or not
-	uint8_t comment;
+	int comment;
 
 	//gzip open file handle
 	gzFile gzfd;

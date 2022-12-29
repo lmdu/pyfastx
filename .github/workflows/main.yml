@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, macOS-11]
+        os: [windows-2019, ubuntu-20.04, macos-11]
 
     steps:
       - uses: actions/checkout@v3
@@ -24,16 +24,16 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.11.2
+        uses: pypa/cibuildwheel@v2.11.4
         env:
           CIBW_SKIP: pp*
           CIBW_BUILD_VERBOSITY: 0
           CIBW_ARCHS_LINUX: auto aarch64
           CIBW_ARCHS_MACOS: x86_64 arm64
-          CIBW_BEFORE_BUILD: sqlite3 --version && curl -O http://zlib.net/zlib-1.2.13.tar.gz && tar xzf zlib-1.2.13.tar.gz && cd zlib-1.2.13 && ./configure && make && make install
+          CIBW_BEFORE_BUILD_LINUX: sqlite3 --version && curl -O http://zlib.net/zlib-1.2.13.tar.gz && tar xzf zlib-1.2.13.tar.gz && cd zlib-1.2.13 && ./configure && make && make install
+          CIBW_BEFORE_BUILD_MACOS: sqlite3 --version && curl -O http://zlib.net/zlib-1.2.13.tar.gz && tar xzf zlib-1.2.13.tar.gz && cd zlib-1.2.13 && ./configure && make && make install
           CIBW_TEST_COMMAND: cd {project} && python setup.py test
           CIBW_TEST_REQUIRES: pyfaidx==0.5.8
-          #CIBW_BUILD_VERBOSITY: 3 for debug
 
       - name: Display wheel
         run: ls -l wheelhouse

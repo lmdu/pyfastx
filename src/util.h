@@ -1,17 +1,17 @@
 #ifndef PYFASTX_UTIL_H
 #define PYFASTX_UTIL_H
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include <stdint.h>
-#include "unistd.h"
+//#include "unistd.h"
 #include "sqlite3.h"
 #include "zran.h"
 #include "zlib.h"
 #include "time.h"
 
-uint16_t file_exists(char *file_name);
-void upper_string(char *str, uint32_t len);
-uint32_t remove_space(char *str, uint32_t len);
-uint32_t remove_space_uppercase(char *str, uint32_t len);
+int file_exists(char *file_name);
+void upper_string(char *str, Py_ssize_t len);
+Py_ssize_t remove_space(char *str, Py_ssize_t len);
+Py_ssize_t remove_space_uppercase(char *str, Py_ssize_t len);
 void reverse_seq(char *seq);
 void reverse_complement_seq(char *seq);
 
@@ -19,7 +19,7 @@ int is_gzip_format(char *file_name);
 //void truncate_seq(char *seq, uint32_t start, uint32_t end);
 void complement_seq(char *seq);
 void reverse_seq(char *seq);
-uint32_t sum_array(uint32_t arr[], int num);
+Py_ssize_t sum_array(Py_ssize_t arr[], int num);
 //char *int_to_str(int c);
 int is_subset(char *seq1, char *seq2);
 //PyObject* make_large_sequence(char *seq);
@@ -28,7 +28,7 @@ int is_subset(char *seq1, char *seq2);
 
 //PyObject* clean_seq(PyObject *self, PyObject *args);
 //PyObject* sub_seq(PyObject *self, PyObject *args);
-char *str_n_str(char *haystack, char *needle, uint32_t len, uint32_t size);
+char *str_n_str(char *haystack, char *needle, Py_ssize_t len, Py_ssize_t size);
 
 //int64_t zran_readline(zran_index_t *index, char *linebuf, uint32_t bufsize);
 void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db);

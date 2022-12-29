@@ -1,7 +1,7 @@
 #ifndef PYFASTX_FASTQ_H
 #define PYFASTX_FASTQ_H
-#include "Python.h"
-#include "stdint.h"
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "zlib.h"
 #include "kseq.h"
 #include "zran.h"
@@ -12,10 +12,10 @@ typedef struct {
 	PyObject_HEAD
 
 	//phred
-	uint16_t phred;
+	int phred;
 
 	//is gzip file
-	uint8_t gzip_format;
+	int gzip_format;
 
 	//file handle for zran index
 	FILE* fd;
@@ -36,13 +36,13 @@ typedef struct {
 	char* cache_buff;
 
 	//cache start offset
-	int64_t cache_soff;
+	Py_ssize_t cache_soff;
 
 	//cache end offset
-	int64_t cache_eoff;
+	Py_ssize_t cache_eoff;
 
 	//iteration mode
-	uint8_t iterating;
+	int iterating;
 
 	PyObject *fastq;
 
@@ -59,10 +59,10 @@ typedef struct {
 	char* index_file;
 
 	//total read counts
-	uint64_t read_counts;
+	Py_ssize_t read_counts;
 
 	//total sequence length;
-	uint64_t seq_length;
+	Py_ssize_t seq_length;
 
 	//GC content
 	float gc_content;
@@ -79,21 +79,21 @@ typedef struct {
 	sqlite3_stmt *name_stmt;
 
 	//if build_index is True means has index
-	uint8_t has_index;
+	int has_index;
 
 	//average length
-	float avg_length;
+	double avg_length;
 
 	//min max length
-	uint32_t maxlen;
-	uint32_t minlen;
+	Py_ssize_t maxlen;
+	Py_ssize_t minlen;
 
 	//min and max quality score
 	int maxqual;
 	int minqual;
 
 	//iterate with full name
-	uint8_t full_name;
+	int full_name;
 
 	pyfastx_FastqMiddleware* middle;
 

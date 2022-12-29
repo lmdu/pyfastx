@@ -1,11 +1,7 @@
 #define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "fastx.h"
 #include "util.h"
-
-/*PyObject *pyfastx_fastx_null(kseq_t* kseqs) {
-	PyErr_SetString(PyExc_TypeError, "'Fastx' object is not an iterator");
-	return NULL;
-}*/
 
 PyObject *pyfastx_fastx_fasta(kseq_t* kseqs) {
 	return Py_BuildValue("ss", kseqs->name.s, kseqs->seq.s);
@@ -33,13 +29,13 @@ PyObject *pyfastx_fastx_fastq_comment(kseq_t* kseqs) {
 }
 
 PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
-	//fasta or fastq file path
-	Py_ssize_t file_len;
-
 	int uppercase = 0;
 	int comment = 0;
+
 	char *file_name;
 	char *format = "auto";
+
+	Py_ssize_t file_len;
 
 	pyfastx_Fastx *obj;
 
@@ -84,9 +80,6 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//initial kseq
 	gzrewind(obj->gzfd);
 	obj->kseqs = kseq_init(obj->gzfd);
-
-	//iter function
-	//obj->func = pyfastx_fastx_null;
 
 	if (obj->format == 1) {
 		if (obj->uppercase) {
