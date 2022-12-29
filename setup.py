@@ -2,7 +2,7 @@ import os
 import sys
 import glob
 import tarfile
-#import platform
+import zipfile
 import urllib.request
 from setuptools import setup, Extension
 
