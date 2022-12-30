@@ -17,13 +17,16 @@ jobs:
       - name: Install requirements
         run: |
           pip install pyfaidx==0.5.8
-          pip install pytest-cov
+          pip install pytest
+          pip install gcovr
       - name: Build extension
         run: python setup.py build_ext -i
         env:
-          CPPFLAGS: -fprofile-arcs -ftest-coverage -O0
+          CPPFLAGS: CFLAGS="--coverage"
       - name: Generate coverage report
-        run: pytest --cov=./src ./tests
+        run: |
+          pytest tests
+          gcovr --filter src/
       - name: Upload Coverage to CodeCov
         uses: codecov/codecov-action@v3
         with:

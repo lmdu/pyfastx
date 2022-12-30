@@ -1107,7 +1107,7 @@ static PyGetSetDef pyfastx_fasta_getsets[] = {
 
 static PyMemberDef pyfastx_fasta_members[] = {
 	{"file_name", T_STRING, offsetof(pyfastx_Fasta, file_name), READONLY},
-	{"size", T_ULONGLONG, offsetof(pyfastx_Fasta, seq_length), READONLY},
+	{"size", T_PYSSIZET, offsetof(pyfastx_Fasta, seq_length), READONLY},
 	{NULL}
 };
 
