@@ -19,14 +19,12 @@ jobs:
       - name: Install requirements
         run: |
           pip install pyfaidx==0.5.8
-          pip install pytest
-          pip install gcovr
+          pip install pytest-cov
 
       - name: Generate coverage report
         run: |
           python setup.py build_ext -i
-          pytest tests
-          gcovr --filter src/
+          pytest --cov=src tests/
         env:
           CFLAGS: --coverage
 
