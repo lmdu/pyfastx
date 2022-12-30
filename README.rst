@@ -17,10 +17,6 @@ pyfastx
    :target: https://pypi.org/project/pyfastx
    :alt: PyPI
 
-.. image:: https://img.shields.io/pypi/wheel/pyfastx.svg
-   :target: https://pypi.org/project/pyfastx
-   :alt: Wheel
-
 .. image:: https://img.shields.io/pypi/implementation/pyfastx
    :target: https://pypi.org/project/pyfastx
    :alt: Language
@@ -28,6 +24,10 @@ pyfastx
 .. image:: https://img.shields.io/pypi/pyversions/pyfastx.svg
    :target: https://pypi.org/project/pyfastx
    :alt: Pyver
+
+.. image:: https://img.shields.io/pypi/wheel/pyfastx.svg
+   :target: https://pypi.org/project/pyfastx
+   :alt: Wheel
 
 .. image:: https://api.codacy.com/project/badge/Grade/80790fa30f444d9d9ece43689d512dae
    :target: https://www.codacy.com/manual/lmdu/pyfastx?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lmdu/pyfastx&amp;utm_campaign=Badge_Grade
