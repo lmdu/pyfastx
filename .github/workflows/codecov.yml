@@ -23,7 +23,7 @@ jobs:
           pip install gcovr
 
       - name: Generate coverage report
-        run: 
+        run: |
           python setup.py build_ext -i
           pytest tests
           gcovr --filter src/
