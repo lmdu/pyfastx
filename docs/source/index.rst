@@ -10,10 +10,6 @@ Welcome to pyfastx's documentation!
    :target: https://github.com/lmdu/pyfastx/actions/workflows/main.yml
    :alt: Action
 
-.. image:: https://ci.appveyor.com/api/projects/status/7qeurb8wcl0bw993?svg=true
-   :target: https://ci.appveyor.com/project/lmdu/pyfastx
-   :alt: Appveyor
-
 .. image:: https://readthedocs.org/projects/pyfastx/badge/?version=latest
    :target: https://pyfastx.readthedocs.io/en/latest/?badge=latest
    :alt: Readthedocs

@@ -5,10 +5,6 @@ pyfastx
    :target: https://github.com/lmdu/pyfastx/actions/workflows/main.yml
    :alt: Action
 
-.. image:: https://ci.appveyor.com/api/projects/status/7qeurb8wcl0bw993?svg=true
-   :target: https://ci.appveyor.com/project/lmdu/pyfastx
-   :alt: Appveyor
-
 .. image:: https://readthedocs.org/projects/pyfastx/badge/?version=latest
    :target: https://pyfastx.readthedocs.io/en/latest/?badge=latest
    :alt: Readthedocs
@@ -992,7 +988,11 @@ Testing
 
 The ``pyfaidx`` module was used to test ``pyfastx``. First, make sure you have a suitable version installed::
 
-    pip install '.[dev]'
+    pip install pyfastx
+
+To test pyfastx, you should also install pyfaidx 0.5.8::
+
+    pip install pyfaidx==0.5.8
 
 Then, to run the tests::
 

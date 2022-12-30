@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Version 0.9.0 (2022-12-30)
+--------------------------
+
+- Added support for Python3.10, 3.11
+- Added support for aarch64 and musllinux
+- Added using tab as fasta sequence name splitter
+- Fixed repeat sequence comment error
+- Fixed the quality score parsing error from fastq
+- Fixed the reference of sequence returned from function
+
 Version 0.8.4 (2021-06-30)
 --------------------------
 

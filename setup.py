@@ -71,23 +71,6 @@ else:
 
 prepare_indexed_gzip()
 
-#if os.name == 'nt':
-#    major, minor, revise = sys.version.split()[0].split('.')
-
-#    if int(minor) >= 10:
-#        comp_args.append('-std=gnu11')
-
-#    if '32' in platform.architecture()[0] and int(minor) >= 8:
-#        link_args.append('-static-libgcc')
-#        link_args.append('-static-libstdc++')
-
-#    if '64' in platform.architecture()[0]:
-#        link_args.append('-DMS_WIN64')
-#        comp_args.append('-DMS_WIN64')
-#        comp_args.append('-D_FILE_OFFSET_BITS=64')
-#        comp_args.append('-D_LARGEFILE64_SOURCE=1')
-#        comp_args.append('-D_LFS64_LARGEFILE=1')
-
 extension = Extension('pyfastx',
     sources = sources,
     include_dirs = include_dirs,
@@ -118,7 +101,7 @@ setup(
     author_email = 'adullb@qq.com',
     url = 'https://github.com/lmdu/pyfastx',
     license = 'MIT',
-    keywords = 'fasta sequence bioinformatics',
+    keywords = 'fasta fastq sequence bioinformatics',
     classifiers = [
             "Development Status :: 5 - Production/Stable",
             "Intended Audience :: Developers",
@@ -142,13 +125,5 @@ setup(
         'console_scripts': ['pyfastx = pyfastxcli:main']
     },
     py_modules = ["pyfastxcli"],
-    test_suite = "tests",
-    extras_requires = {
-        "dev": [
-            # pyfaidx is used as ground truth for expected values.  Version
-            # 0.5.9 and newer don't support negative indexes, which are used in
-            # our tests.
-            "pyfaidx <=0.5.8",
-        ],
-    }
+    test_suite = "tests"
 )

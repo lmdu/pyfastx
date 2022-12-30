@@ -11,22 +11,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
+
       - name: Install requirements
         run: |
           pip install pyfaidx==0.5.8
           pip install pytest
           pip install gcovr
-      - name: Build extension
-        run: python setup.py build_ext -i
-        env:
-          CPPFLAGS: CFLAGS="--coverage"
+
       - name: Generate coverage report
-        run: |
+        run: 
+          python setup.py build_ext -i
           pytest tests
           gcovr --filter src/
+        env:
+          CFLAGS: --coverage
+
       - name: Upload Coverage to CodeCov
         uses: codecov/codecov-action@v3
         with:
