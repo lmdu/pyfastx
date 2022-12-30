@@ -19,16 +19,19 @@ jobs:
       - name: Install requirements
         run: |
           pip install pyfaidx==0.5.8
-          pip install pytest-cov
+          pip install pytest
+          pip install gcovr
 
       - name: Generate coverage report
         run: |
           python setup.py build_ext -i
-          pytest --cov=src tests/
+          pytest tests
+          gcovr --filter src/ --xml -o coverage.xml
         env:
           CFLAGS: --coverage
 
       - name: Upload Coverage to CodeCov
         uses: codecov/codecov-action@v3
         with:
+          files: ./coverage.xml
           fail_ci_if_error: true
