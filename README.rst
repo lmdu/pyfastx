@@ -97,15 +97,14 @@ Pyfastx provide a simple and fast python binding for kseq.h to iterate over sequ
 FASTA sequences iteration
 -------------------------
 
-When iterating over sequences on FASTX object, a tuple ``(name, seq, comment)`` will be returned, the comment is the content of header line after the first white space character.
+When iterating over sequences on FASTX object, a tuple ``(name, seq)`` will be returned.
 
 .. code:: python
 
     >>> fa = pyfastx.Fastx('tests/data/test.fa.gz')
-    >>> for name,seq,comment in fa:
+    >>> for name,seq in fa:
     >>>     print(name)
     >>>     print(seq)
-    >>>     print(comment)
 
     >>> #always output uppercase sequence
     >>> for item in pyfastx.Fastx('tests/data/test.fa', uppercase=True):
@@ -115,19 +114,43 @@ When iterating over sequences on FASTX object, a tuple ``(name, seq, comment)`` 
     >>> for item in pyfastx.Fastx('tests/data/test.fa', format="fasta"):
     >>>     print(item)
 
+If you want the sequence comment, you can set comment to True, New in ``pyfastx`` 0.9.0.
+
+.. code:: python
+
+    >>> fa = pyfastx.Fastx('tests/data/test.fa.gz', comment=True)
+    >>> for name,seq,comment in fa:
+    >>>     print(name)
+    >>>     print(seq)
+    >>>     print(comment)
+
+The comment is the content of header line after the first white space or tab character.
+
 FASTQ reads iteration
 ---------------------
 
-When iterating over reads on FASTX object, a tuple ``(name, seq, qual, comment)`` will be returned, the comment is the content of header line after the first white space character.
+When iterating over reads on FASTX object, a tuple ``(name, seq, qual)`` will be returned.
 
 .. code:: python
 
     >>> fq = pyfastx.Fastx('tests/data/test.fq.gz')
+    >>> for name,seq,qual in fq:
+    >>>     print(name)
+    >>>     print(seq)
+    >>>     print(qual)
+
+If you want the read comment, you can set comment to True, New in ``pyfastx`` 0.9.0.
+
+.. code:: python
+
+    >>> fq = pyfastx.Fastx('tests/data/test.fq.gz', comment=True)
     >>> for name,seq,qual,comment in fq:
     >>>     print(name)
     >>>     print(seq)
     >>>     print(qual)
     >>>     print(comment)
+
+The comment is the content of header line after the first white space or tab character.
 
 FASTA
 =====
