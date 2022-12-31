@@ -64,7 +64,7 @@ void pyfastx_read_continue_reader(pyfastx_Read *self) {
     self->raw = (char *)malloc(residue_len + 2);
 
     if (offset < self->middle->cache_soff) {
-        pyfastx_read_random_reader(self, self->raw, residue_len);
+        pyfastx_read_random_reader(self, self->raw, offset, residue_len);
     } else {
         while (residue_len > 0) {
             if (offset >= self->middle->cache_soff && offset < self->middle->cache_eoff) {
