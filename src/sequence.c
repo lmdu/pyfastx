@@ -61,7 +61,6 @@ void pyfastx_sequence_continue_read(pyfastx_Sequence* self) {
 	memcpy(self->desc, self->raw+1, self->desc_len);
 	self->desc[self->desc_len] = '\0';
 
-	printf("##: o: %lld, l: %lld, g: %lld, %s\n", offset, bytelen, gap, self->desc);
 	//copy sequence to cache
 	if (self->byte_len >= self->index->cache_seq.m) {
 		self->index->cache_seq.m = self->byte_len + 1;

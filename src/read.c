@@ -34,6 +34,16 @@ Py_ssize_t pyfastx_read_length(pyfastx_Read *self) {
     return self->read_len;
 }
 
+void pyfastx_read_random_reader(pyfastx_Read *self, char *buff, Py_ssize_t offset, Py_ssize_t bytes) {
+    if (self->middle->gzip_format) {
+        zran_seek(self->middle->gzip_index, offset, SEEK_SET, NULL);
+        zran_read(self->middle->gzip_index, buff, bytes);
+    } else {
+        FSEEK(self->middle->fd, offset, SEEK_SET);
+        fread(buff, bytes, 1, self->middle->fd);
+    }
+}
+
 //read content from buff or file
 void pyfastx_read_continue_reader(pyfastx_Read *self) {
     Py_ssize_t slice_offset;
@@ -53,31 +63,35 @@ void pyfastx_read_continue_reader(pyfastx_Read *self) {
 
     self->raw = (char *)malloc(residue_len + 2);
 
-    while (residue_len > 0) {
-        if (offset >= self->middle->cache_soff && offset < self->middle->cache_eoff) {
-            slice_offset = offset - self->middle->cache_soff;
-            slice_length = self->middle->cache_eoff - offset;
+    if (offset < self->middle->cache_soff) {
+        pyfastx_read_random_reader(self, self->raw, residue_len);
+    } else {
+        while (residue_len > 0) {
+            if (offset >= self->middle->cache_soff && offset < self->middle->cache_eoff) {
+                slice_offset = offset - self->middle->cache_soff;
+                slice_length = self->middle->cache_eoff - offset;
 
-            if (slice_length >= residue_len) {
-                cache_len = residue_len;
-            } else {
-                //cache_len = self->middle->cache_eoff - self->middle->cache_soff;
-                cache_len = slice_length;
+                if (slice_length >= residue_len) {
+                    cache_len = residue_len;
+                } else {
+                    //cache_len = self->middle->cache_eoff - self->middle->cache_soff;
+                    cache_len = slice_length;
+                }
+
+                memcpy(self->raw+read_len, self->middle->cache_buff+slice_offset, cache_len);
+                read_len += cache_len;
+                residue_len -= cache_len;
             }
 
-            memcpy(self->raw+read_len, self->middle->cache_buff+slice_offset, cache_len);
-            read_len += cache_len;
-            residue_len -= cache_len;
-        }
+            if (residue_len > 0) {
+                offset += cache_len;
+                self->middle->cache_soff = self->middle->cache_eoff;
+                gzread(self->middle->gzfd, self->middle->cache_buff, 1048576);
+                self->middle->cache_eoff = gztell(self->middle->gzfd);
+            }
 
-        if (residue_len > 0) {
-            offset += cache_len;
-            self->middle->cache_soff = self->middle->cache_eoff;
-            gzread(self->middle->gzfd, self->middle->cache_buff, 1048576);
-            self->middle->cache_eoff = gztell(self->middle->gzfd);
+            //known error: fastq file without line ending in last line
         }
-
-        //known error: fastq file without line ending in last line
     }
 
     self->desc = (char *)malloc(self->desc_len + 1);
@@ -99,16 +113,6 @@ void pyfastx_read_continue_reader(pyfastx_Read *self) {
     self->qual = (char *)malloc(self->read_len + 1);
     memcpy(self->qual, self->raw + self->qual_offset - offset, self->read_len);
     self->qual[self->read_len] = '\0';
-}
-
-void pyfastx_read_random_reader(pyfastx_Read *self, char *buff, Py_ssize_t offset, Py_ssize_t bytes) {
-    if (self->middle->gzip_format) {
-        zran_seek(self->middle->gzip_index, offset, SEEK_SET, NULL);
-        zran_read(self->middle->gzip_index, buff, bytes);
-    } else {
-        FSEEK(self->middle->fd, offset, SEEK_SET);
-        fread(buff, bytes, 1, self->middle->fd);
-    }
 }
 
 PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {

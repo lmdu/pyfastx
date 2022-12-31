@@ -84,3 +84,4 @@ test.py
 tests/__pycache__/test_fastx.cpython-38.pyc
 tests/__pycache__/test_fqkeys.cpython-38.pyc
 tests/__pycache__/test_sequence_error.cpython-38.pyc
+.DS_Store

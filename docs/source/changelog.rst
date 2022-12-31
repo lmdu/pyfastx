@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.9.1 (2022-12-31)
+--------------------------
+
+- Fixed unicode decode error when parsing large fasta/q file
+- Fixed sequence retrival error when using sequence object from loop after break
+
 Version 0.9.0 (2022-12-30)
 --------------------------
 
