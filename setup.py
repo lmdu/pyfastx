@@ -83,6 +83,9 @@ else:
             '-D_LARGEFILE64_SOURCE',
         ])
 
+    if sys.platform.startswith('darwin'):
+        comp_args.append('-DHAVE_UNISTD_H')
+
 prepare_zlib()
 prepare_sqlite3()
 prepare_indexed_gzip()
