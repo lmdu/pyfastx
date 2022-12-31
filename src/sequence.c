@@ -4,6 +4,8 @@
 #include "structmember.h"
 
 void pyfastx_sequence_continue_read(pyfastx_Sequence* self) {
+	int header_len;
+
 	Py_ssize_t offset;
 	Py_ssize_t bytelen;
 
@@ -13,33 +15,54 @@ void pyfastx_sequence_continue_read(pyfastx_Sequence* self) {
 	Py_ssize_t rlen;
 
 	//raw string offset and bytelen
-	offset = self->offset - self->desc_len - self->end_len - 1;
-	bytelen = self->byte_len + self->desc_len + self->end_len + 1;
+	header_len = self->desc_len + self->end_len + 1;
+	offset = self->offset - header_len;
+	bytelen = self->byte_len + header_len;
 
 	self->raw = (char *)malloc(bytelen + 1);
 
 	current = gztell(self->index->gzfd);
 	gap = offset - current;
 
-	if (gap > 0) {
-		if (self->index->gzip_format) {
+	if (self->index->gzip_format) {
+		if (gap >= 0) {
 			while (gap > 0) {
 				rlen = gap > bytelen ? bytelen : gap;
 				gzread(self->index->gzfd, self->raw, rlen);
 				gap -= rlen;
 			}
+			gzread(self->index->gzfd, self->raw, bytelen);
 		} else {
+			zran_seek(self->index->gzip_index, offset, SEEK_SET, NULL);
+			zran_read(self->index->gzip_index, self->raw, bytelen);
+		}
+	} else {
+		if (gap != 0) {
 			gzseek(self->index->gzfd, offset, SEEK_SET);
 		}
+		gzread(self->index->gzfd, self->raw, bytelen);
+	}
+	self->raw[bytelen] = '\0';
+
+	/*if (gap > 0 && self->index->gzip_format) {
+		while (gap > 0) {
+			rlen = gap > bytelen ? bytelen : gap;
+			gzread(self->index->gzfd, self->raw, rlen);
+			gap -= rlen;
+		}
+	} else {
+		gzseek(self->index->gzfd, offset, SEEK_SET);
 	}
 
 	gzread(self->index->gzfd, self->raw, bytelen);
-	self->raw[bytelen] = '\0';
+	self->raw[bytelen] = '\0';*/
 
 	self->desc = (char *)malloc(self->desc_len + 1);
 	memcpy(self->desc, self->raw+1, self->desc_len);
 	self->desc[self->desc_len] = '\0';
 
+	printf("##: o: %lld, l: %lld, g: %lld, %s\n", offset, bytelen, gap, self->desc);
+	//copy sequence to cache
 	if (self->byte_len >= self->index->cache_seq.m) {
 		self->index->cache_seq.m = self->byte_len + 1;
 		self->index->cache_seq.s = (char *)realloc(self->index->cache_seq.s, self->index->cache_seq.m);

@@ -73,7 +73,7 @@ Features
 Installation
 ============
 
-Currently, ``pyfastx`` supports Python 3.5, 3.6, 3.7, 3.8, 3.9. Make sure you have installed both `pip <https://pip.pypa.io/en/stable/installing/>`_ and Python before starting.
+Currently, ``pyfastx`` supports Python 3.6, 3.7, 3.8, 3.9, 3.10, 3.11. Make sure you have installed both `pip <https://pip.pypa.io/en/stable/installing/>`_ and Python before starting.
 
 You can install ``pyfastx`` via the Python Package Index (PyPI)
 

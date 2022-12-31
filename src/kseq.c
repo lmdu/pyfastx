@@ -24,6 +24,8 @@
 */
 
 /* Last Modified: 05MAR2012 */
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "kseq.h"
 
 kstream_t *ks_init(gzFile f)						
@@ -54,13 +56,13 @@ int ks_getc(kstream_t *ks)
 	return (int)ks->buf[ks->begin++];					
 }
 
-int ks_getuntil2(kstream_t *ks, int delimiter, kstring_t *str, int *dret, int append)
+Py_ssize_t ks_getuntil2(kstream_t *ks, int delimiter, kstring_t *str, int *dret, int append)
 {																	
 	int gotany = 0;													
 	if (dret) *dret = 0;											
 	str->l = append? str->l : 0;									
 	for (;;) {														
-		int i;														
+		Py_ssize_t i;														
 		if (ks_err(ks)) return -3;									
 		if (ks->begin >= ks->end) {									
 			if (!ks->is_eof) {										
@@ -83,7 +85,7 @@ int ks_getuntil2(kstream_t *ks, int delimiter, kstring_t *str, int *dret, int ap
 			for (i = ks->begin; i < ks->end; ++i)					
 				if (isspace(ks->buf[i]) && ks->buf[i] != ' ') break; 
 		} else i = 0; /* never come to here! */						
-		if (str->m - str->l < (size_t)(i - ks->begin + 1)) {		
+		if (str->m - str->l < (i - ks->begin + 1)) {		
 			str->m = str->l + (i - ks->begin) + 1;					
 			kroundup32(str->m);										
 			str->s = (char*)realloc(str->s, str->m);				
@@ -106,7 +108,7 @@ int ks_getuntil2(kstream_t *ks, int delimiter, kstring_t *str, int *dret, int ap
 	return str->l;													
 } 
 
-int ks_getuntil(kstream_t *ks, int delimiter, kstring_t *str, int *dret) 
+Py_ssize_t ks_getuntil(kstream_t *ks, int delimiter, kstring_t *str, int *dret) 
 { return ks_getuntil2(ks, delimiter, str, dret, 0); }
 
 void kseq_rewind(kseq_t *ks)
@@ -133,9 +135,10 @@ void kseq_destroy(kseq_t *ks)
    -3   error reading stream
  */
 
-int kseq_read(kseq_t *seq) 
+Py_ssize_t kseq_read(kseq_t *seq) 
 { 
-	int c,r; 
+	int c;
+	Py_ssize_t r; 
 	kstream_t *ks = seq->f; 
 	if (seq->last_char == 0) { /* then jump to the next header line */ 
 		while ((c = ks_getc(ks)) >= 0 && c != '>' && c != '@'); 

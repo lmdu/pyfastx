@@ -63,12 +63,24 @@ def prepare_indexed_gzip():
 
 
 if sys.platform.startswith('win'):
-    prepare_zlib()
-    prepare_sqlite3()
+    #prepare_zlib()
+    #prepare_sqlite3()
+    comp_args.extend([
+        '/D_LFS64_LARGEFILE',
+        '/D_LARGEFILE64_SOURCE',
+        '/D_FILE_OFFSET_BITS=64'
+    ])
 else:
-    link_args.extend(['-lz', '-lsqlite3'])
-    comp_args.append('-Wno-unused-result')
+    #link_args.extend(['-lz', '-lsqlite3'])
+    comp_args.extend([
+        '-Wno-unused-result',
+        '-D_LFS64_LARGEFILE',
+        '-D_LARGEFILE64_SOURCE',
+        '-D_FILE_OFFSET_BITS=64'
+    ])
 
+prepare_zlib()
+prepare_sqlite3()
 prepare_indexed_gzip()
 
 extension = Extension('pyfastx',

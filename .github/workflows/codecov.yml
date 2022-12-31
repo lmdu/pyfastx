@@ -1,4 +1,4 @@
-name: Code Coverage
+name: coverage
 
 on: [push, pull_request]
 
@@ -6,9 +6,6 @@ jobs:
   run:
     name: Coverage Test
     runs-on: ubuntu-latest
-    env:
-      OS: ubuntu-latest
-      PYTHON: '3.8'
 
     steps:
       - uses: actions/checkout@v3
