@@ -74,10 +74,14 @@ else:
     #link_args.extend(['-lz', '-lsqlite3'])
     comp_args.extend([
         '-Wno-unused-result',
-        '-D_LFS64_LARGEFILE',
-        '-D_LARGEFILE64_SOURCE',
         '-D_FILE_OFFSET_BITS=64'
     ])
+
+    if sys.platform.startswith('linux'):
+        comp_args.extend([
+            '-D_LFS64_LARGEFILE',
+            '-D_LARGEFILE64_SOURCE',
+        ])
 
 prepare_zlib()
 prepare_sqlite3()
