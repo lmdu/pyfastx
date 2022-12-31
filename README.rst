@@ -5,10 +5,6 @@ pyfastx
    :target: https://github.com/lmdu/pyfastx/actions/workflows/main.yml
    :alt: Action
 
-.. image:: https://ci.appveyor.com/api/projects/status/7qeurb8wcl0bw993?svg=true
-   :target: https://ci.appveyor.com/project/lmdu/pyfastx
-   :alt: Appveyor
-
 .. image:: https://readthedocs.org/projects/pyfastx/badge/?version=latest
    :target: https://pyfastx.readthedocs.io/en/latest/?badge=latest
    :alt: Readthedocs
@@ -21,10 +17,6 @@ pyfastx
    :target: https://pypi.org/project/pyfastx
    :alt: PyPI
 
-.. image:: https://img.shields.io/pypi/wheel/pyfastx.svg
-   :target: https://pypi.org/project/pyfastx
-   :alt: Wheel
-
 .. image:: https://img.shields.io/pypi/implementation/pyfastx
    :target: https://pypi.org/project/pyfastx
    :alt: Language
@@ -32,6 +24,10 @@ pyfastx
 .. image:: https://img.shields.io/pypi/pyversions/pyfastx.svg
    :target: https://pypi.org/project/pyfastx
    :alt: Pyver
+
+.. image:: https://img.shields.io/pypi/wheel/pyfastx.svg
+   :target: https://pypi.org/project/pyfastx
+   :alt: Wheel
 
 .. image:: https://api.codacy.com/project/badge/Grade/80790fa30f444d9d9ece43689d512dae
    :target: https://www.codacy.com/manual/lmdu/pyfastx?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lmdu/pyfastx&amp;utm_campaign=Badge_Grade
@@ -77,7 +73,7 @@ Features
 Installation
 ============
 
-Currently, ``pyfastx`` supports Python 3.5, 3.6, 3.7, 3.8, 3.9. Make sure you have installed both `pip <https://pip.pypa.io/en/stable/installing/>`_ and Python before starting.
+Currently, ``pyfastx`` supports Python 3.6, 3.7, 3.8, 3.9, 3.10, 3.11. Make sure you have installed both `pip <https://pip.pypa.io/en/stable/installing/>`_ and Python before starting.
 
 You can install ``pyfastx`` via the Python Package Index (PyPI)
 
@@ -101,15 +97,14 @@ Pyfastx provide a simple and fast python binding for kseq.h to iterate over sequ
 FASTA sequences iteration
 -------------------------
 
-When iterating over sequences on FASTX object, a tuple ``(name, seq, comment)`` will be returned, the comment is the content of header line after the first white space character.
+When iterating over sequences on FASTX object, a tuple ``(name, seq)`` will be returned.
 
 .. code:: python
 
     >>> fa = pyfastx.Fastx('tests/data/test.fa.gz')
-    >>> for name,seq,comment in fa:
+    >>> for name,seq in fa:
     >>>     print(name)
     >>>     print(seq)
-    >>>     print(comment)
 
     >>> #always output uppercase sequence
     >>> for item in pyfastx.Fastx('tests/data/test.fa', uppercase=True):
@@ -119,19 +114,43 @@ When iterating over sequences on FASTX object, a tuple ``(name, seq, comment)`` 
     >>> for item in pyfastx.Fastx('tests/data/test.fa', format="fasta"):
     >>>     print(item)
 
+If you want the sequence comment, you can set comment to True, New in ``pyfastx`` 0.9.0.
+
+.. code:: python
+
+    >>> fa = pyfastx.Fastx('tests/data/test.fa.gz', comment=True)
+    >>> for name,seq,comment in fa:
+    >>>     print(name)
+    >>>     print(seq)
+    >>>     print(comment)
+
+The comment is the content of header line after the first white space or tab character.
+
 FASTQ reads iteration
 ---------------------
 
-When iterating over reads on FASTX object, a tuple ``(name, seq, qual, comment)`` will be returned, the comment is the content of header line after the first white space character.
+When iterating over reads on FASTX object, a tuple ``(name, seq, qual)`` will be returned.
 
 .. code:: python
 
     >>> fq = pyfastx.Fastx('tests/data/test.fq.gz')
+    >>> for name,seq,qual in fq:
+    >>>     print(name)
+    >>>     print(seq)
+    >>>     print(qual)
+
+If you want the read comment, you can set comment to True, New in ``pyfastx`` 0.9.0.
+
+.. code:: python
+
+    >>> fq = pyfastx.Fastx('tests/data/test.fq.gz', comment=True)
     >>> for name,seq,qual,comment in fq:
     >>>     print(name)
     >>>     print(seq)
     >>>     print(qual)
     >>>     print(comment)
+
+The comment is the content of header line after the first white space or tab character.
 
 FASTA
 =====
@@ -990,9 +1009,15 @@ This will take a long time to finish. Becuase, pyfastx does not load the index i
 Testing
 =======
 
-The ``pyfaidx`` module was used to test ``pyfastx``. To run the tests:
+The ``pyfaidx`` module was used to test ``pyfastx``. First, make sure you have a suitable version installed::
 
-::
+    pip install pyfastx
+
+To test pyfastx, you should also install pyfaidx 0.5.8::
+
+    pip install pyfaidx==0.5.8
+
+Then, to run the tests::
 
 	$ python setup.py test
 

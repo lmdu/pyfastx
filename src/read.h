@@ -1,6 +1,7 @@
 #ifndef PYFASTX_READ_H
 #define PYFASTX_READ_H
-#include "Python.h"
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "zran.h"
 #include "kseq.h"
 #include "fastq.h"
@@ -11,19 +12,19 @@ typedef struct {
 	PyObject_HEAD
 
 	//read order id
-	uint64_t id;
+	Py_ssize_t id;
 
 	//read length
-	int read_len;
+	Py_ssize_t read_len;
 
 	//description length
 	int desc_len;
 
 	//seq start offset
-	int64_t seq_offset;
+	Py_ssize_t seq_offset;
 
 	//quality start offset
-	int64_t qual_offset;
+	Py_ssize_t qual_offset;
 
 	//parent fastq
 	pyfastx_FastqMiddleware *middle;

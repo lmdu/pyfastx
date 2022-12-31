@@ -1,7 +1,7 @@
 #ifndef PYFASTX_FASTA_KEYS_H
 #define PYFASTX_FASTA_KEYS_H
-#include "Python.h"
-#include <stdint.h>
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "sqlite3.h"
 
 typedef struct {
@@ -16,7 +16,7 @@ typedef struct {
 	sqlite3_stmt *in_stmt;
 
 	//sequence counts
-	uint64_t seq_counts;
+	Py_ssize_t seq_counts;
 
 	//filter string
 	char *temp_filter;
@@ -29,6 +29,6 @@ typedef struct {
 
 extern PyTypeObject pyfastx_FastaKeysType;
 
-PyObject *pyfastx_fasta_keys_create(sqlite3 *index_db, uint64_t seq_counts);
+PyObject *pyfastx_fasta_keys_create(sqlite3 *index_db, Py_ssize_t seq_counts);
 
 #endif

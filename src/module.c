@@ -1,4 +1,4 @@
-#include "Python.h"
+#include <Python.h>
 #include "fasta.h"
 #include "fastq.h"
 #include "fastx.h"
@@ -41,51 +41,23 @@ PyObject *pyfastx_gzip_check(PyObject *self, PyObject *args) {
 	Py_RETURN_FALSE;
 }
 
-/*PyObject *pyfastx_test(PyObject *self) {
-	PyObject *result;
-	char *hello = "hello, world";
-	result = PyUnicode_New(strlen(hello), 127);
-
-	if (result == NULL)
-		return NULL;
-
-	//Py_USC1 *data = PyUnicode_1BYTE_DATA(result);
-
-	memcpy(PyUnicode_1BYTE_DATA(result), hello, strlen(hello));
-	return result;
-	char *s = (char *)malloc(1);
-	s[0] = '\0';
-	return Py_BuildValue("s", s);
-}*/
-
 static PyMethodDef module_methods[] = {
-	//{"test", (PyCFunction)pyfastx_test, METH_NOARGS, NULL},
-	//{"clean_seq", clean_seq, METH_VARARGS, NULL},
-	//{"sub_seq", sub_seq, METH_VARARGS, NULL},
 	{"version", (PyCFunction)pyfastx_version, METH_VARARGS | METH_KEYWORDS, NULL},
 	{"gzip_check", (PyCFunction)pyfastx_gzip_check, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL}
 };
 
-#if PY_MAJOR_VERSION >= 3
-	static struct PyModuleDef module_pyfastx = {
-		PyModuleDef_HEAD_INIT,
-		"pyfastx",
-		"A python C extension for parsing fasta and fastq file",
-		-1,
-		module_methods,
-	};
-#endif
+static struct PyModuleDef module_pyfastx = {
+	PyModuleDef_HEAD_INIT,
+	"pyfastx",
+	"A python C extension for parsing fasta and fastq file",
+	-1,
+	module_methods,
+};
+
 
 static PyObject* pyfastx_module_init(void){
-	PyObject *module;
-
-#if PY_MAJOR_VERSION >= 3
-	module = PyModule_Create(&module_pyfastx);
-
-#else
-	module = Py_InitModule("pyfastx", module_methods);
-#endif
+	PyObject *module = PyModule_Create(&module_pyfastx);
 
 	if (module == NULL){
 		return NULL;
@@ -94,55 +66,55 @@ static PyObject* pyfastx_module_init(void){
 	if(PyType_Ready(&pyfastx_FastaType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_FastaType);
+	Py_INCREF(&pyfastx_FastaType);
 	PyModule_AddObject(module, "Fasta", (PyObject *)&pyfastx_FastaType);
 
 	if(PyType_Ready(&pyfastx_FastqType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_FastqType);
+	Py_INCREF(&pyfastx_FastqType);
 	PyModule_AddObject(module, "Fastq", (PyObject *)&pyfastx_FastqType);
 
 	if(PyType_Ready(&pyfastx_FastxType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_FastxType);
+	Py_INCREF(&pyfastx_FastxType);
 	PyModule_AddObject(module, "Fastx", (PyObject *)&pyfastx_FastxType);
 
 	if(PyType_Ready(&pyfastx_SequenceType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_SequenceType);
+	Py_INCREF(&pyfastx_SequenceType);
 	PyModule_AddObject(module, "Sequence", (PyObject *)&pyfastx_SequenceType);
-
 	
 	if(PyType_Ready(&pyfastx_ReadType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_ReadType);
+	Py_INCREF(&pyfastx_ReadType);
 	PyModule_AddObject(module, "Read", (PyObject *)&pyfastx_ReadType);
 
 	if(PyType_Ready(&pyfastx_FastaKeysType) < 0){
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_FastaKeysType);
+	Py_INCREF(&pyfastx_FastaKeysType);
 	PyModule_AddObject(module, "FastaKeys", (PyObject *)&pyfastx_FastaKeysType);
 
 	if (PyType_Ready(&pyfastx_FastqKeysType) < 0) {
 		return NULL;
 	}
-	Py_INCREF((PyObject *)&pyfastx_FastqKeysType);
+	Py_INCREF(&pyfastx_FastqKeysType);
 	PyModule_AddObject(module, "FastqKeys", (PyObject *)&pyfastx_FastqKeysType);
 
-	return module;
+	PyModule_AddStringConstant(module, "__version__", PYFASTX_VERSION);
+
+	if (!PyErr_Occurred()) {
+		return module;
+	} else {
+		Py_XDECREF(module);
+		return NULL;
+	}
 }
 
-#if PY_MAJOR_VERSION >= 3
 PyMODINIT_FUNC PyInit_pyfastx() {
 	return pyfastx_module_init();
 }
-#else
-PyMODINIT_FUNC initpyfastx(void) {
-	pyfastx_module_init();
-}
-#endif

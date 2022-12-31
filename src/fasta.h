@@ -1,12 +1,8 @@
 #ifndef PYFASTX_FASTA_H
 #define PYFASTX_FASTA_H
-#include "Python.h"
-#include "stdint.h"
-#include "zlib.h"
-#include "kseq.h"
-#include "zran.h"
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "index.h"
-#include "sqlite3.h"
 
 //make sequence iterator
 typedef struct {
@@ -16,16 +12,16 @@ typedef struct {
 	char* file_name;
 
 	//always output uppercase sequence
-	uint8_t uppercase;
+	int uppercase;
 
 	//total sequence counts
-	uint64_t seq_counts;
+	Py_ssize_t seq_counts;
 
 	//total sequence length (bp)
-	uint64_t seq_length;
+	Py_ssize_t seq_length;
 
 	//if build_index is True means has index
-	uint8_t has_index;
+	int has_index;
 
 	//iteration function
 	PyObject* (*func) (pyfastx_Index *);
@@ -40,7 +36,7 @@ extern PyTypeObject pyfastx_FastaType;
 void pyfastx_calc_fasta_attrs(pyfastx_Fasta *self);
 void pyfastx_fasta_calc_composition(pyfastx_Fasta *self);
 void pyfastx_fasta_dealloc(pyfastx_Fasta *self);
-uint64_t pyfastx_fasta_length(pyfastx_Fasta *self);
+Py_ssize_t pyfastx_fasta_length(pyfastx_Fasta *self);
 
 
 PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);

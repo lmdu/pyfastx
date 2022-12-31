@@ -1,27 +1,35 @@
-name: Code Coverage
+name: coverage
 
 on: [push, pull_request]
 
 jobs:
   run:
+    name: Coverage Test
     runs-on: ubuntu-latest
-    env:
-      OS: ubuntu-latest
-      PYTHON: '3.8'
 
     steps:
-      - uses: actions/checkout@master
-      - name: Setup Python
-        uses: actions/setup-python@master
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
-      - name: Generate coverage report
+          python-version: '3.10'
+
+      - name: Install requirements
         run: |
           pip install pyfaidx==0.5.8
-          python setup.py test
+          pip install pytest
+          pip install gcovr
+
+      - name: Generate coverage report
+        run: |
+          python setup.py build_ext -i
+          pytest tests
+          gcovr --filter src/ --xml -o coverage.xml
         env:
-          CPPFLAGS: -coverage
+          CFLAGS: --coverage
+
       - name: Upload Coverage to CodeCov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
+          files: ./coverage.xml
           fail_ci_if_error: true

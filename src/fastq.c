@@ -1,21 +1,30 @@
 #define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "fastq.h"
 #include "read.h"
 #include "fqkeys.h"
 #include "structmember.h"
 
 void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
-	sqlite3_stmt *stmt;
-	int64_t soff = 0, qoff = 0, pos = 0;
-	uint64_t size = 0;
-	kstring_t name = {0, 0, 0};
-	char* space;
-	int l, j, rlen = 0;
-	int dlen = 0;
-	const char *sql;
-	kstring_t line = {0, 0, 0};
-	uint64_t line_num = 0;
 	int ret;
+	int l;
+	int j;
+	int dlen = 0;
+
+	char* space;
+	const char *sql;
+
+	sqlite3_stmt *stmt;
+
+	Py_ssize_t rlen = 0;
+	Py_ssize_t soff = 0;
+	Py_ssize_t qoff = 0;
+	Py_ssize_t pos = 0;
+	Py_ssize_t size = 0;
+	Py_ssize_t line_num = 0;
+	
+	kstring_t name = {0, 0, 0};
+	kstring_t line = {0, 0, 0};
 
 	sql = " \
 		CREATE TABLE read ( \
@@ -51,15 +60,14 @@ void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
 		);";
 
 	PYFASTX_SQLITE_CALL(ret=sqlite3_open(self->index_file, &self->index_db));
-
 	if (ret != SQLITE_OK){
-		PyErr_Format(PyExc_ConnectionError, "can not open index file %s", self->index_file);
+		PyErr_Format(PyExc_ConnectionError, "could not open index file %s", self->index_file);
 		return;
 	}
 
 	PYFASTX_SQLITE_CALL(ret=sqlite3_exec(self->index_db, sql, NULL, NULL, NULL));
 	if (ret != SQLITE_OK){
-		PyErr_SetString(PyExc_RuntimeError, "can not create index table");
+		PyErr_SetString(PyExc_RuntimeError, "could not create index table");
 		return;
 	}
 
@@ -127,7 +135,7 @@ void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
 					sqlite3_bind_null(stmt, 1);
 					sqlite3_bind_text(stmt, 2, name.s, name.l, SQLITE_STATIC);
 					sqlite3_bind_int(stmt, 3, dlen);
-					sqlite3_bind_int(stmt, 4, rlen);
+					sqlite3_bind_int64(stmt, 4, rlen);
 					sqlite3_bind_int64(stmt, 5, soff);
 					sqlite3_bind_int64(stmt, 6, qoff);
 					sqlite3_step(stmt);
@@ -172,14 +180,14 @@ void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
 }
 
 void pyfastx_fastq_load_index(pyfastx_Fastq *self) {
-	sqlite3_stmt* stmt;
-	const char* sql;
 	int ret;
+	const char* sql;
+	sqlite3_stmt* stmt;	
 
 	PYFASTX_SQLITE_CALL(ret=sqlite3_open(self->index_file, &self->index_db));
 
 	if (ret != SQLITE_OK){
-		PyErr_Format(PyExc_ConnectionError, "can not open index file %s", self->index_file);
+		PyErr_Format(PyExc_ConnectionError, "could not open index file %s", self->index_file);
 		return;
 	}
 
@@ -235,18 +243,19 @@ PyObject *pyfastx_fastq_build_index(pyfastx_Fastq *self){
 }
 
 PyObject *pyfastx_fastq_next_null(pyfastx_FastqMiddleware *self) {
-	PyErr_SetString(PyExc_TypeError, "'Fastq' object is not an iterator");
+	PyErr_SetString(PyExc_TypeError, "'Fastq' object is not iterable");
 	return NULL;
 }
 
 PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
-	char *file_name;
-	Py_ssize_t file_len;
-
 	int phred = 0;
 	int build_index = 1;
 	int full_index = 0;
 	int full_name = 0;
+
+	char *file_name;
+
+	Py_ssize_t file_len;
 
 	static char* keywords[] = {"file_name", "phred", "build_index", "full_index", "full_name", NULL};
 
@@ -255,14 +264,6 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiii", keywords, &file_name, &file_len, &phred, &build_index, &full_index, &full_name)) {
 		return NULL;
 	}
-
-	//check input sequence file is whether exists
-	//file_name = (char *)PyUnicode_AsUTF8AndSize(file_obj, &file_len);
-	
-	/*if (!file_name) {
-		PyErr_Format(PyExc_ValueError, "the input file name is not a right string");
-		return NULL;
-	}*/
 
 	if (!file_exists(file_name)) {
 		PyErr_Format(PyExc_FileExistsError, "input fastq file %s does not exists", file_name);
@@ -320,7 +321,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	//is gzip file
 	if (obj->middle->gzip_format) {
 		obj->middle->gzip_index = (zran_index_t *)malloc(sizeof(zran_index_t));
-		zran_init(obj->middle->gzip_index, obj->middle->fd, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
+		zran_init(obj->middle->gzip_index, obj->middle->fd, NULL, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
 	}
 
 	if (file_exists(obj->index_file)) {
@@ -346,6 +347,8 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->middle->cache_buff = NULL;
 	obj->middle->cache_soff = 0;
 	obj->middle->cache_eoff = 0;
+
+	obj->middle->fastq = (PyObject *)obj;
 
 	return (PyObject *)obj;
 }
@@ -375,6 +378,8 @@ void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
 		free(self->middle->cache_buff);
 	}
 
+	self->middle->fastq = NULL;
+
 	ks_destroy(self->ks);
 	kseq_destroy(self->middle->kseq);
 	fclose(self->middle->fd);
@@ -383,7 +388,7 @@ void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-uint64_t pyfastx_fastq_length(pyfastx_Fastq *self) {
+Py_ssize_t pyfastx_fastq_length(pyfastx_Fastq *self) {
 	return self->read_counts;
 }
 
@@ -394,6 +399,9 @@ pyfastx_Read* pyfastx_fastq_new_read(pyfastx_FastqMiddleware *middle) {
 	read->qual = NULL;
 	read->raw = NULL;
 	read->desc = NULL;
+
+	Py_INCREF(middle->fastq);
+
 	return read;
 }
 
@@ -410,20 +418,19 @@ PyObject* pyfastx_fastq_make_read(pyfastx_FastqMiddleware *middle) {
 		memcpy(read->name, sqlite3_column_text(middle->iter_stmt, 1), nbytes);
 		read->name[nbytes] = '\0';
 		read->desc_len = sqlite3_column_int(middle->iter_stmt, 2);
-		read->read_len = sqlite3_column_int(middle->iter_stmt, 3);
+		read->read_len = sqlite3_column_int64(middle->iter_stmt, 3);
 		read->seq_offset = sqlite3_column_int64(middle->iter_stmt, 4);
 		read->qual_offset = sqlite3_column_int64(middle->iter_stmt, 5);
 		//sqlite3_finalize(stmt);
 	);
 
-	//Py_INCREF(read);
 	return (PyObject *)read;
 }
 
-PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint64_t read_id) {
-	pyfastx_Read *obj;
-	int nbytes;
+PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, Py_ssize_t read_id) {
 	int ret;
+	int nbytes;
+	pyfastx_Read *obj;
 
 	PYFASTX_SQLITE_CALL(
 		sqlite3_bind_int(self->id_stmt, 1, read_id);
@@ -439,11 +446,12 @@ PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint64_t read_id) {
 			memcpy(obj->name, sqlite3_column_text(self->id_stmt, 1), nbytes);
 			obj->name[nbytes] = '\0';
 			obj->desc_len = sqlite3_column_int(self->id_stmt, 2);
-			obj->read_len = sqlite3_column_int(self->id_stmt, 3);
+			obj->read_len = sqlite3_column_int64(self->id_stmt, 3);
 			obj->seq_offset = sqlite3_column_int64(self->id_stmt, 4);
 			obj->qual_offset = sqlite3_column_int64(self->id_stmt, 5);
 			sqlite3_reset(self->id_stmt);
 		);
+
 		return (PyObject *)obj;
 	} else {
 		PyErr_SetString(PyExc_IndexError, "Index Error");
@@ -452,10 +460,10 @@ PyObject* pyfastx_fastq_get_read_by_id(pyfastx_Fastq *self, uint64_t read_id) {
 }
 
 PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, PyObject* rname) {
-	pyfastx_Read *obj;
+	int ret;
 	char *name;
 	Py_ssize_t nbytes;
-	int ret;
+	pyfastx_Read *obj;
 
 	name = (char *)PyUnicode_AsUTF8AndSize(rname, &nbytes);
 
@@ -473,11 +481,12 @@ PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, PyObject* rname) {
 		PYFASTX_SQLITE_CALL(
 			obj->id = sqlite3_column_int64(self->name_stmt, 0);
 			obj->desc_len = sqlite3_column_int(self->name_stmt, 2);
-			obj->read_len = sqlite3_column_int(self->name_stmt, 3);
+			obj->read_len = sqlite3_column_int64(self->name_stmt, 3);
 			obj->seq_offset = sqlite3_column_int64(self->name_stmt, 4);
 			obj->qual_offset = sqlite3_column_int64(self->name_stmt, 5);
 			sqlite3_reset(self->name_stmt);
 		);
+
 		return (PyObject *)obj;
 	} else {
 		PyErr_Format(PyExc_KeyError, "%s does not exist in fastq file", name);
@@ -486,12 +495,13 @@ PyObject* pyfastx_fastq_get_read_by_name(pyfastx_Fastq *self, PyObject* rname) {
 }
 
 PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
+	Py_ssize_t i;
+
 	self->middle->iterating = 0;
 
 	if (PyUnicode_Check(item)) {
 		return pyfastx_fastq_get_read_by_name(self, item);
 	} else if (PyIndex_Check(item)) {
-		Py_ssize_t i;
 		i = PyNumber_AsSsize_t(item, PyExc_IndexError);
 
 		if (i < 0) {
@@ -519,10 +529,10 @@ PyObject* pyfastx_fastq_repr(pyfastx_Fastq *self) {
 }
 
 int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
-	sqlite3_stmt *stmt;
+	int ret;
 	char *name;
 	const char *sql;
-	int ret;
+	sqlite3_stmt *stmt;
 
 	if (!PyUnicode_Check(key)) {
 		return 0;
@@ -543,6 +553,7 @@ int pyfastx_fastq_contains(pyfastx_Fastq *self, PyObject *key) {
 
 PyObject *pyfastx_fastq_next_with_index_read(pyfastx_FastqMiddleware *middle) {
 	int ret;
+
 	PYFASTX_SQLITE_CALL(ret = sqlite3_step(middle->iter_stmt));
 
 	if (ret == SQLITE_ROW) {
@@ -572,6 +583,7 @@ PyObject *pyfastx_fastq_next_read(pyfastx_FastqMiddleware *middle) {
 PyObject *pyfastx_fastq_next_full_name_read(pyfastx_FastqMiddleware *middle) {
 	PyObject *rname;
 	PyObject *ret;
+
 	if (kseq_read(middle->kseq) >= 0) {
 		if (middle->kseq->comment.l) {
 			rname = PyUnicode_FromFormat("%s %s", middle->kseq->name.s, middle->kseq->comment.s);
@@ -621,48 +633,32 @@ PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 }
 
 PyObject *pyfastx_fastq_next(pyfastx_Fastq *self) {
-	/*if (self->has_index) {
-		int ret;
-		PYFASTX_SQLITE_CALL(ret = sqlite3_step(self->middle->iter_stmt));
-
-		if (ret == SQLITE_ROW) {
-			return pyfastx_fastq_make_read(self, self->middle->iter_stmt);
-		}
-
-	} else {
-		if (kseq_read(self->middle->kseq) >= 0) {
-			return Py_BuildValue("sss", self->middle->kseq->name.s, self->middle->kseq->seq.s, self->middle->kseq->qual.s);
-		}
-	}
-
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(self->middle->iter_stmt));
-	self->middle->iter_stmt = NULL;
-	self->middle->iterating = 0;
-
-	if (self->middle->cache_buff) {
-		free(self->middle->cache_buff);
-		self->middle->cache_buff = NULL;
-	}
-
-	return NULL;*/
 	return self->func(self->middle);
 }
 
 void pyfastx_fastq_calc_composition(pyfastx_Fastq *self) {
-	sqlite3_stmt *stmt;
-	kstring_t line = {0, 0, 0};
-	uint64_t a = 0, c = 0, g = 0, t = 0, n = 0;
-	uint64_t line_num = 0;
-	int i, j;
-	int ret;
-
-	//min and max read length
-	int minlen=10000000, maxlen=0;
+	int i, j, ret;
 
 	//min and max quality score
-	int minqs = 104, maxqs = 33, phred = 0;
+	int minqs = 104;
+	int maxqs = 33;
+	int phred = 0;
 
-	const char *sql = "SELECT * FROM meta LIMIT 1";
+	const char *sql;
+
+	sqlite3_stmt *stmt;
+	kstring_t line = {0, 0, 0};
+
+	//min and max read length
+	Py_ssize_t maxlen = 0;
+	Py_ssize_t minlen = 10000000000;
+
+	//base number
+	Py_ssize_t a = 0, c = 0, g = 0, t = 0, n = 0;
+	Py_ssize_t line_num = 0;
+	
+
+	sql = "SELECT * FROM meta LIMIT 1";
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 		ret = sqlite3_step(stmt);
@@ -671,9 +667,9 @@ void pyfastx_fastq_calc_composition(pyfastx_Fastq *self) {
 	if (ret == SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(
 			if (!self->maxlen)
-				self->maxlen = sqlite3_column_int(stmt, 0);
+				self->maxlen = sqlite3_column_int64(stmt, 0);
 			if (!self->minlen)
-				self->minlen = sqlite3_column_int(stmt, 1);
+				self->minlen = sqlite3_column_int64(stmt, 1);
 			if (!self->minqual)
 				self->minqual = sqlite3_column_int(stmt, 2);
 			if (!self->maxqual)
@@ -757,8 +753,8 @@ void pyfastx_fastq_calc_composition(pyfastx_Fastq *self) {
 	sql = "INSERT INTO meta VALUES (?,?,?,?,?);";
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
-		sqlite3_bind_int(stmt, 1, maxlen);
-		sqlite3_bind_int(stmt, 2, minlen);
+		sqlite3_bind_int64(stmt, 1, maxlen);
+		sqlite3_bind_int64(stmt, 2, minlen);
 		sqlite3_bind_int(stmt, 3, minqs);
 		sqlite3_bind_int(stmt, 4, maxqs);
 		sqlite3_bind_int(stmt, 5, phred);
@@ -775,12 +771,16 @@ void pyfastx_fastq_calc_composition(pyfastx_Fastq *self) {
 }
 
 PyObject* pyfastx_fastq_guess_encoding_type(pyfastx_Fastq* self, void* closure) {
-	sqlite3_stmt *stmt;
-	int maxqs, minqs;
+	int ret;
+	int maxqs;
+	int minqs;
+
 	const char *sql;
+
+	sqlite3_stmt *stmt;
+
 	PyObject* platforms;
 	PyObject* platform;
-	int ret;
 
 	pyfastx_fastq_calc_composition(self);
 
@@ -806,33 +806,48 @@ PyObject* pyfastx_fastq_guess_encoding_type(pyfastx_Fastq* self, void* closure) 
 	platforms = PyList_New(0);
 
 	//check fastq platform
-	if (minqs < 33 || maxqs > 104) {
-		return PyErr_Format(PyExc_TypeError, "Quality values corrupt. found [%d, %d] where [33, 104] was expected", minqs, maxqs);
+	if (minqs < 33 || maxqs > 126) {
+		//return PyErr_Format(PyExc_TypeError, "Quality values corrupt. found [%d, %d] where [33, 104] was expected", minqs, maxqs);
+		platform = Py_BuildValue("s", "Unknown");
+		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
+		return platforms;
 	}
 
 	if (minqs >= 33 && maxqs <= 73) {
 		platform = Py_BuildValue("s", "Sanger Phred+33");
 		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	if (minqs >= 33 && maxqs <= 74) {
 		platform = Py_BuildValue("s", "Illumina 1.8+ Phred+33");
 		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	if (minqs >= 59 && maxqs <= 104) {
 		platform = Py_BuildValue("s", "Solexa Solexa+64");
 		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	if (minqs >= 64 && maxqs <= 104) {
 		platform = Py_BuildValue("s", "Illumina 1.3+ Phred+64");
 		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	if (minqs >= 66 && maxqs <= 104) {
 		platform = Py_BuildValue("s", "Illumina 1.5+ Phred+64");
 		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
+	}
+
+	if (minqs >= 33 && maxqs <= 126) {
+		platform = Py_BuildValue("s", "PacBio HiFi Phred+33");
+		PyList_Append(platforms, platform);
+		Py_DECREF(platform);
 	}
 
 	return platforms;
@@ -863,8 +878,8 @@ PyObject* pyfastx_fastq_maxqual(pyfastx_Fastq *self, void* closure) {
 }
 
 PyObject* pyfastx_fastq_minlen(pyfastx_Fastq *self, void* closure) {
-	sqlite3_stmt *stmt;
 	int ret;
+	sqlite3_stmt *stmt;
 
 	if (!self->minlen) {
 		PYFASTX_SQLITE_CALL(
@@ -873,19 +888,19 @@ PyObject* pyfastx_fastq_minlen(pyfastx_Fastq *self, void* closure) {
 		);
 
 		if (ret == SQLITE_ROW) {
-			PYFASTX_SQLITE_CALL(self->minlen=sqlite3_column_double(stmt, 0));
+			PYFASTX_SQLITE_CALL(self->minlen=sqlite3_column_int64(stmt, 0));
 		}
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		stmt = NULL;
 
 		if (!self->minlen) {
 			PYFASTX_SQLITE_CALL(
-				sqlite3_prepare_v2(self->index_db, "SELECT min(rlen) FROM read", -1, &stmt, NULL);
+				sqlite3_prepare_v2(self->index_db, "SELECT MIN(rlen) FROM read", -1, &stmt, NULL);
 				ret = sqlite3_step(stmt);
 			);
 
 			if (ret == SQLITE_ROW) {
-				PYFASTX_SQLITE_CALL(self->minlen=sqlite3_column_double(stmt, 0));
+				PYFASTX_SQLITE_CALL(self->minlen=sqlite3_column_int64(stmt, 0));
 			}
 
 			sqlite3_finalize(stmt);
@@ -893,12 +908,12 @@ PyObject* pyfastx_fastq_minlen(pyfastx_Fastq *self, void* closure) {
 
 	}
 
-	return Py_BuildValue("I", self->minlen);
+	return Py_BuildValue("n", self->minlen);
 }
 
 PyObject* pyfastx_fastq_maxlen(pyfastx_Fastq *self, void* closure) {
-	sqlite3_stmt *stmt;
 	int ret;
+	sqlite3_stmt *stmt;
 
 	if (!self->maxlen) {
 		PYFASTX_SQLITE_CALL(
@@ -907,19 +922,19 @@ PyObject* pyfastx_fastq_maxlen(pyfastx_Fastq *self, void* closure) {
 		);
 
 		if (ret == SQLITE_ROW) {
-			PYFASTX_SQLITE_CALL(self->maxlen=sqlite3_column_double(stmt, 0));
+			PYFASTX_SQLITE_CALL(self->maxlen=sqlite3_column_int64(stmt, 0));
 		}
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		stmt = NULL;
 
 		if (!self->maxlen) {
 			PYFASTX_SQLITE_CALL(
-				sqlite3_prepare_v2(self->index_db, "SELECT max(rlen) FROM read", -1, &stmt, NULL);
+				sqlite3_prepare_v2(self->index_db, "SELECT MAX(rlen) FROM read", -1, &stmt, NULL);
 				ret = sqlite3_step(stmt);
 			);
 
 			if (ret == SQLITE_ROW) {
-				PYFASTX_SQLITE_CALL(self->maxlen=sqlite3_column_double(stmt, 0));
+				PYFASTX_SQLITE_CALL(self->maxlen=sqlite3_column_int64(stmt, 0));
 			}
 
 			sqlite3_finalize(stmt);
@@ -927,14 +942,16 @@ PyObject* pyfastx_fastq_maxlen(pyfastx_Fastq *self, void* closure) {
 
 	}
 
-	return Py_BuildValue("I", self->maxlen);
+	return Py_BuildValue("n", self->maxlen);
 }
 
 PyObject* pyfastx_fastq_gc_content(pyfastx_Fastq *self, void* closure) {
-	sqlite3_stmt *stmt;
-	int64_t a, c, g, t;
-	const char *sql;
 	int ret;
+	const char *sql;
+
+	sqlite3_stmt *stmt;
+
+	Py_ssize_t a, c, g, t;
 
 	if (self->gc_content) {
 		return Py_BuildValue("f", self->gc_content);
@@ -950,7 +967,7 @@ PyObject* pyfastx_fastq_gc_content(pyfastx_Fastq *self, void* closure) {
 	
 	if (ret != SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-		PyErr_SetString(PyExc_RuntimeError, "can not calculate gc content");
+		PyErr_SetString(PyExc_RuntimeError, "could not calculate gc content");
 		return NULL;
 	}
 
@@ -968,15 +985,16 @@ PyObject* pyfastx_fastq_gc_content(pyfastx_Fastq *self, void* closure) {
 }
 
 PyObject* pyfastx_fastq_composition(pyfastx_Fastq *self, void* closure) {
-	sqlite3_stmt *stmt;
-	int64_t a, c, g, t, n;
-	const char *sql;
 	int ret;
+	const char *sql;
+
+	sqlite3_stmt *stmt;
+
+	Py_ssize_t a, c, g, t, n;
 
 	pyfastx_fastq_calc_composition(self);
 	
 	sql = "SELECT * FROM base LIMIT 1";
-	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index_db, sql, -1, &stmt, NULL);
 		ret = sqlite3_step(stmt);
@@ -984,7 +1002,7 @@ PyObject* pyfastx_fastq_composition(pyfastx_Fastq *self, void* closure) {
 	
 	if (ret != SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-		PyErr_SetString(PyExc_RuntimeError, "can not get composition");
+		PyErr_SetString(PyExc_RuntimeError, "could not get composition");
 		return NULL;
 	}
 
@@ -997,7 +1015,7 @@ PyObject* pyfastx_fastq_composition(pyfastx_Fastq *self, void* closure) {
 		sqlite3_finalize(stmt);
 	);
 
-	return Py_BuildValue("{s:L,s:L,s:L,s:L,s:L}","A",a,"C",c,"G",g,"T",t,"N",n);
+	return Py_BuildValue("{s:n,s:n,s:n,s:n,s:n}","A",a,"C",c,"G",g,"T",t,"N",n);
 }
 
 PyObject* pyfastx_fastq_isgzip(pyfastx_Fastq *self, void* closure) {
@@ -1013,22 +1031,12 @@ PyObject *pyfastx_fastq_keys(pyfastx_Fastq *self, void* closure) {
 }
 
 static PySequenceMethods pyfastx_fastq_as_sequence = {
-	0, /*sq_length*/
-	0, /*sq_concat*/
-	0, /*sq_repeat*/
-	0, /*sq_item*/
-	0, /*sq_slice */
-	0, /*sq_ass_item*/
-	0, /*sq_ass_splice*/
-	(objobjproc)pyfastx_fastq_contains, /*sq_contains*/
-	0, /*sq_inplace_concat*/
-	0, /*sq_inplace_repeat*/
+	.sq_contains = (objobjproc)pyfastx_fastq_contains,
 };
 
 static PyMappingMethods pyfastx_fastq_as_mapping = {
-	(lenfunc)pyfastx_fastq_length,
-	(binaryfunc)pyfastx_fastq_subscript,
-	0,
+	.mp_length = (lenfunc)pyfastx_fastq_length,
+	.mp_subscript = (binaryfunc)pyfastx_fastq_subscript,
 };
 
 static PyMethodDef pyfastx_fastq_methods[] = {
@@ -1052,51 +1060,24 @@ static PyGetSetDef pyfastx_fastq_getsets[] = {
 
 static PyMemberDef pyfastx_fastq_members[] = {
 	{"file_name", T_STRING, offsetof(pyfastx_Fastq, file_name), READONLY},
-	{"size", T_ULONGLONG, offsetof(pyfastx_Fastq, seq_length), READONLY},
-	{"avglen", T_FLOAT, offsetof(pyfastx_Fastq, avg_length), READONLY},
-	//{"is_gzip", T_BOOL, offsetof(pyfastx_Fastq, gzip_format), READONLY},
-	//{"gc_content", T_FLOAT, offsetof(pyfastx_Fastq, gc_content), READONLY},
-	//{"composition", T_OBJECT, offsetof(pyfastx_Fastq, composition), READONLY},
+	{"size", T_PYSSIZET, offsetof(pyfastx_Fastq, seq_length), READONLY},
+	{"avglen", T_DOUBLE, offsetof(pyfastx_Fastq, avg_length), READONLY},
 	{NULL}
 };
 
 PyTypeObject pyfastx_FastqType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "Fastq",                        /* tp_name */
-    sizeof(pyfastx_Fastq),          /* tp_basicsize */
-    0,                              /* tp_itemsize */
-    (destructor)pyfastx_fastq_dealloc,   /* tp_dealloc */
-    0,                              /* tp_print */
-    0,                              /* tp_getattr */
-    0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
-    (reprfunc)pyfastx_fastq_repr,                              /* tp_repr */
-    0,                              /* tp_as_number */
-    &pyfastx_fastq_as_sequence,                   /* tp_as_sequence */
-    &pyfastx_fastq_as_mapping,                   /* tp_as_mapping */
-    0,                              /* tp_hash */
-    0,                              /* tp_call */
-    0,                              /* tp_str */
-    0,                              /* tp_getattro */
-    0,                              /* tp_setattro */
-    0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,             /* tp_flags */
-    0,                              /* tp_doc */
-    0,                              /* tp_traverse */
-    0,                              /* tp_clear */
-    0,                              /* tp_richcompare */
-    0,                              /* tp_weaklistoffset */
-    (getiterfunc)pyfastx_fastq_iter,     /* tp_iter */
-    (iternextfunc)pyfastx_fastq_next,    /* tp_iternext */
-    pyfastx_fastq_methods,          /* tp_methods */
-    pyfastx_fastq_members,          /* tp_members */
-    pyfastx_fastq_getsets,                              /* tp_getset */
-    0,                              /* tp_base */
-    0,                              /* tp_dict */
-    0,                              /* tp_descr_get */
-    0,                              /* tp_descr_set */
-    0,                              /* tp_dictoffset */
-    0,                              /* tp_init */
-    PyType_GenericAlloc,            /* tp_alloc */
-    pyfastx_fastq_new,              /* tp_new */
+    .tp_name = "Fastq",
+    .tp_basicsize = sizeof(pyfastx_Fastq),
+    .tp_dealloc = (destructor)pyfastx_fastq_dealloc,
+    .tp_repr = (reprfunc)pyfastx_fastq_repr,
+    .tp_as_sequence = &pyfastx_fastq_as_sequence,
+    .tp_as_mapping = &pyfastx_fastq_as_mapping,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_iter = (getiterfunc)pyfastx_fastq_iter,
+    .tp_iternext = (iternextfunc)pyfastx_fastq_next,
+    .tp_methods = pyfastx_fastq_methods,
+    .tp_members = pyfastx_fastq_members,
+    .tp_getset = pyfastx_fastq_getsets,
+    .tp_new = pyfastx_fastq_new,
 };

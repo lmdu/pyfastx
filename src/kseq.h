@@ -1,7 +1,8 @@
 #ifndef AC_KSEQ_H
 #define AC_KSEQ_H
-#include "Python.h"
-#include <stdint.h>
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+//#include <stdint.h>
 #include <ctype.h>
 #include "zlib.h"
 
@@ -23,12 +24,14 @@
 
 typedef struct __kstream_t {
 	unsigned char *buf;
-	int64_t begin, end, is_eof;
+	//int64_t begin, end, is_eof;
+	Py_ssize_t begin, end, is_eof;
 	gzFile f;
 } kstream_t;
 
 typedef struct __kstring_t {
-	int64_t l, m;
+	//int64_t l, m;
+	Py_ssize_t l, m;
 	char *s;
 } kstring_t;
 
@@ -41,11 +44,11 @@ typedef struct {
 kstream_t *ks_init(gzFile f);
 void ks_destroy(kstream_t *ks);
 int ks_getc(kstream_t *ks);
-int ks_getuntil2(kstream_t *ks, int delimiter, kstring_t *str, int *dret, int append);
-int ks_getuntil(kstream_t *ks, int delimiter, kstring_t *str, int *dret);
+Py_ssize_t ks_getuntil2(kstream_t *ks, int delimiter, kstring_t *str, int *dret, int append);
+Py_ssize_t ks_getuntil(kstream_t *ks, int delimiter, kstring_t *str, int *dret);
 kseq_t *kseq_init(gzFile fd);
 void kseq_rewind(kseq_t *ks);
 void kseq_destroy(kseq_t *ks);
-int kseq_read(kseq_t *seq);
+Py_ssize_t kseq_read(kseq_t *seq);
 
 #endif

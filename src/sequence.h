@@ -1,7 +1,7 @@
 #ifndef PYFASTX_SEQ_H
 #define PYFASTX_SEQ_H
-#include "Python.h"
-#include "stdint.h"
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "index.h"
 #include "kseq.h"
 #include "util.h"
@@ -11,7 +11,7 @@ typedef struct {
 	PyObject_HEAD
 
 	//sequence order
-	uint64_t id;
+	Py_ssize_t id;
 	
 	//sequence name
 	char* name;
@@ -26,16 +26,16 @@ typedef struct {
 	kstring_t line;
 
 	//start position
-	uint32_t start;
+	Py_ssize_t start;
 
 	//end position
-	uint32_t end;
+	Py_ssize_t end;
 
 	//sequence real length
-	uint32_t seq_len;
+	Py_ssize_t seq_len;
 
 	//description length
-	uint32_t desc_len;
+	int desc_len;
 
 	//subsequence parent length
 	//uint32_t parent_len;
@@ -44,22 +44,22 @@ typedef struct {
 	pyfastx_Index* index;
 
 	//start offset in fasta file
-	int64_t offset;
+	Py_ssize_t offset;
 
 	//byte length for sequence
-	uint32_t byte_len;
+	Py_ssize_t byte_len;
 
 	//each line length of sequence
-	uint32_t line_len;
+	Py_ssize_t line_len;
 
 	//line end length, \n or \r\n
-	uint8_t end_len;
+	int end_len;
 
 	//standard fasta format with same line length
-	uint8_t normal;
+	int normal;
 
 	//complete sequence or subsequence
-	uint8_t complete;
+	int complete;
 
 	//line iteration cache
 	char* line_cache;
@@ -71,7 +71,7 @@ typedef struct {
 
 extern PyTypeObject pyfastx_SequenceType;
 
-uint32_t pyfastx_sequence_length(pyfastx_Sequence* self);
+Py_ssize_t pyfastx_sequence_length(pyfastx_Sequence* self);
 char *pyfastx_sequence_acquire(pyfastx_Sequence* self);
 int pyfastx_sequence_contains(pyfastx_Sequence *self, PyObject *key);
 

@@ -1,3 +1,5 @@
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "read.h"
 #include "util.h"
 #include "time.h"
@@ -22,21 +24,34 @@ void pyfastx_read_dealloc(pyfastx_Read *self) {
         free(self->desc);
     }
 
+    Py_DECREF(self->middle->fastq);
+    self->middle = NULL;
+
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-int pyfastx_read_length(pyfastx_Read *self) {
+Py_ssize_t pyfastx_read_length(pyfastx_Read *self) {
     return self->read_len;
+}
+
+void pyfastx_read_random_reader(pyfastx_Read *self, char *buff, Py_ssize_t offset, Py_ssize_t bytes) {
+    if (self->middle->gzip_format) {
+        zran_seek(self->middle->gzip_index, offset, SEEK_SET, NULL);
+        zran_read(self->middle->gzip_index, buff, bytes);
+    } else {
+        FSEEK(self->middle->fd, offset, SEEK_SET);
+        fread(buff, bytes, 1, self->middle->fd);
+    }
 }
 
 //read content from buff or file
 void pyfastx_read_continue_reader(pyfastx_Read *self) {
-    int32_t slice_offset;
-    int32_t slice_length;
-    int32_t residue_len;
-    int32_t read_len;
-    int32_t cache_len;
-    int64_t offset;
+    Py_ssize_t slice_offset;
+    Py_ssize_t slice_length;
+    Py_ssize_t residue_len;
+    Py_ssize_t read_len;
+    Py_ssize_t cache_len;
+    Py_ssize_t offset;
 
     //read raw string offset
     offset = self->seq_offset - self->desc_len - 1;
@@ -48,28 +63,34 @@ void pyfastx_read_continue_reader(pyfastx_Read *self) {
 
     self->raw = (char *)malloc(residue_len + 2);
 
-    while (residue_len > 0) {
-        if (offset >= self->middle->cache_soff && offset < self->middle->cache_eoff) {
-            slice_offset = offset - self->middle->cache_soff;
-            slice_length = self->middle->cache_eoff - offset;
+    if (offset < self->middle->cache_soff) {
+        pyfastx_read_random_reader(self, self->raw, offset, residue_len);
+    } else {
+        while (residue_len > 0) {
+            if (offset >= self->middle->cache_soff && offset < self->middle->cache_eoff) {
+                slice_offset = offset - self->middle->cache_soff;
+                slice_length = self->middle->cache_eoff - offset;
 
-            if (slice_length >= residue_len) {
-                cache_len = residue_len;
-            } else {
-                //cache_len = self->middle->cache_eoff - self->middle->cache_soff;
-                cache_len = slice_length;
+                if (slice_length >= residue_len) {
+                    cache_len = residue_len;
+                } else {
+                    //cache_len = self->middle->cache_eoff - self->middle->cache_soff;
+                    cache_len = slice_length;
+                }
+
+                memcpy(self->raw+read_len, self->middle->cache_buff+slice_offset, cache_len);
+                read_len += cache_len;
+                residue_len -= cache_len;
             }
 
-            memcpy(self->raw+read_len, self->middle->cache_buff+slice_offset, cache_len);
-            read_len += cache_len;
-            residue_len -= cache_len;
-        }
+            if (residue_len > 0) {
+                offset += cache_len;
+                self->middle->cache_soff = self->middle->cache_eoff;
+                gzread(self->middle->gzfd, self->middle->cache_buff, 1048576);
+                self->middle->cache_eoff = gztell(self->middle->gzfd);
+            }
 
-        if (residue_len > 0) {
-            offset += cache_len;
-            self->middle->cache_soff = self->middle->cache_eoff;
-            gzread(self->middle->gzfd, self->middle->cache_buff, 1048576);
-            self->middle->cache_eoff = gztell(self->middle->gzfd);
+            //known error: fastq file without line ending in last line
         }
     }
 
@@ -94,25 +115,14 @@ void pyfastx_read_continue_reader(pyfastx_Read *self) {
     self->qual[self->read_len] = '\0';
 }
 
-void pyfastx_read_random_reader(pyfastx_Read *self, char *buff, int64_t offset, uint32_t bytes) {
-    if (self->middle->gzip_format) {
-        zran_seek(self->middle->gzip_index, offset, SEEK_SET, NULL);
-        zran_read(self->middle->gzip_index, buff, bytes);
-    } else {
-        /*gzseek(self->middle->gzfd, offset, SEEK_SET);
-        gzread(self->middle->gzfd, buff, bytes);*/
-        FSEEK(self->middle->fd, offset, SEEK_SET);
-        fread(buff, bytes, 1, self->middle->fd);
-    }
-}
-
 PyObject* pyfastx_read_raw(pyfastx_Read *self, void* closure) {
+    Py_ssize_t new_offset;
+    Py_ssize_t new_bytelen;
+
     if (! self->raw) {
         if (self->middle->iterating) {
             pyfastx_read_continue_reader(self);
         } else {
-            int64_t new_offset;
-            int64_t new_bytelen;
             new_offset = self->seq_offset - self->desc_len - 1;
             new_bytelen = self->qual_offset + self->read_len - new_offset + 1;
 
@@ -150,48 +160,56 @@ PyObject* pyfastx_read_seq(pyfastx_Read *self, void* closure) {
 }
 
 PyObject* pyfastx_read_reverse(pyfastx_Read *self, void* closure) {
-    PyObject* ret;
     char *data;
+    PyObject* ret;
+
     pyfastx_read_get_seq(self);
+
     ret = PyUnicode_New(self->read_len, 127);
     data = (char *)PyUnicode_1BYTE_DATA(ret);
     memcpy(data, self->seq, self->read_len);
+ 
     reverse_seq(data);
 
     return ret;
 }
 
 PyObject* pyfastx_read_complement(pyfastx_Read *self, void* closure) {
-    PyObject* ret;
     char *data;
+    PyObject* ret;
+
     pyfastx_read_get_seq(self);
+
     ret = PyUnicode_New(self->read_len, 127);
     data = (char *)PyUnicode_1BYTE_DATA(ret);
     memcpy(data, self->seq, self->read_len);
+
     complement_seq(data);
 
     return ret;
 }
 
 PyObject* pyfastx_read_antisense(pyfastx_Read *self, void* closure) {
-    PyObject* ret;
     char *data;
+    PyObject* ret;
+
     pyfastx_read_get_seq(self);
+
     ret = PyUnicode_New(self->read_len, 127);
     data = (char *)PyUnicode_1BYTE_DATA(ret);
     memcpy(data, self->seq, self->read_len);
+
     reverse_complement_seq(data);
 
     return ret;
 }
 
 PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
+    Py_ssize_t new_offset;
+
     if (self->middle->iterating) {
         pyfastx_read_continue_reader(self);
-    }
-    else if (!self->desc) {
-        int64_t new_offset;
-
+    } else if (!self->desc) {
         new_offset = self->seq_offset - self->desc_len - 1;
         self->desc = (char *)malloc(self->desc_len + 1);
 
@@ -210,8 +228,7 @@ PyObject* pyfastx_read_description(pyfastx_Read *self, void* closure) {
 PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
     if (self->middle->iterating) {
         pyfastx_read_continue_reader(self);
-    }
-    else if (!self->qual) {
+    } else if (!self->qual) {
         self->qual = (char *)malloc(self->read_len + 1);
         pyfastx_read_random_reader(self, self->qual, self->qual_offset, self->read_len);
         self->qual[self->read_len] = '\0';
@@ -221,8 +238,9 @@ PyObject* pyfastx_read_qual(pyfastx_Read *self, void* closure) {
 }
 
 PyObject* pyfastx_read_quali(pyfastx_Read *self, void* closure) {
-    int phred;
     int i;
+    int phred;
+
     PyObject *quals;
     PyObject *q;
 
@@ -263,57 +281,26 @@ static PyGetSetDef pyfastx_read_getsets[] = {
 };
 
 static PyMappingMethods pyfastx_read_as_mapping = {
-	(lenfunc)pyfastx_read_length,
-	//(binaryfunc)pyfastx_fasta_subscript,
-	0,
+	.mp_length = (lenfunc)pyfastx_read_length,
 };
 
 static PyMemberDef pyfastx_read_members[] = {
-    {"id", T_ULONGLONG, offsetof(pyfastx_Read, id), READONLY},
+    {"id", T_PYSSIZET, offsetof(pyfastx_Read, id), READONLY},
 	{"name", T_STRING, offsetof(pyfastx_Read, name), READONLY},
-	//{"size", T_LONG, offsetof(pyfastx_Read, seq_length), READONLY},
-	//{"gc_content", T_FLOAT, offsetof(pyfastx_Read, gc_content), READONLY},
-	//{"composition", T_OBJECT, offsetof(pyfastx_Read, composition), READONLY},
 	{NULL}
 };
 
 PyTypeObject pyfastx_ReadType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "Read",                        /* tp_name */
-    sizeof(pyfastx_Read),          /* tp_basicsize */
-    0,                              /* tp_itemsize */
-    (destructor)pyfastx_read_dealloc,   /* tp_dealloc */
-    0,                              /* tp_print */
-    0,                              /* tp_getattr */
-    0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
-    (reprfunc)pyfastx_read_repr,                              /* tp_repr */
-    0,                              /* tp_as_number */
-    0,                   /* tp_as_sequence */
-    &pyfastx_read_as_mapping,                   /* tp_as_mapping */
-    0,                              /* tp_hash */
-    0,                              /* tp_call */
-    (reprfunc)pyfastx_read_str,                              /* tp_str */
-    0,                              /* tp_getattro */
-    0,                              /* tp_setattro */
-    0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,             /* tp_flags */
-    0,                              /* tp_doc */
-    0,                              /* tp_traverse */
-    0,                              /* tp_clear */
-    0,                              /* tp_richcompare */
-    0,                              /* tp_weaklistoffset */
-    0,     /* tp_iter */
-    0,    /* tp_iternext */
-    0,          /* tp_methods */
-    pyfastx_read_members,          /* tp_members */
-    pyfastx_read_getsets,                              /* tp_getset */
-    0,                              /* tp_base */
-    0,                              /* tp_dict */
-    0,                              /* tp_descr_get */
-    0,                              /* tp_descr_set */
-    0,                              /* tp_dictoffset */
-    0,                              /* tp_init */
-    PyType_GenericAlloc,            /* tp_alloc */
-    PyType_GenericNew,              /* tp_new */
+    .tp_name = "Read",
+    .tp_basicsize = sizeof(pyfastx_Read),
+    .tp_dealloc = (destructor)pyfastx_read_dealloc,
+    .tp_repr = (reprfunc)pyfastx_read_repr,
+    .tp_as_mapping = &pyfastx_read_as_mapping,
+    .tp_str = (reprfunc)pyfastx_read_str,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_members = pyfastx_read_members,
+    .tp_getset = pyfastx_read_getsets,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = PyType_GenericNew,
 };

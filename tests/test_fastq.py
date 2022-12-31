@@ -4,7 +4,7 @@ import pyfastx
 import unittest
 
 join = os.path.join
-data_dir = join(os.path.dirname(__file__), 'data')
+data_dir = join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 gzip_fastq = join(data_dir, 'test.fq.gz')
 flat_fastq = join(data_dir, 'test.fq')
@@ -88,7 +88,7 @@ class FastqTest(unittest.TestCase):
 		self.assertEqual(self.fastq.composition, self.bases)
 
 		# test encoding type
-		self.assertEqual(['Sanger Phred+33', 'Illumina 1.8+ Phred+33'], self.fastq.encoding_type)
+		self.assertEqual(['Sanger Phred+33', 'Illumina 1.8+ Phred+33', 'PacBio HiFi Phred+33'], self.fastq.encoding_type)
 
 		# test phred
 		self.assertEqual(self.fastq.phred, 33)

@@ -1,36 +1,46 @@
 #define PY_SSIZE_T_CLEAN
+#include <Python.h>
 #include "fastx.h"
 #include "util.h"
 
-/*PyObject *pyfastx_fastx_null(kseq_t* kseqs) {
-	PyErr_SetString(PyExc_TypeError, "'Fastx' object is not an iterator");
-	return NULL;
-}*/
-
 PyObject *pyfastx_fastx_fasta(kseq_t* kseqs) {
-	return Py_BuildValue("sss", kseqs->name.s, kseqs->seq.s, kseqs->comment.s);
+	return Py_BuildValue("ss", kseqs->name.s, kseqs->seq.s);
+}
+
+PyObject *pyfastx_fastx_fasta_comment(kseq_t* kseqs) {
+	return Py_BuildValue("sss#", kseqs->name.s, kseqs->seq.s, kseqs->comment.s, kseqs->comment.l);
 }
 
 PyObject *pyfastx_fastx_fasta_upper(kseq_t* kseqs) {
-	upper_string(kseqs->seq.s, kseqs->seq.l);
 	return pyfastx_fastx_fasta(kseqs);
 }
 
+PyObject *pyfastx_fastx_fasta_upper_comment(kseq_t* kseqs) {
+	upper_string(kseqs->seq.s, kseqs->seq.l);
+	return pyfastx_fastx_fasta_comment(kseqs);
+}
+
 PyObject *pyfastx_fastx_fastq(kseq_t* kseqs) {
-	return Py_BuildValue("ssss", kseqs->name.s, kseqs->seq.s, kseqs->qual.s, kseqs->comment.s);
+	return Py_BuildValue("sss", kseqs->name.s, kseqs->seq.s, kseqs->qual.s);
+}
+
+PyObject *pyfastx_fastx_fastq_comment(kseq_t* kseqs) {
+	return Py_BuildValue("ssss#", kseqs->name.s, kseqs->seq.s, kseqs->qual.s, kseqs->comment.s, kseqs->comment.l);
 }
 
 PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
-	//fasta or fastq file path
-	Py_ssize_t file_len;
-	char *file_name;
 	int uppercase = 0;
+	int comment = 0;
+
+	char *file_name;
 	char *format = "auto";
+
+	Py_ssize_t file_len;
 
 	pyfastx_Fastx *obj;
 
-	static char* keywords[] = {"file_name", "format", "uppercase", NULL};
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|si", keywords, &file_name, &file_len, &format, &uppercase)) {
+	static char* keywords[] = {"file_name", "format", "uppercase", "comment", NULL};
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|sii", keywords, &file_name, &file_len, &format, &uppercase, &comment)) {
 		return NULL;
 	}
 
@@ -65,22 +75,32 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 
 	obj->uppercase = uppercase;
+	obj->comment = comment;
 
 	//initial kseq
 	gzrewind(obj->gzfd);
 	obj->kseqs = kseq_init(obj->gzfd);
 
-	//iter function
-	//obj->func = pyfastx_fastx_null;
-
 	if (obj->format == 1) {
 		if (obj->uppercase) {
-			obj->func = pyfastx_fastx_fasta_upper;
+			if (obj->comment) {
+				obj->func = pyfastx_fastx_fasta_upper_comment;
+			} else {
+				obj->func = pyfastx_fastx_fasta_upper;
+			}
 		} else {
-			obj->func = pyfastx_fastx_fasta;
+			if (obj->comment) {
+				obj->func = pyfastx_fastx_fasta_comment;
+			} else {
+				obj->func = pyfastx_fastx_fasta;
+			}
 		}
 	} else {
-		obj->func = pyfastx_fastx_fastq;
+		if (obj->comment) {
+			obj->func = pyfastx_fastx_fastq_comment;
+		} else {
+			obj->func = pyfastx_fastx_fastq;
+		}
 	}
 
 	return (PyObject *)obj;
@@ -117,41 +137,12 @@ PyObject *pyfastx_fastx_repr(pyfastx_Fastx *self) {
 
 PyTypeObject pyfastx_FastxType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "Fastx",                        /* tp_name */
-    sizeof(pyfastx_Fastx),          /* tp_basicsize */
-    0,                              /* tp_itemsize */
-    (destructor)pyfastx_fastx_dealloc,   /* tp_dealloc */
-    0,                              /* tp_print */
-    0,                              /* tp_getattr */
-    0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
-    (reprfunc)pyfastx_fastx_repr,                              /* tp_repr */
-    0,                              /* tp_as_number */
-    0,                   /* tp_as_sequence */
-    0,                   /* tp_as_mapping */
-    0,                              /* tp_hash */
-    0,                              /* tp_call */
-    0,                              /* tp_str */
-    0,                              /* tp_getattro */
-    0,                              /* tp_setattro */
-    0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,             /* tp_flags */
-    0,                              /* tp_doc */
-    0,                              /* tp_traverse */
-    0,                              /* tp_clear */
-    0,                              /* tp_richcompare */
-    0,                              /* tp_weaklistoffset */
-    (getiterfunc)pyfastx_fastx_iter,     /* tp_iter */
-    (iternextfunc)pyfastx_fastx_next,    /* tp_iternext */
-    0,          /* tp_methods */
-    0,          /* tp_members */
-    0,                              /* tp_getset */
-    0,                              /* tp_base */
-    0,                              /* tp_dict */
-    0,                              /* tp_descr_get */
-    0,                              /* tp_descr_set */
-    0,                              /* tp_dictoffset */
-    0,                              /* tp_init */
-    PyType_GenericAlloc,            /* tp_alloc */
-    pyfastx_fastx_new,              /* tp_new */
+    .tp_name = "Fastx",
+    .tp_basicsize = sizeof(pyfastx_Fastx),
+    .tp_dealloc = (destructor)pyfastx_fastx_dealloc,
+    .tp_repr = (reprfunc)pyfastx_fastx_repr,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_iter = (getiterfunc)pyfastx_fastx_iter,
+    .tp_iternext = (iternextfunc)pyfastx_fastx_next,
+    .tp_new = pyfastx_fastx_new,
 };

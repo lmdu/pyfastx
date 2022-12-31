@@ -1,42 +1,100 @@
 import os
 import sys
 import glob
-import platform
+import tarfile
+import zipfile
+import urllib.request
 from setuptools import setup, Extension
 
-link_args = ['-lz', '-lsqlite3']
-comp_args = ['-Wno-unused-result']
+root_dir = os.path.dirname(os.path.abspath(__file__))
+
+sources = glob.glob(os.path.join(root_dir, 'src', '*.c'))
+link_args = []
+comp_args = []
 include_dirs = []
-libs = []
-lib_dirs = []
-define_macros = []
 
-sources = glob.glob('src/*.c')
+def prepare_zlib():
+    global include_dirs
+    global sources
 
-if os.name == 'nt':
-    if '32' in platform.architecture()[0] and sys.version.startswith('3.8'):
-        link_args.append('-static-libgcc')
-        link_args.append('-static-libstdc++')
+    zlib_dir = os.path.join(root_dir, "zlib-1.2.13")
+    zlib_file = os.path.join(root_dir, "zlib-1.2.13.zip")
+    url = "https://zlib.net/zlib1213.zip"
 
-    if '64' in platform.architecture()[0]:
-        link_args.append('-DMS_WIN64')
-        comp_args.append('-DMS_WIN64')
-        comp_args.append('-D_FILE_OFFSET_BITS=64')
-        comp_args.append('-D_LARGEFILE64_SOURCE=1')
-        comp_args.append('-D_LFS64_LARGEFILE=1')
+    if not os.path.exists(zlib_dir):
+        urllib.request.urlretrieve(url, zlib_file)
+        with zipfile.ZipFile(zlib_file) as _zip:
+            _zip.extractall()
 
-#if sys.platform == 'darwin':
-#    link_args.append('-fPIC')
-#    comp_args.append('-fPIC')
+    include_dirs.append(zlib_dir)
+    sources.extend(glob.glob(os.path.join(zlib_dir, '*.c')))
+
+def prepare_sqlite3():
+    global include_dirs
+    global sources
+
+    sqlite_dir = os.path.join(root_dir, "sqlite-amalgamation-3400100")
+    sqlite_file = os.path.join(root_dir, "sqlite-amalgamation-3400100.zip")
+    url = "https://www.sqlite.org/2022/sqlite-amalgamation-3400100.zip"
+
+    if not os.path.exists(sqlite_dir):
+        urllib.request.urlretrieve(url, sqlite_file)
+        with zipfile.ZipFile(sqlite_file) as _zip:
+            _zip.extractall()
+
+    include_dirs.append(sqlite_dir)
+    sources.append(os.path.join(sqlite_dir, 'sqlite3.c'))
+
+def prepare_indexed_gzip():
+    global include_dirs
+    global sources
+
+    igzip_dir = os.path.join(root_dir, "indexed_gzip-1.7.0", "indexed_gzip")
+    igzip_file = os.path.join(root_dir, "indexed_gzip-1.7.0.zip")
+    url = "https://github.com/pauldmccarthy/indexed_gzip/archive/refs/tags/v1.7.0.zip"
+
+    if not os.path.exists(igzip_dir):
+        urllib.request.urlretrieve(url, igzip_file)
+        with zipfile.ZipFile(igzip_file) as _zip:
+            _zip.extractall()
+
+    include_dirs.append(igzip_dir)
+    sources.extend(glob.glob(os.path.join(igzip_dir, 'zran*.c')))
+
+
+if sys.platform.startswith('win'):
+    comp_args.extend([
+        '/D_LFS64_LARGEFILE',
+        '/D_LARGEFILE64_SOURCE',
+        '/D_FILE_OFFSET_BITS=64'
+    ])
+else:
+    comp_args.extend([
+        '-Wno-unused-result',
+        '-D_FILE_OFFSET_BITS=64'
+    ])
+
+    if sys.platform.startswith('linux'):
+        link_args.extend(['-lz', '-lsqlite3'])
+        comp_args.extend([
+            '-D_LFS64_LARGEFILE',
+            '-D_LARGEFILE64_SOURCE',
+        ])
+
+    elif sys.platform.startswith('darwin'):
+        comp_args.append('-DHAVE_UNISTD_H')
+
+if not sys.platform.startswith('linux'):
+    prepare_zlib()
+    prepare_sqlite3()
+
+prepare_indexed_gzip()
 
 extension = Extension('pyfastx',
     sources = sources,
-    libraries = libs,
-    library_dirs = lib_dirs,
     include_dirs = include_dirs,
     extra_compile_args = comp_args,
-    extra_link_args = link_args,
-    define_macros = define_macros
+    extra_link_args = link_args
 )
 
 description = (
@@ -45,10 +103,10 @@ description = (
     "FASTA/Q file"
 )
 
-with open('README.rst') as fh:
+with open(os.path.join(root_dir, 'README.rst')) as fh:
     long_description = fh.read()
 
-with open(os.path.join('src', 'version.h')) as fh:
+with open(os.path.join(root_dir, 'src', 'version.h')) as fh:
     version = fh.read().split()[2].strip('"')
 
 setup(
@@ -62,7 +120,7 @@ setup(
     author_email = 'adullb@qq.com',
     url = 'https://github.com/lmdu/pyfastx',
     license = 'MIT',
-    keywords = 'fasta sequence bioinformatics',
+    keywords = 'fasta fastq sequence bioinformatics',
     classifiers = [
             "Development Status :: 5 - Production/Stable",
             "Intended Audience :: Developers",
@@ -71,11 +129,12 @@ setup(
             "Natural Language :: English",
             "License :: OSI Approved :: MIT License",
             "Programming Language :: C",
-            "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
             "Operating System :: Microsoft :: Windows",
             "Operating System :: POSIX :: Linux",
             "Operating System :: Unix",

@@ -5,7 +5,7 @@ import pyfastx
 import unittest
 
 join = os.path.join
-data_dir = join(os.path.dirname(__file__), 'data')
+data_dir = join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 gzip_fastq = join(data_dir, 'test.fq.gz')
 flat_fastq = join(data_dir, 'test.fq')
@@ -62,6 +62,7 @@ class ReadTest(unittest.TestCase):
 		idx = self.get_random_read()
 		read = self.flatq[idx]
 		read1 = self.reads[idx]
+
 		self.assertEqual(repr(read), "<Read> {} with length of {}".format(read1[0], len(read1[1])))
 
 	def test_read(self):

@@ -5,7 +5,8 @@ import pyfaidx
 import unittest
 
 join = os.path.join
-data_dir = join(os.path.dirname(__file__), 'data')
+root_dir = join(os.path.dirname(os.path.abspath(__file__)), '..')
+data_dir = join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 gzip_fasta = join(data_dir, 'test.fa.gz')
 flat_fasta = join(data_dir, 'test.fa')
@@ -52,7 +53,7 @@ class FastaTest(unittest.TestCase):
 		self.assertEqual(pyfastx.gzip_check(gzip_fasta), self.fastx.is_gzip)
 
 		# version test
-		with open('src/version.h') as fh:
+		with open(join(root_dir, 'src', 'version.h')) as fh:
 			version = fh.read().split()[2].strip('"')
 			self.assertEqual(version, pyfastx.version())
 
