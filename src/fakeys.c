@@ -76,10 +76,9 @@ void pyfastx_fasta_keys_count(pyfastx_FastaKeys *self) {
 
 	PYFASTX_SQLITE_CALL(ret=sqlite3_step(stmt));
 
+	self->seq_counts = 0;
 	if (ret == SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(self->seq_counts = sqlite3_column_int64(stmt, 0));
-	} else {
-		self->seq_counts = 0;
 	}
 
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));

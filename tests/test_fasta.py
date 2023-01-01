@@ -117,8 +117,17 @@ class FastaTest(unittest.TestCase):
 		name = self.faidx[idx].name
 		self.assertTrue(name in self.fastx)
 
-		#test repr
-		self.assertEqual(repr(self.fastx), "<Fasta> {} contains {} sequences".format(gzip_fasta, self.count))
+	#test repr
+	def test_repr(self):
+		expect = "<Fasta> {} contains {} sequences".format(gzip_fasta, self.count)
+		result = repr(self.fastx)
+		self.assertEqual(expect, result)
+
+		#without build index
+		fa = pyfastx.Fasta(flat_fasta, build_index=False)
+		expect = "<Fasta> {}".format(flat_fasta)
+		result = repr(fa)
+		self.assertEqual(expect, result)
 
 	def test_seq_type(self):
 		#test dna format
@@ -136,6 +145,18 @@ class FastaTest(unittest.TestCase):
 		for seq in self.fastx:
 			expect = self.faidx[seq.name][:].seq
 			self.assertEqual(expect, seq.seq)
+
+		for seq in pyfastx.Fasta(flat_fasta, uppercase=True):
+			expect = self.faidx[seq.name][:].seq
+			self.assertEqual(expect, seq.seq)
+
+		#test reference of sequence made from loop
+		for seq in self.fastx:
+			break
+
+		expect = self.faidx[seq.name][:].seq
+		self.assertEqual(expect, seq.seq)
+		self.assertEqual(expect, seq.seq)
 
 	def test_iter_tuple(self):
 		fa = pyfastx.Fasta(gzip_fasta, build_index=False)
@@ -278,6 +299,12 @@ class FastaTest(unittest.TestCase):
 
 		with self.assertRaises(ValueError):
 			self.fastx.nl(101)
+
+		with self.assertRaises(RuntimeError):
+			with open('non.fa', 'w') as fw:
+				fw.write('abc')
+
+			pyfastx.Fasta('non.fa')
 
 if __name__ == '__main__':
 	unittest.main()

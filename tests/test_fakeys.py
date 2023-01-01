@@ -125,6 +125,7 @@ class IdentifierTest(unittest.TestCase):
 		self.assertEqual(result[-1], ids[-1])
 
 		ids.reset()
+		ids.filter(ids % 'JZ8226', ids >= 200)
 
 	def test_id_exception(self):
 		keyobj = self.fastx.keys()
@@ -136,6 +137,15 @@ class IdentifierTest(unittest.TestCase):
 
 		with self.assertRaises(ValueError):
 			_ = keyobj.filter()
+
+		with self.assertRaises(ValueError):
+			_ = keyobj.sort('sort')
+
+		with self.assertRaises(ValueError):
+			_ = keyobj > list
+
+		with self.assertRaises(TypeError):
+			_ = keyobj[list]
 
 if __name__ == '__main__':
 	unittest.main()

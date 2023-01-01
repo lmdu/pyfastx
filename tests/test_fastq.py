@@ -115,6 +115,14 @@ class FastqTest(unittest.TestCase):
 			self.assertEqual(read.seq, self.reads[i][1])
 			self.assertEqual(read.qual, self.reads[i][2])
 
+		#test reference of read made from loop
+		for read in self.fastq:
+			break
+
+		expect = self.reads[0][1]
+		self.assertEqual(expect, read.seq)
+		self.assertEqual(expect, read.seq)
+
 	def test_iter_tuple(self):
 		i = -1
 		for name, seq, qual in pyfastx.Fastq(flat_fastq, build_index=False):

@@ -103,6 +103,22 @@ class ReadTest(unittest.TestCase):
 		# test contain
 		self.assertTrue(result.name in self.fastq)
 
+	def test_read_seq(self):
+		#test reverse
+		idx = self.get_random_read()
+		result = self.fastq[idx]
+		expect = self.reads[idx][1]
+		self.assertEqual(result.reverse, expect[::-1])
+
+		#test complement
+		complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N':'N'}
+		expect1 = ''.join(complement.get(b) for b in expect)
+		self.assertEqual(result.complement, expect1)
+
+		#test antisense
+		expect2 = ''.join(complement.get(b) for b in reversed(expect))
+		self.assertEqual(result.antisense, expect2)
+
 	def test_read_description(self):
 		idx = self.get_random_read()
 		read = self.fastq[idx]
@@ -120,7 +136,6 @@ class ReadTest(unittest.TestCase):
 
 		read = self.flatq[idx]
 		self.assertEqual(line.strip(), read.description)
-
 
 	def test_read_raw(self):
 		idx = self.get_random_read()
