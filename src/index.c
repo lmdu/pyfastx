@@ -231,7 +231,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			if (start > 0) {
 				//end of sequence and check whether normal fasta
 				seq_normal = (bad_line > 1) ? 0 : 1;
-				
+
 				PYFASTX_SQLITE_CALL(
 					sqlite3_bind_null(stmt, 1);
 					sqlite3_bind_text(stmt, 2, chrom.s, chrom.l, SQLITE_STATIC);
@@ -288,11 +288,10 @@ void pyfastx_create_index(pyfastx_Index *self){
 						}
 					}
 
-					//if (space_pos == NULL) {
-					//	chrom.l = desc_len;
-					//} else {
-					//	chrom.l = space_pos - header_pos;
-					//}
+					// If no whitespace was encountered, reset
+					if (chrom.l > desc_len) {
+				    		chrom.l = desc_len;
+					}
 					memcpy(chrom.s, header_pos, chrom.l);
 					chrom.s[chrom.l] = '\0';
 				}

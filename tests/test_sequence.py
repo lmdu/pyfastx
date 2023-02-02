@@ -94,7 +94,7 @@ class SequenceTest(unittest.TestCase):
 
 					lines.append(line)
 
-		self.assertEqual(''.join(lines).replace('\n','\r\n'), seq.raw)
+		self.assertEqual(''.join(lines), seq.raw)
 
 	def test_seq_slice(self):
 		idx = self.get_random_index()

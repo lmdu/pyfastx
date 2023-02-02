@@ -3,6 +3,7 @@ import random
 import pyfastx
 import pyfaidx
 import unittest
+from statistics import median
 
 join = os.path.join
 root_dir = join(os.path.dirname(os.path.abspath(__file__)), '..')
@@ -117,6 +118,10 @@ class FastaTest(unittest.TestCase):
 		name = self.faidx[idx].name
 		self.assertTrue(name in self.fastx)
 
+	def test_keys(self):
+		# Test retrieving key where full_name was not specified and no whitespace
+		self.assertEqual(self.fastx['JZ840319.1'].name, 'JZ840319.1')
+
 	#test repr
 	def test_repr(self):
 		expect = "<Fasta> {} contains {} sequences".format(gzip_fasta, self.count)
@@ -191,7 +196,10 @@ class FastaTest(unittest.TestCase):
 		if os.path.exists("{}.fxi".format(gzip_fasta)):
 			os.remove("{}.fxi".format(gzip_fasta))
 
-		self.fastx = pyfastx.Fasta(gzip_fasta, key_func=lambda x: x.split()[1])
+		self.fastx = pyfastx.Fasta(
+			gzip_fasta,
+			key_func=lambda x: x.split()[1] if len(x.split()) > 1 else x
+		)
 		idx = self.get_random_index()
 		self.assertEqual(self.fastx[idx].name, self.fastx[idx].description.split()[1])
 
@@ -216,7 +224,7 @@ class FastaTest(unittest.TestCase):
 
 		#test median length
 		lens = sorted(lens)
-		expect = lens[105]
+		expect = median(lens)
 
 		result = self.fastx.median
 		self.assertEqual(expect, result)
