@@ -272,6 +272,9 @@ void pyfastx_create_index(pyfastx_Index *self){
 
 			desc_len = line.l - line_end;
 
+			printf("desc len: %d\n", desc_len);
+			printf("line len: %zd\n", line.l);
+
 			if (chrom.m < line.l) {
 				chrom.m = line.l;
 				chrom.s = (char *)realloc(chrom.s, chrom.m);
@@ -288,7 +291,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 				} else {
 					//space_pos = strchr(header_pos, ' ');
 					//find space or tab
-					for (chrom.l = 0; chrom.l <= desc_len; ++chrom.l) {
+					for (chrom.l = 0; chrom.l < desc_len; ++chrom.l) {
 						if ((header_pos[chrom.l] == ' ') || (header_pos[chrom.l] == '\t')) {
 							break;
 						}

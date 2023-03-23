@@ -1,2 +1,2 @@
-#define PYFASTX_VERSION "0.9.1"
+#define PYFASTX_VERSION "1.0.0"
 #define ZRAN_VERSION "1.7.0"

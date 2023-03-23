@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.0.0 (2023-03-23)
+--------------------------
+
+- Added support for fasta header without space
+
 Version 0.9.1 (2022-12-31)
 --------------------------
 
