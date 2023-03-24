@@ -1,5 +1,6 @@
 include LICENSE
-include src/*h
+include README.rst
+include src/*
 include tests/*.py
 graft tests/data
 graft docs
