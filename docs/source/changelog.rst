@@ -5,6 +5,7 @@ Version 1.0.0 (2023-03-24)
 --------------------------
 
 - Added support for fasta header without space
+- Fixed some files missing in pypi tar.gz file
 
 Version 0.9.1 (2022-12-31)
 --------------------------
