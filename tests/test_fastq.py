@@ -102,6 +102,55 @@ class FastqTest(unittest.TestCase):
 		self.assertEqual(self.fastq.maxqual, 70)
 		self.assertEqual(self.fastq.minqual, 35)
 
+	def test_platform(self):
+		#test unknown
+		fqfile = 'test.fq'
+		with open(fqfile, 'w') as fw:
+			fw.write("@read1\n")
+			fw.write("AAAAAAAAAA\n")
+			fw.write("+\n")
+			fw.write("          \n")
+		fq = pyfastx.Fastq(fqfile)
+		self.assertEqual(fq.encoding_type, ['Unknown'])
+		os.remove("{}.fxi".format(fqfile))
+
+		with open(fqfile, 'w') as fw:
+			fw.write("@read1\n")
+			qs = []
+			for i in range(59, 105):
+				qs.append(chr(i))
+			fw.write("{}\n".format('A'*len(qs)))
+			fw.write("+\n")
+			fw.write("{}\n".format(''.join(qs)))
+		fq = pyfastx.Fastq(fqfile)
+		self.assertIn("Solexa Solexa+64", fq.encoding_type)
+		os.remove("{}.fxi".format(fqfile))
+
+		with open(fqfile, 'w') as fw:
+			fw.write("@read1\n")
+			qs = []
+			for i in range(64, 105):
+				qs.append(chr(i))
+			fw.write("{}\n".format('A'*len(qs)))
+			fw.write("+\n")
+			fw.write("{}\n".format(''.join(qs)))
+		fq = pyfastx.Fastq(fqfile)
+		self.assertIn("Illumina 1.3+ Phred+64", fq.encoding_type)
+		os.remove("{}.fxi".format(fqfile))
+
+		with open(fqfile, 'w') as fw:
+			fw.write("@read1\n")
+			qs = []
+			for i in range(66, 105):
+				qs.append(chr(i))
+			fw.write("{}\n".format('A'*len(qs)))
+			fw.write("+\n")
+			fw.write("{}\n".format(''.join(qs)))
+		fq = pyfastx.Fastq(fqfile)
+		self.assertIn("Illumina 1.5+ Phred+64", fq.encoding_type)
+		os.remove("{}.fxi".format(fqfile))
+		os.remove(fqfile)
+
 	def test_negative(self):
 		read = self.fastq[-1]
 		self.assertEqual(read.name, self.reads[len(self.reads)-1][0])

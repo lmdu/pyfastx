@@ -12,6 +12,7 @@ PyObject *pyfastx_fastx_fasta_comment(kseq_t* kseqs) {
 }
 
 PyObject *pyfastx_fastx_fasta_upper(kseq_t* kseqs) {
+	upper_string(kseqs->seq.s, kseqs->seq.l);
 	return pyfastx_fastx_fasta(kseqs);
 }
 

@@ -183,8 +183,9 @@ class SequenceTest(unittest.TestCase):
 		self.assertEqual(s.name, "{}:{}-{}".format(n, s.start, s.end))
 
 	def test_full_compo(self):
+		idx = self.get_random_index()
 		fas = pyfastx.Fasta(flat_fasta, full_index=True)
-		self.assertEqual(self.fastx[0].composition, fas[0].composition)
+		self.assertEqual(self.fastx[idx].composition, fas[idx].composition)
 
 	def test_seq_exception(self):
 		with self.assertRaises(RuntimeError):

@@ -52,4 +52,4 @@ class FastxTest(unittest.TestCase):
 
 	def test_exception(self):
 		with self.assertRaises(IndexError):
-			_ = self.keys[self.count]
+			_ = self.keys[self.count*2]

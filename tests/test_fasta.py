@@ -165,11 +165,24 @@ class FastaTest(unittest.TestCase):
 			expect = str(self.faidx[name])
 			self.assertEqual(expect, seq)
 
+	def test_iter_upper(self):
+		fa = pyfastx.Fasta(flat_fasta, build_index=False, uppercase=True)
+
+		for name, seq in fa:
+			self.assertEqual(seq, self.faidx[name.split()[0]][:].seq)
+
 	def test_iter_full_name(self):
 		fa = pyfastx.Fasta(flat_fasta, build_index=False, full_name=True)
 
 		for name, _ in fa:
 			self.assertTrue(name, self.fastx[name.split()[0]].description)
+
+	def test_iter_upper_full_name(self):
+		fa = pyfastx.Fasta(flat_fasta, build_index=False, uppercase=True, full_name=True)
+
+		for name, seq in fa:
+			self.assertEqual(name, self.fastx[name.split()[0]].description)
+			self.assertEqual(seq, self.fastx[name.split()[0]].seq)
 
 	def test_key_func(self):
 		del self.fastx
@@ -301,10 +314,13 @@ class FastaTest(unittest.TestCase):
 			self.fastx.nl(101)
 
 		with self.assertRaises(RuntimeError):
-			with open('non.fa', 'w') as fw:
+			non_fa = 'non.fa'
+			with open(non_fa, 'w') as fw:
 				fw.write('abc')
 
-			pyfastx.Fasta('non.fa')
+			pyfastx.Fasta(non_fa)
+
+			os.remove(non_fa)
 
 if __name__ == '__main__':
 	unittest.main()

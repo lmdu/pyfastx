@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.0.1 (2023-03-28)
+--------------------------
+
+- Fixed invalid uppercase when iterating fastx
+
 Version 1.0.0 (2023-03-24)
 --------------------------
 
