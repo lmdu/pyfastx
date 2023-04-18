@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.1.0 (2023-04-19)
+--------------------------
+
+- Fixed unicode error when reading fastq file
+
 Version 1.0.1 (2023-03-28)
 --------------------------
 
