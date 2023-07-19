@@ -73,8 +73,8 @@ Py_ssize_t ks_getuntil2(kstream_t *ks, int delimiter, kstring_t *str, int *dret,
 			} else break;											
 		}															
 		if (delimiter == KS_SEP_LINE) { 
-			for (i = ks->begin; i < ks->end; ++i) 
-				if (ks->buf[i] == '\n') break; 
+			unsigned char *sep = (unsigned char*)memchr(ks->buf + ks->begin, '\n', ks->end - ks->begin);
+			i = sep != NULL ? sep - ks->buf : ks->end;
 		} else if (delimiter > KS_SEP_MAX) {						
 			for (i = ks->begin; i < ks->end; ++i)					
 				if (ks->buf[i] == delimiter) break;					
