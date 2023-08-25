@@ -1104,6 +1104,7 @@ PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
 //support for guess sequence type according to IUPAC codes
 //https://www.bioinformatics.org/sms/iupac.html
 PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
+	int l;
 	int ret;
 	int i, j;
 
@@ -1114,37 +1115,39 @@ PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 	sqlite3_stmt *stmt;
 
 	Py_ssize_t c;
+	Py_ssize_t n;
 
 	pyfastx_fasta_calc_composition(self);
 
-	sql = "SELECT * FROM comp ORDER BY ID DESC LIMIT 1";
+	sql = "SELECT * FROM comp WHERE seqid=0";
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 		ret = sqlite3_step(stmt);
 	);
 
-	if (ret != SQLITE_ROW) {
-		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-		PyErr_SetString(PyExc_RuntimeError, "could not get sequence type");
-		return NULL;
-	}
-
-	alphabets = (char *)malloc(26);
 	j = 0;
-	for (i = 1; i < 27; i++) {
-		PYFASTX_SQLITE_CALL(c = sqlite3_column_int64(stmt, i));
-		if (c > 0) {
-			alphabets[j++] = i+64;
+	alphabets = (char *)malloc(128);
+
+	while (ret == SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(
+			l = sqlite3_column_int(stmt, 2);
+			n = sqlite3_column_int64(stmt, 3);
+			ret = sqlite3_step(stmt);
+		);
+
+		if (l > 32 && l < 127 && n > 0) {
+			alphabets[j++] = l;
 		}
 	}
+
 	alphabets[j] = '\0';
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 
-	if (is_subset("ACGTN", alphabets) || is_subset("ABCDGHKMNRSTVWY-", alphabets)) {
+	if (is_subset("ACGTNacgtn", alphabets) || is_subset("abcdghkmnrstvwyABCDGHKMNRSTVWY*-", alphabets)) {
 		retval = "DNA";
-	} else if (is_subset("ACGUN", alphabets) || is_subset("ABCDGHKMNRSUVWY-", alphabets)) {
+	} else if (is_subset("ACGUNacgun", alphabets) || is_subset("abcdghkmnrsuvwyABCDGHKMNRSUVWY*-", alphabets)) {
 		retval = "RNA";
-	} else if (is_subset("ACDEFGHIKLMNPQRSTVWY*-", alphabets)) {
+	} else if (is_subset("acdefghiklmnpqrstvwyACDEFGHIKLMNPQRSTVWY*-", alphabets)) {
 		retval = "protein";
 	} else {
 		retval = "unknown";
