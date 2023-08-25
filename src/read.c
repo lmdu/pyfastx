@@ -239,8 +239,12 @@ PyObject* pyfastx_read_quali(pyfastx_Read *self, void* closure) {
     PyObject *quals;
     PyObject *q;
 
-    if (!self->qual) {
-        pyfastx_read_qual(self, NULL);
+    if (self->middle->iterating) {
+        pyfastx_read_continue_reader(self);
+    } else if (!self->qual) {
+        self->qual = (char *)malloc(self->read_len + 1);
+        pyfastx_read_random_reader(self, self->qual, self->qual_offset, self->read_len);
+        self->qual[self->read_len] = '\0';
     }
 
     phred = self->middle->phred ? self->middle->phred : 33;

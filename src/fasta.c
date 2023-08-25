@@ -859,11 +859,11 @@ void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
 
 	//ascii char statistics
 	Py_ssize_t seq_comp[128] = {0};
-	Py_ssize_t fa_comp[26] = {0};
+	Py_ssize_t fa_comp[128] = {0};
 
 	Py_ssize_t i;
-	
-	
+	Py_ssize_t seqid = 0;
+
 	sql = "SELECT * FROM comp LIMIT 1";
 
 	PYFASTX_SQLITE_CALL(
@@ -880,7 +880,7 @@ void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
 	sql = "PRAGMA synchronous=OFF;BEGIN TRANSACTION;";
 	PYFASTX_SQLITE_CALL(sqlite3_exec(self->index->index_db, sql, NULL, NULL, NULL));
 
-	sql = "INSERT INTO comp VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+	sql = "INSERT INTO comp VALUES (?,?,?,?);";
 	PYFASTX_SQLITE_CALL(sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL));
 	
 	gzrewind(self->index->gzfd);
@@ -890,51 +890,60 @@ void pyfastx_fasta_calc_composition(pyfastx_Fasta *self) {
 	
 	while (ks_getuntil(ks, '\n', &line, 0) >= 0) {
 		if (line.s[0] == 62) {
-			if (sum_array(seq_comp, 128) > 0) {
-				j = 0;
-				sqlite3_bind_null(stmt, ++j);
-				for (c = 65; c <= 90; c++) {
-					sqlite3_bind_int64(stmt, ++j, seq_comp[c]+seq_comp[c+32]);
-					fa_comp[c-65] += seq_comp[c]+seq_comp[c+32];
+			if (seqid > 0) {
+				for (j = 0; j < 128; ++j) {
+					if (seq_comp[j] > 0) {
+						sqlite3_bind_null(stmt, 1);
+						sqlite3_bind_int64(stmt, 2, seqid);
+						sqlite3_bind_int(stmt, 3, j);
+						sqlite3_bind_int64(stmt, 4, seq_comp[j]);
+						sqlite3_step(stmt);
+						sqlite3_reset(stmt);
+						fa_comp[j] += seq_comp[j];
+					}
 				}
-				sqlite3_step(stmt);
-				sqlite3_reset(stmt);
 			}
+
 			memset(seq_comp, 0, sizeof(seq_comp));
+			seqid++;
 			continue;
 		}
 
-		for (i = 0; i < line.l; i++) {
+		for (i = 0; i < line.l; ++i) {
 			c = line.s[i];
-			if (c == 10 || c == 13) {
-				continue;
-			}
+
 			++seq_comp[c];
 		}
 	}
 
-	if (sum_array(seq_comp, 128) > 0) {
-		j = 0;
-		sqlite3_bind_null(stmt, ++j);
-		for (c = 65; c <= 90; c++) {
-			sqlite3_bind_int64(stmt, ++j, seq_comp[c]+seq_comp[c+32]);
-			fa_comp[c-65] += seq_comp[c]+seq_comp[c+32];
+	//write the last sequence
+	for (j = 0; j < 128; ++j) {
+		if (seq_comp[j] > 0) {
+			sqlite3_bind_null(stmt, 1);
+			sqlite3_bind_int64(stmt, 2, seqid);
+			sqlite3_bind_int(stmt, 3, j);
+			sqlite3_bind_int64(stmt, 4, seq_comp[j]);
+			sqlite3_step(stmt);
+			sqlite3_reset(stmt);
+			fa_comp[j] += seq_comp[j];
 		}
+	}
+
+	//write total composition to db
+	for (j = 0; j < 128; ++j) {
+		sqlite3_bind_null(stmt, 1);
+		sqlite3_bind_int64(stmt, 2, 0);
+		sqlite3_bind_int(stmt, 3, j);
+		sqlite3_bind_int64(stmt, 4, fa_comp[j]);
 		sqlite3_step(stmt);
 		sqlite3_reset(stmt);
 	}
 
-	//write total bases to db
-	sqlite3_bind_null(stmt, 1);
-	for (j = 0; j < 26; j++) {
-		sqlite3_bind_int64(stmt, j+2, fa_comp[j]);
-	}
-	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	sqlite3_exec(self->index->index_db, "COMMIT;", NULL, NULL, NULL);
 
 	Py_END_ALLOW_THREADS
-	
+
 	ks_destroy(ks);
 	free(line.s);
 }
@@ -943,28 +952,57 @@ PyObject *pyfastx_fasta_gc_content(pyfastx_Fasta *self, void* closure) {
 	int ret;
 	const char *sql;
 	sqlite3_stmt *stmt;
-	Py_ssize_t a, c, g, t;
+
+	int l;
+	Py_ssize_t n;
+	Py_ssize_t a = 0;
+	Py_ssize_t c = 0;
+	Py_ssize_t g = 0;
+	Py_ssize_t t = 0;
 
 	pyfastx_fasta_calc_composition(self);
-	sql = "SELECT a, c, g, t FROM comp ORDER BY ID DESC LIMIT 1";
+	sql = "SELECT * FROM comp WHERE seqid=0";
 	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 		ret = sqlite3_step(stmt);
 	);
 
-	if (ret == SQLITE_ROW) {
+	while (ret == SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(
-			a = sqlite3_column_int64(stmt, 0);
-			c = sqlite3_column_int64(stmt, 1);
-			g = sqlite3_column_int64(stmt, 2);
-			t = sqlite3_column_int64(stmt, 3);
-			sqlite3_finalize(stmt);
+			l = sqlite3_column_int(stmt, 2);
+			n = sqlite3_column_int64(stmt, 3);
+			ret = sqlite3_step(stmt);
 		);
+
+		switch (l) {
+			case 65:
+			case 97:
+				a += n;
+				break;
+
+			case 67:
+			case 99:
+				c += n;
+				break;
+
+			case 71:
+			case 103:
+				g += n;
+				break;
+
+			case 84:
+			case 116:
+				t += n;
+				break;
+		}
+	}
+
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+
+	if (a + c + g + t > 0) {
 		return Py_BuildValue("f", (float)(g+c)/(a+c+g+t)*100);
-	
 	} else {
-		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "could not calculate gc content");
 		return NULL;
 	}
@@ -974,70 +1012,93 @@ PyObject *pyfastx_fasta_gc_skew(pyfastx_Fasta *self, void* closure) {
 	int ret;
 	const char *sql;
 	sqlite3_stmt *stmt;
-	Py_ssize_t c, g;
+
+	int l;
+	Py_ssize_t n;
+	Py_ssize_t c = 0;
+	Py_ssize_t g = 0;
 
 	pyfastx_fasta_calc_composition(self);
-	sql = "SELECT c, g FROM comp ORDER BY ID DESC LIMIT 1";
+	sql = "SELECT * FROM comp WHERE seqid=0";
+	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 		ret = sqlite3_step(stmt);
 	);
-	
-	if (ret == SQLITE_ROW) {
+
+	while (ret == SQLITE_ROW) {
 		PYFASTX_SQLITE_CALL(
-			c = sqlite3_column_int64(stmt, 0);
-			g = sqlite3_column_int64(stmt, 1);
-			sqlite3_finalize(stmt);
+			l = sqlite3_column_int(stmt, 2);
+			n = sqlite3_column_int64(stmt, 3);
+			ret = sqlite3_step(stmt);
 		);
+
+		switch (l) {
+			case 67:
+			case 99:
+				c += n;
+				break;
+
+			case 71:
+			case 103:
+				g += n;
+				break;
+		}
+	}
+
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+
+	if (c + g > 0) {
 		return Py_BuildValue("f", (float)(g-c)/(g+c));
 	} else {
-		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 		PyErr_SetString(PyExc_RuntimeError, "could not calculate gc skew");
 		return NULL;
 	}
 }
 
 PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
-	int i;
+	int l;
 	int ret;
 	const char *sql;
 
 	sqlite3_stmt *stmt;
 	
-	Py_ssize_t c;
+	Py_ssize_t n;
+
 	PyObject *d;
-	PyObject *base;
-	PyObject *count;
+	PyObject *b;
+	PyObject *c;
 
 	pyfastx_fasta_calc_composition(self);
 
 	//the last row store the sum of the each base
-	sql = "SELECT * FROM comp ORDER BY ID DESC LIMIT 1";
+	sql = "SELECT * FROM comp WHERE seqid=0";
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
 		ret = sqlite3_step(stmt);
 	);
-	
-	if (ret == SQLITE_ROW) {
-		d = PyDict_New();
-		for (i = 1; i < 27; i++) {
-			PYFASTX_SQLITE_CALL(c = sqlite3_column_int64(stmt, i));
-			if (c > 0) {
-				base = Py_BuildValue("C", i+64);
-				count = Py_BuildValue("n", c);
-				PyDict_SetItem(d, base, count);
-				Py_DECREF(base);
-				Py_DECREF(count);
-			}
+
+	d = PyDict_New();
+
+	while (ret == SQLITE_ROW) {
+		PYFASTX_SQLITE_CALL(
+			l = sqlite3_column_int(stmt, 2);
+			n = sqlite3_column_int64(stmt, 3);
+			ret = sqlite3_step(stmt);
+		);
+
+		if (n > 0 && l != 13) {
+			b = Py_BuildValue("C", l);
+			c = Py_BuildValue("n", n);
+			PyDict_SetItem(d, b, c);
+			Py_DECREF(b);
+			Py_DECREF(c);
 		}
-		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-		return d;
-		
-	} else {
-		PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-		PyErr_SetString(PyExc_RuntimeError, "could not get composition");
-		return NULL;
 	}
+
+	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+
+	return d;
 }
 
 //support for guess sequence type according to IUPAC codes

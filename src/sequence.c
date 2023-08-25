@@ -566,15 +566,16 @@ PyObject *pyfastx_sequence_search(pyfastx_Sequence *self, PyObject *args, PyObje
 }
 
 PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
+	int l;
 	int ret;
 	char *seq;
 
 	sqlite3_stmt *stmt;
 
-	Py_ssize_t i;
+	Py_ssize_t i, n;
 	Py_ssize_t a = 0, c = 0, g = 0, t = 0;
 
-	const char *sql = "SELECT a, c, g, t FROM comp WHERE ID=? LIMIT 1";
+	const char *sql = "SELECT * FROM comp WHERE seqid=?";
 	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
@@ -583,21 +584,59 @@ PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
 	);
 
 	if (ret == SQLITE_ROW && self->start == 1 && self->end == self->seq_len) {
-		PYFASTX_SQLITE_CALL(
-			a = sqlite3_column_int64(stmt, 0);
-			c = sqlite3_column_int64(stmt, 1);
-			g = sqlite3_column_int64(stmt, 2);
-			t = sqlite3_column_int64(stmt, 3);
-		);
+		while (ret == SQLITE_ROW) {
+			PYFASTX_SQLITE_CALL(
+				l = sqlite3_column_int(stmt, 2);
+				n = sqlite3_column_int64(stmt, 3);
+				ret = sqlite3_step(stmt);
+			);
+
+			switch (l) {
+				case 65:
+				case 97:
+					a += n;
+					break;
+
+				case 67:
+				case 99:
+					c += n;
+					break;
+
+				case 71:
+				case 103:
+					g += n;
+					break;
+
+				case 84:
+				case 116:
+					t += n;
+					break;
+			}
+		}
 	} else {
 		seq = pyfastx_sequence_get_subseq(self);
 
 		for (i = 0; i < self->seq_len; ++i) {
 			switch (seq[i]) {
-				case 65: case 97: ++a; break;
-				case 84: case 116: ++t; break;
-				case 71: case 103: ++g; break;
-				case 67: case 99: ++c; break;
+				case 65:
+				case 97:
+					++a;
+					break;
+
+				case 84:
+				case 116:
+					++t;
+					break;
+
+				case 71:
+				case 103:
+					++g;
+					break;
+
+				case 67:
+				case 99:
+					++c;
+					break;
 			}
 		}
 	}
@@ -608,14 +647,15 @@ PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
 }
 
 PyObject *pyfastx_sequence_gc_skew(pyfastx_Sequence *self, void* closure) {
+	int l;
 	int ret;
 	char *seq;
 	sqlite3_stmt *stmt;
 
-	Py_ssize_t i;
+	Py_ssize_t i, n;
 	Py_ssize_t c = 0, g = 0;
 
-	const char *sql = "SELECT c, g FROM comp WHERE ID=? LIMIT 1";
+	const char *sql = "SELECT * FROM comp WHERE seqid=?";
 	
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
@@ -624,17 +664,39 @@ PyObject *pyfastx_sequence_gc_skew(pyfastx_Sequence *self, void* closure) {
 	);
 
 	if (ret == SQLITE_ROW && self->start == 1 && self->end == self->seq_len) {
-		PYFASTX_SQLITE_CALL(
-			c = sqlite3_column_int64(stmt, 0);
-			g = sqlite3_column_int64(stmt, 1);
-		);
+		while (ret == SQLITE_ROW) {
+			PYFASTX_SQLITE_CALL(
+				l = sqlite3_column_int(stmt, 2);
+				n = sqlite3_column_int64(stmt, 3);
+				ret = sqlite3_step(stmt);
+			);
+
+			switch (l) {
+				case 67:
+				case 99:
+					c += n;
+					break;
+
+				case 71:
+				case 103:
+					g += n;
+					break;
+			}
+		}
 	} else {
 		seq = pyfastx_sequence_get_subseq(self);
 
 		for (i = 0; i < self->seq_len; ++i) {
 			switch (seq[i]) {
-				case 71: case 103: ++g; break;
-				case 67: case 99: ++c; break;
+				case 67:
+				case 99:
+					++c;
+					break;
+
+				case 71:
+				case 103:
+					++g;
+					break;	
 			}
 		}
 	}
@@ -646,17 +708,18 @@ PyObject *pyfastx_sequence_gc_skew(pyfastx_Sequence *self, void* closure) {
 
 PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	int i;
+	int l;
 	int ret;
 	char *seq;
 
 	sqlite3_stmt *stmt;
 	
-	Py_ssize_t c;
-	Py_ssize_t seq_comp[26] = {0};
+	Py_ssize_t n;
+	Py_ssize_t seq_comp[128] = {0};
 
 	PyObject *d;
-	PyObject *base;
-	PyObject *count;
+	PyObject *b;
+	PyObject *c;
 
 	const char *sql = "SELECT * FROM comp WHERE ID=?";
 
@@ -669,33 +732,37 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	d = PyDict_New();
 	
 	if (ret == SQLITE_ROW && self->start == 1 && self->end == self->seq_len) {
-		for (i = 1; i < 27; ++i) {
-			PYFASTX_SQLITE_CALL(c = sqlite3_column_int64(stmt, i));
+		for (i = 1; i < 128; ++i) {
+			PYFASTX_SQLITE_CALL(
+				l = sqlite3_column_int(stmt, 2);
+				n = sqlite3_column_int64(stmt, 3);
+				ret = sqlite3_step(stmt);
+			);
 
-			if (c > 0) {
-				base = Py_BuildValue("C", i+64);
-				count = Py_BuildValue("n", c);
-				PyDict_SetItem(d, base, count);
-				Py_DECREF(base);
-				Py_DECREF(count);
+			if (n > 0 && l != 13) {
+				b = Py_BuildValue("C", l);
+				c = Py_BuildValue("n", n);
+				PyDict_SetItem(d, b, c);
+				Py_DECREF(b);
+				Py_DECREF(c);
 			}
 		}
 	} else {
 		seq = pyfastx_sequence_get_subseq(self);
 
-		for (c = 0; c < self->seq_len; ++c) {
-			++seq_comp[seq[c]-65];
+		for (i = 0; i < self->seq_len; ++i) {
+			++seq_comp[(unsigned char)seq[i]];
 		}
 
-		for (i = 0; i < 26; ++i) {
-			c = seq_comp[i];
+		for (l = 0; l < 128; ++l) {
+			n = seq_comp[l];
 
-			if (c > 0) {
-				base = Py_BuildValue("C", i+65);
-				count = Py_BuildValue("i", c);
-				PyDict_SetItem(d, base, count);
-				Py_DECREF(base);
-				Py_DECREF(count);
+			if (n > 0 && l != 13) {
+				b = Py_BuildValue("C", l);
+				c = Py_BuildValue("i", n);
+				PyDict_SetItem(d, b, c);
+				Py_DECREF(b);
+				Py_DECREF(c);
 			}
 		}
 	}

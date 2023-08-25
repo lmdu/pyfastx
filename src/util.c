@@ -1,19 +1,31 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "util.h"
+#include "math.h"
 
 #ifdef _WIN32
-#include "fcntl.h"
-#include "stdio.h"
+#include "windows.h"
+#include "io.h"
+#define fopen _wfopen_s
 
-int mkstemp(char *template) {
+/*int mkstemp(char *template) {
 	if (_mktemp_s(template, strlen(template) + 1) != 0) {
 		return -1;
 	}
 
 	return open(template, _O_CREAT | _O_EXCL, _S_IWRITE);
+}*/
+#else
+#include <fcntl.h>
+static uint32_t max(uint32_t a, uint32_t b) {
+
+  if (a > b) return a;
+  else       return b;
 }
 #endif
+
+//const char ZRAN_INDEX_FILE_ID[] = {'G', 'Z', 'I', 'D', 'X'};
+//const uint8_t ZRAN_INDEX_FILE_VERSION = 1;
 
 //check file is whether exists in disk
 int file_exists(char *file_name){
@@ -261,7 +273,7 @@ int is_gzip_format(char* file_name){
 }
 
 //generate random file name according to given length
-char *generate_random_name(char* index_file) {
+/*char *generate_random_name(char* index_file) {
 	int file_len;
 	char *result;
 
@@ -270,110 +282,412 @@ char *generate_random_name(char* index_file) {
 	sprintf(result, "%s.XXXXXX", index_file);
 
 	return result;
+}*/
+
+/*Py_ssize_t pyfastx_gzip_index_size(zran_index_t* gzip_index) {
+	zran_point_t *point;
+	zran_point_t *list_end;
+
+	uint8_t flags = 0; 
+
+	Py_ssize_t index_size = 0;
+
+	//ID and version size
+	index_size += sizeof(ZRAN_INDEX_FILE_ID);
+	index_size += 1;
+
+	//flags size
+	index_size += 1;
+
+	//compressed size
+	index_size += sizeof(gzip_index->compressed_size);
+
+	//uncompressed size
+	index_size += sizeof(gzip_index->uncompressed_size);
+
+	//spacing size
+	index_size += sizeof(gzip_index->spacing);
+
+	//window size
+	index_size += sizeof(gzip_index->window_size);
+
+	//number of points size
+	index_size += sizeof(gzip_index->npoints);
+
+	//all points size
+	point = gzip_index->list;
+	list_end = gzip_index->list + gzip_index->npoints;
+
+	while (point < list_end) {
+		index_size += sizeof(point->cmp_offset);
+		index_size += sizeof(point->uncmp_offset);
+		index_size += sizeof(point->bits);
+		flags = (point->data != NULL) ? 1 : 0;
+		index_size += 1;
+		point++;
+	}
+
+	//window data for every point
+	point = gzip_index->list;
+	list_end = gzip_index->list + gzip_index->npoints;
+	while (point < list_end) {
+		if (point->data == NULL) {
+			point++;
+			continue;
+		}
+
+		index_size += gzip_index->window_size;
+		point++;
+	}
+
+	return index_size;
+}*/
+
+int pyfastx_gzip_index_write(sqlite3_stmt* stmt, const void *buff, size_t bytes) {
+	int ret;
+
+	PYFASTX_SQLITE_CALL(
+		ret = sqlite3_bind_null(stmt, 1);
+		if (ret != SQLITE_OK) goto fail;
+
+		ret = sqlite3_bind_blob(stmt, 2, buff, bytes, NULL);
+		if (ret != SQLITE_OK) goto fail;
+
+		ret = sqlite3_step(stmt);
+		if (ret != SQLITE_DONE) goto fail;
+
+		ret = sqlite3_reset(stmt);
+		if (ret != SQLITE_OK) goto fail;
+	);
+
+	return SQLITE_OK;
+
+fail:
+	return SQLITE_ERROR;
 }
 
-void pyfastx_build_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db) {
-	int fd;
+int pyfastx_gzip_index_read(sqlite3_stmt* stmt, void *buff) {
 	int ret;
-	int rowid;
+	size_t bytes;
+	
+	const void* ptr;
 
-	char *temp_index;
-	void *buff;
+	PYFASTX_SQLITE_CALL(
+		ret = sqlite3_step(stmt);
+		if (ret != SQLITE_ROW) goto fail;
+		ptr = sqlite3_column_blob(stmt, 1);
+		bytes = sqlite3_column_bytes(stmt, 1);
+	);
 
-	FILE* fh;
+	memcpy(buff, ptr, bytes);
+
+	return SQLITE_OK;
+
+fail:
+	return SQLITE_ERROR;
+}
+
+int pyfastx_gzip_index_export(zran_index_t* gzip_index, sqlite3* index_db) {
+	int ret;
+	uint8_t flags = 0;
+
+	zran_point_t *point;
+	zran_point_t *list_end;
 
 	sqlite3_stmt *stmt;
-	sqlite3_blob *blob;
+
+	PYFASTX_SQLITE_CALL(
+		ret = sqlite3_prepare_v2(index_db, "INSERT INTO gzindex VALUES (?,?)", -1, &stmt, NULL);
+	);	
+	if (ret != SQLITE_OK) goto fail;
+
+	//write ID and version
+	ret = pyfastx_gzip_index_write(stmt, ZRAN_INDEX_FILE_ID, sizeof(char)*5);
+	if (ret != SQLITE_OK) goto fail;
 	
-	Py_ssize_t remain;
-	Py_ssize_t offset;
-	Py_ssize_t block;
-	Py_ssize_t len;
-	Py_ssize_t chunk;
+	ret = pyfastx_gzip_index_write(stmt, &ZRAN_INDEX_FILE_VERSION, 1);
+	if (ret != SQLITE_OK) goto fail;
+
+	//write flags
+	ret = pyfastx_gzip_index_write(stmt, &flags, 1);
+	if (ret != SQLITE_OK) goto fail;
+
+	//write compressed size
+	ret = pyfastx_gzip_index_write(stmt, &gzip_index->compressed_size, sizeof(gzip_index->compressed_size));
+	if (ret != SQLITE_OK) goto fail;
+
+	//write uncompressed size
+	ret = pyfastx_gzip_index_write(stmt, &gzip_index->uncompressed_size, sizeof(gzip_index->uncompressed_size));
+	if (ret != SQLITE_OK) goto fail;
+
+	//write spacing
+	ret = pyfastx_gzip_index_write(stmt, &gzip_index->spacing, sizeof(gzip_index->spacing));
+	if (ret != SQLITE_OK) goto fail;
+
+	//write window size
+	ret = pyfastx_gzip_index_write(stmt, &gzip_index->window_size, sizeof(gzip_index->window_size));
+	if (ret != SQLITE_OK) goto fail;
+
+	//write number of points
+	ret = pyfastx_gzip_index_write(stmt, &gzip_index->npoints, sizeof(gzip_index->npoints));
+	if (ret != SQLITE_OK) goto fail;
+
+	//all points offset
+	point = gzip_index->list;
+	list_end = gzip_index->list + gzip_index->npoints;
+	while (point < list_end) {
+		//write compressed offset
+		ret = pyfastx_gzip_index_write(stmt, &point->cmp_offset, sizeof(point->cmp_offset));
+		if (ret != SQLITE_OK) goto fail;
+
+		//write uncompressed offset
+		ret = pyfastx_gzip_index_write(stmt, &point->uncmp_offset, sizeof(point->uncmp_offset));
+		if (ret != SQLITE_OK) goto fail;
+
+		//write bit offset
+		ret = pyfastx_gzip_index_write(stmt, &point->bits, sizeof(point->bits));
+		if (ret != SQLITE_OK) goto fail;
+
+		//write data flag
+		flags = (point->data != NULL) ? 1 : 0;
+		ret = pyfastx_gzip_index_write(stmt, &flags, 1);
+		if (ret != SQLITE_OK) goto fail;
+
+		++point;
+	}
+
+	//write window data
+	point = gzip_index->list;
+	list_end = gzip_index->list + gzip_index->npoints;
+	while (point < list_end) {
+		if (point->data == NULL) {
+			++point;
+			continue;
+		}
+
+		//write checkpoint data
+		ret = pyfastx_gzip_index_write(stmt, point->data, gzip_index->window_size);
+		if (ret != SQLITE_OK) goto fail;
+
+		++point;
+	}
+
+	PYFASTX_SQLITE_CALL(ret = sqlite3_finalize(stmt));
+	if (ret != SQLITE_OK) goto fail;
+
+	return ZRAN_EXPORT_OK;
+
+fail:
+	return ZRAN_EXPORT_WRITE_ERROR;
+}
+
+int pyfastx_gzip_index_import(zran_index_t* gzip_index, sqlite3* index_db) {
+	int ret;
+
+	uint64_t i;
+	zran_point_t *point;
+	zran_point_t *list_end;
+
+	uint8_t *dataflags = NULL;
+
+	char file_id[sizeof(char)*5];
+	uint8_t version;
+	uint8_t flags;
+
+	uint64_t compressed_size;
+	uint64_t uncompressed_size;
+	uint32_t spacing;
+	uint32_t window_size;
+	uint32_t npoints;
+	zran_point_t *new_list = NULL;
+
+	sqlite3_stmt *stmt;
+
+	PYFASTX_SQLITE_CALL(
+		ret = sqlite3_prepare_v2(index_db, "SELECT * FROM gzindex", -1, &stmt, NULL);
+	);
+	if (ret != SQLITE_OK) goto fail;
+
+	gzip_index->flags |= ZRAN_SKIP_CRC_CHECK;
+	
+	//read and verify ID
+	ret = pyfastx_gzip_index_read(stmt, file_id);
+	if (ret != SQLITE_OK) goto read_error;
+
+	if (memcmp(file_id, ZRAN_INDEX_FILE_ID, sizeof(file_id))) goto unknown_format;
+
+	//read format version and check
+	ret = pyfastx_gzip_index_read(stmt, &version);
+	if (ret != SQLITE_OK) goto read_error;
+
+	if (version > ZRAN_INDEX_FILE_VERSION) goto unsupported_version;
+
+	//read flags
+	ret = pyfastx_gzip_index_read(stmt, &flags);
+	if (ret != SQLITE_OK) goto read_error;
+
+	//read compressed size and check
+	ret = pyfastx_gzip_index_read(stmt, &compressed_size);
+	if (ret != SQLITE_OK) goto read_error;
+
+	if (compressed_size != gzip_index->compressed_size) goto inconsistent;
+
+	//read uncompressed size and check
+	ret = pyfastx_gzip_index_read(stmt, &uncompressed_size);
+	if (ret != SQLITE_OK) goto read_error;
+
+	if (uncompressed_size != 0 && gzip_index->uncompressed_size != 0 && gzip_index->uncompressed_size != uncompressed_size) goto inconsistent;
+
+	//read spacing
+	ret = pyfastx_gzip_index_read(stmt, &spacing);
+	if (ret != SQLITE_OK) goto read_error;
+
+	//read window size
+	ret = pyfastx_gzip_index_read(stmt, &window_size);
+	if (ret != SQLITE_OK) goto read_error;
+
+	//check spacing and window size
+	if (window_size < 32768) goto fail;
+	if (spacing < window_size) goto fail;
+
+	//read no. of points
+	ret = pyfastx_gzip_index_read(stmt, &npoints);
+	if (ret != SQLITE_OK) goto read_error;
+
+	new_list = calloc(1, sizeof(zran_point_t) * max(npoints, 8));
+	if (new_list == NULL) goto memory_error;
+
+	dataflags = calloc(npoints, 1);
+	if (dataflags == NULL) goto memory_error;
+
+	for (i = 0, point = new_list; i < npoints; ++i, ++point) {
+		ret = pyfastx_gzip_index_read(stmt, &point->cmp_offset);
+		if (ret != SQLITE_OK) goto read_error;
+
+		ret = pyfastx_gzip_index_read(stmt, &point->uncmp_offset);
+		if (ret != SQLITE_OK) goto read_error;
+
+		ret = pyfastx_gzip_index_read(stmt, &point->bits);
+		if (ret != SQLITE_OK) goto read_error;
+
+		if (version >= 1) {
+			ret = pyfastx_gzip_index_read(stmt, &flags);
+			if (ret != SQLITE_OK) goto read_error;
+		} else {
+			flags = (point == new_list) ? 0 : 1;
+		}
+
+		dataflags[i] = flags;
+	}
+
+	for (i = 0, point = new_list; i < npoints; ++i, ++point) {
+		if (dataflags[i] == 0) {
+			continue;
+		}
+
+		point->data = calloc(1, window_size);
+		if (point->data == NULL) goto memory_error;
+
+		ret = pyfastx_gzip_index_read(stmt, point->data);
+		if (ret != SQLITE_OK) goto read_error;
+	}
+
+	PYFASTX_SQLITE_CALL(ret = sqlite3_finalize(stmt));
+	if (ret != SQLITE_OK) goto fail;
+
+	if (gzip_index->uncompressed_size == 0 && uncompressed_size != 0) {
+		gzip_index->uncompressed_size = uncompressed_size;
+	}
+
+	if (gzip_index->spacing != spacing) {
+		gzip_index->spacing = spacing;
+	}
+
+	if (gzip_index->window_size != window_size) {
+		gzip_index->window_size = window_size;
+	}
+
+	point = gzip_index->list + 1;
+	list_end = gzip_index->list + gzip_index->npoints;
+
+	while (point < list_end) {
+		free(point->data);
+		++point;
+	}
+
+	free(gzip_index->list);
+	gzip_index->list = new_list;
+	gzip_index->npoints = npoints;
+	gzip_index->size = max(npoints, 8);
+	free(dataflags);
+
+	return ZRAN_IMPORT_OK;
+
+fail:
+	ret = ZRAN_IMPORT_FAIL;
+	goto cleanup;
+
+read_error:
+	ret = ZRAN_IMPORT_READ_ERROR;
+	goto cleanup;
+
+inconsistent:
+	ret = ZRAN_IMPORT_INCONSISTENT;
+	goto cleanup;
+
+memory_error:
+	ret = ZRAN_IMPORT_MEMORY_ERROR;
+	goto cleanup;
+
+unknown_format:
+	ret = ZRAN_IMPORT_UNKNOWN_FORMAT;
+	goto cleanup;
+
+unsupported_version:
+	ret = ZRAN_IMPORT_UNSUPPORTED_VERSION;
+	goto cleanup;
+
+cleanup:
+	if (new_list != NULL) {
+		point    = new_list + 1;
+		list_end = new_list + npoints;
+
+		while (point < list_end && point->data != NULL) {
+			free(point->data);
+			++point;
+		}
+
+		free(new_list);
+	}
+
+	if (dataflags != NULL) {
+		free(dataflags);
+	}
+
+	return ret;
+}
+
+void pyfastx_build_gzip_index(zran_index_t* gzip_index, sqlite3* index_db) {
+	int ret;
 
 	ret = zran_build_index(gzip_index, 0, 0);
-
 	if (ret != 0) {
-		PyErr_SetString(PyExc_RuntimeError, "failed to build gzip index");
+		PyErr_Format(PyExc_RuntimeError, "failed to build gzip index return %d", ret);
 		return;
 	}
 
-	temp_index = generate_random_name(index_file);
-	if ((fd = mkstemp(temp_index)) < 0) {
-		PyErr_SetString(PyExc_RuntimeError, "failed to create temp file");
+	ret = pyfastx_gzip_index_export(gzip_index, index_db);
+	if (ret != ZRAN_EXPORT_OK) {
+		PyErr_Format(PyExc_RuntimeError, "failed to save gzip index return %d", ret);
 		return;
 	}
-	close(fd);
-
-	fh = fopen(temp_index, "wb+");
-	if (zran_export_index(gzip_index, fh, NULL) != ZRAN_EXPORT_OK){
-		fclose(fh);
-		free(temp_index);
-		PyErr_SetString(PyExc_RuntimeError, "failed to export gzip index");
-		return;
-	}
-
-	remain = FTELL(fh);
-	rewind(fh);
-
-	buff = malloc(1048576);
-
-	while (remain > 0) {
-		if (remain > 524288000) {
-			block = 524288000;
-		} else {
-			block = remain;
-		}
-		offset = 0;
-		PYFASTX_SQLITE_CALL(
-			sqlite3_prepare_v2(index_db, "INSERT INTO gzindex VALUES (?,?)", -1, &stmt, NULL);
-			sqlite3_bind_null(stmt, 1);
-			sqlite3_bind_zeroblob(stmt, 2, block);
-			sqlite3_step(stmt);
-			rowid = sqlite3_last_insert_rowid(index_db);
-			sqlite3_blob_open(index_db, "main", "gzindex", "content", rowid, 1, &blob);
-
-			while (offset < block) {
-				chunk = block - offset;
-				if (chunk > 1048576) chunk = 1048576;
-
-				if ((len=fread(buff, 1, chunk, fh)) > 0) {
-					sqlite3_blob_write(blob, buff, len, offset);
-					offset += len;
-				} else {
-					break;
-				}
-			}
-
-			sqlite3_blob_close(blob);
-			sqlite3_finalize(stmt);
-		);
-		blob = NULL;
-		stmt = NULL;
-		remain -= offset;
-	}
-
-	free(buff);
-	fclose(fh);
-	remove(temp_index);
-	free(temp_index);
 }
 
-void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3* index_db) {
-	int fd;
-	int i, rows;
+void pyfastx_load_gzip_index(zran_index_t* gzip_index, sqlite3* index_db) {
+	int ret;
+	int rows;
 
-	char *temp_index;
-	void *buff;
-
-	FILE *fh;
-
-	sqlite3_blob *blob;
 	sqlite3_stmt *stmt;
-
-	Py_ssize_t bytes = 0;
-	Py_ssize_t offset;
-	Py_ssize_t len;
 
 	PYFASTX_SQLITE_CALL(
 		sqlite3_prepare_v2(index_db, "SELECT COUNT(1) FROM gzindex", -1, &stmt, NULL);
@@ -387,49 +701,11 @@ void pyfastx_load_gzip_index(char* index_file, zran_index_t* gzip_index, sqlite3
 		return;
 	}
 
-	temp_index = generate_random_name(index_file);
-	if ((fd = mkstemp(temp_index)) < 0) {
-		free(temp_index);
-		PyErr_SetString(PyExc_RuntimeError, "failed to create temp file");
+	ret = pyfastx_gzip_index_import(gzip_index, index_db);
+	if (ret != ZRAN_IMPORT_OK) {
+		PyErr_Format(PyExc_RuntimeError, "failed to import gzip index return %d", ret);
 		return;
 	}
-	close(fd);
-
-	fh = fopen(temp_index, "wb");
-	buff = malloc(1048576);
-
-	for (i = 1; i <= rows; i++) {
-		offset = 0;
-
-		PYFASTX_SQLITE_CALL(
-			sqlite3_blob_open(index_db, "main", "gzindex", "content", i, 0, &blob);
-			bytes = sqlite3_blob_bytes(blob);
-
-			while (offset < bytes) {
-				len = bytes - offset;
-
-				if (len > 1048576) {
-					len = 1048576;
-				}
-
-				sqlite3_blob_read(blob, buff, len, offset);
-				fwrite(buff, 1, len, fh);
-				offset += len;
-			}
-			sqlite3_blob_close(blob);
-		);
-		blob = NULL;
-	}
-	free(buff);
-	fclose(fh);
-
-	fh = fopen(temp_index, "rb");
-	if (zran_import_index(gzip_index, fh, NULL) != ZRAN_IMPORT_OK) {
-		PyErr_SetString(PyExc_RuntimeError, "failed to import gzip index");
-	}
-	fclose(fh);
-	remove(temp_index);
-	free(temp_index);
 }
 
 char *str_n_str(char *haystack, char *needle, Py_ssize_t len, Py_ssize_t size) {

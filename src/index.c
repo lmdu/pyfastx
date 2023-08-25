@@ -175,33 +175,10 @@ void pyfastx_create_index(pyfastx_Index *self){
 			l50 INTEGER --N50 seq count \n \
 		); \
 		CREATE TABLE comp ( \
-			ID INTEGER PRIMARY KEY, \
-			a INTEGER, \
-			b INTEGER, \
-			c INTEGER, \
-			d INTEGER, \
-			e INTEGER, \
-			f INTEGER, \
-			g INTEGER, \
-			h INTEGER, \
-			i INTEGER, \
-			j INTEGER, \
-			k INTEGER, \
-			l INTEGER, \
-			m INTEGER, \
-			n INTEGER, \
-			o INTEGER, \
-			p INTEGER, \
-			q INTEGER, \
-			r INTEGER, \
-			s INTEGER, \
-			t INTEGER, \
-			u INTEGER, \
-			v INTEGER, \
-			w INTEGER, \
-			x INTEGER, \
-			y INTEGER, \
-			z INTEGER \
+			ID INTEGER PRIMARY KEY, --comp identifier\n \
+			seqid INTEGER, --seq id\n \
+			abc INTEGER, --seq letter\n \
+			num INTEGER -- letter count\n \
 		); \
 		CREATE TABLE gzindex ( \
 			ID INTEGER PRIMARY KEY, \
@@ -384,7 +361,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 		if (strcmp(self->index_file, ":memory:") == 0) {
 			zran_build_index(self->gzip_index, 0, 0);
 		} else {
-			pyfastx_build_gzip_index(self->index_file, self->gzip_index, self->index_db);
+			pyfastx_build_gzip_index(self->gzip_index, self->index_db);
 		}
 	}
 }
@@ -413,7 +390,7 @@ void pyfastx_load_index(pyfastx_Index *self){
 	}
 
 	if (self->gzip_format) {
-		pyfastx_load_gzip_index(self->index_file, self->gzip_index, self->index_db);
+		pyfastx_load_gzip_index(self->gzip_index, self->index_db);
 	}
 }
 
