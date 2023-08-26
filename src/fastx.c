@@ -36,28 +36,28 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	char *file_name;
 	char *format = "auto";
 
-	Py_ssize_t file_len;
+	PyObject *file_obj;
 
 	pyfastx_Fastx *obj;
 
 	static char* keywords[] = {"file_name", "format", "uppercase", "comment", NULL};
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|sii", keywords, &file_name, &file_len, &format, &uppercase, &comment)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|sii", keywords, &file_obj, &format, &uppercase, &comment)) {
 		return NULL;
 	}
 
-	if (!file_exists(file_name)) {
-		PyErr_Format(PyExc_FileExistsError, "the input file %s does not exists", file_name);
+	if (!file_exists(file_obj)) {
+		PyErr_Format(PyExc_FileExistsError, "the input file %U does not exists", file_obj);
 		return NULL;
 	}
 
 	obj = (pyfastx_Fastx *)type->tp_alloc(type, 0);
 	if (!obj) return NULL;
 
-	obj->file_name = (char *)malloc(file_len + 1);
-	strcpy(obj->file_name, file_name);
+	Py_INCREF(file_obj);
+	obj->file_obj = file_obj;
 
 	//open the sequence file
-	obj->gzfd = gzopen(file_name, "rb");
+	obj->gzfd = gzopen(PyUnicode_AsUTF8(file_obj), "rb");
 
 	//set file format
 	if (strcmp(format, "auto") == 0) {
@@ -71,7 +71,7 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	}
 
 	if (obj->format == 0) {
-		PyErr_Format(PyExc_RuntimeError, "%s is not fasta or fastq sequence file", file_name);
+		PyErr_Format(PyExc_RuntimeError, "%U is not fasta or fastq sequence file", file_obj);
 		return NULL;
 	}
 
@@ -108,7 +108,7 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 }
 
 void pyfastx_fastx_dealloc(pyfastx_Fastx *self) {
-	free(self->file_name);
+	Py_DECREF(self->file_obj);
 	kseq_destroy(self->kseqs);
 	gzclose(self->gzfd);
 	Py_TYPE(self)->tp_free((PyObject *)self);
@@ -130,9 +130,9 @@ PyObject *pyfastx_fastx_next(pyfastx_Fastx *self) {
 
 PyObject *pyfastx_fastx_repr(pyfastx_Fastx *self) {
 	if (self->format == 1) {
-		return PyUnicode_FromFormat("<Fastx> fasta %s", self->file_name);
+		return PyUnicode_FromFormat("<Fastx> fasta %U", self->file_obj);
 	} else {
-		return PyUnicode_FromFormat("<Fastx> fastq %s", self->file_name);
+		return PyUnicode_FromFormat("<Fastx> fastq %U", self->file_obj);
 	}
 }
 

@@ -53,7 +53,7 @@ typedef struct {
 	PyObject_HEAD
 
 	//fastq file name
-	char* file_name;
+	PyObject* file_obj;
 
 	//index file
 	char* index_file;

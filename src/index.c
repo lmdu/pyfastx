@@ -12,8 +12,11 @@ create an index
 @param uppercase, uppercase sequence
 @param uppercase
 */
-pyfastx_Index* pyfastx_init_index(PyObject *obj, char* file_name, int file_len, int uppercase, int full_name, int memory_index, PyObject* key_func){
+pyfastx_Index* pyfastx_init_index(PyObject *obj, PyObject* file_obj, PyObject* index_obj, int uppercase, int full_name, int memory_index, PyObject* key_func){
 	pyfastx_Index* index;
+
+	char *index_file;
+	Py_ssize_t index_len;
 
 	index = (pyfastx_Index *)malloc(sizeof(pyfastx_Index));
 	index->uppercase = uppercase;
@@ -25,22 +28,31 @@ pyfastx_Index* pyfastx_init_index(PyObject *obj, char* file_name, int file_len, 
 	index->full_name = full_name;
 
 	//check input file is gzip or not
-	index->gzip_format = is_gzip_format(file_name);
+	index->gzip_format = is_gzip_format(file_obj);
 
 	//initial kseqs
-	index->gzfd = gzopen(file_name, "rb");
+	index->gzfd = gzopen(PyUnicode_AsUTF8(file_obj), "rb");
 	index->kseqs = kseq_init(index->gzfd);
 
 	//create index file or memory index
 	if (memory_index) {
 		index->index_file = ":memory:";
 	} else {
-		index->index_file = (char *)malloc(file_len + 5);
-		strcpy(index->index_file, file_name);
-		strcat(index->index_file, ".fxi");
+		if (index_obj) {
+			index_file = (char *)PyUnicode_AsUTF8AndSize(index_obj, &index_len);
+			index->index_file = (char *)malloc(index_len);
+			memcpy(index->index_file, index_file, index_len);
+			index->index_file[index_len] = '\0';
+		} else {
+			index_file = (char *)PyUnicode_AsUTF8AndSize(file_obj, &index_len);
+			index_len += 5;
+			index->index_file = (char *)malloc(index_len);
+			strcpy(index->index_file, index_file);
+			strcat(index->index_file, ".fxi");
+		}
 	}
 
-	index->fd = fopen(file_name, "rb");
+	index->fd = _Py_fopen_obj(file_obj, "rb");
 
 	index->index_db = 0;
 
@@ -395,11 +407,16 @@ void pyfastx_load_index(pyfastx_Index *self){
 }
 
 void pyfastx_build_index(pyfastx_Index *self){
-	if (file_exists(self->index_file)) {
+	PyObject *index_obj;
+	index_obj = PyUnicode_FromString(self->index_file);
+
+	if (file_exists(index_obj)) {
 		pyfastx_load_index(self);
 	} else {
 		pyfastx_create_index(self);
 	}
+
+	Py_DECREF(index_obj);
 }
 
 void pyfastx_index_free(pyfastx_Index *self){

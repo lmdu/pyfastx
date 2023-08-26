@@ -28,9 +28,9 @@ PyObject *pyfastx_version(PyObject *self, PyObject *args, PyObject *kwargs)	{
 }
 
 PyObject *pyfastx_gzip_check(PyObject *self, PyObject *args) {
-	char *file_name;
+	PyObject *file_name;
 
-	if (!PyArg_ParseTuple(args, "s", &file_name)) {
+	if (!PyArg_ParseTuple(args, "O", &file_name)) {
 		return NULL;
 	}
 

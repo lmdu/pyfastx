@@ -53,9 +53,8 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	int full_name = 0;
 
 	//fasta file path
-	char *file_name;
-
-	Py_ssize_t file_len;
+	PyObject *file_obj;
+	PyObject *index_obj = NULL;
 
 	//key function for seperating name
 	PyObject *key_func = Py_None;
@@ -63,9 +62,9 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	pyfastx_Fasta *obj;
 
 	//paramters for fasta object construction
-	static char* keywords[] = {"file_name", "uppercase", "build_index", "full_index", "full_name", "memory_index", "key_func", NULL};
+	static char* keywords[] = {"file_name", "index_file", "uppercase", "build_index", "full_index", "full_name", "memory_index", "key_func", NULL};
 	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiiO", keywords, &file_name, &file_len, &uppercase, &build_index, &full_index, &full_name, &memory_index, &key_func)){
+	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OiiiiiO", keywords, &file_obj, &index_obj, &uppercase, &build_index, &full_index, &full_name, &memory_index, &key_func)){
 		return NULL;
 	}
 
@@ -82,8 +81,8 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		return NULL;
 	}*/
 
-	if (!file_exists(file_name)) {
-		PyErr_Format(PyExc_FileExistsError, "the input fasta file %s does not exists", file_name);
+	if (!file_exists(file_obj)) {
+		PyErr_Format(PyExc_FileExistsError, "the input fasta file %U does not exists", file_obj);
 		return NULL;
 	}
 
@@ -92,22 +91,24 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	if (!obj) return NULL;
 
 	//initial sequence file name
-	obj->file_name = (char *)malloc((int)file_len + 1);
-	strcpy(obj->file_name, file_name);
+	//obj->file_name = (char *)malloc((int)file_len + 1);
+	//strcpy(obj->file_name, file_name);
+	Py_INCREF(file_obj);
+	obj->file_obj = file_obj;
 
 	obj->uppercase = uppercase;
 	obj->has_index = build_index;
 
 	//create index
 
-	obj->index = pyfastx_init_index((PyObject *)obj, obj->file_name, (int)file_len, uppercase, full_name, memory_index, key_func);
+	obj->index = pyfastx_init_index((PyObject *)obj, obj->file_obj, index_obj, uppercase, full_name, memory_index, key_func);
 	
 	//iter function
 	obj->func = pyfastx_index_next_null;
 
 	//check is correct fasta format
 	if (!fasta_validator(obj->index->gzfd)) {
-		PyErr_Format(PyExc_RuntimeError, "%s is not plain or gzip compressed fasta formatted file", file_name);
+		PyErr_Format(PyExc_RuntimeError, "%U is not plain or gzip compressed fasta formatted file", file_obj);
 		return NULL;
 	}
 
@@ -130,7 +131,8 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 }
 
 void pyfastx_fasta_dealloc(pyfastx_Fasta *self){
-	free(self->file_name);
+	//free(self->file_name);
+	Py_DECREF(self->file_obj);
 
 	pyfastx_index_free(self->index);
 	Py_TYPE(self)->tp_free((PyObject *)self);
@@ -138,9 +140,9 @@ void pyfastx_fasta_dealloc(pyfastx_Fasta *self){
 
 PyObject *pyfastx_fasta_repr(pyfastx_Fasta *self) {
 	if (self->has_index) {
-		return PyUnicode_FromFormat("<Fasta> %s contains %ld sequences", self->file_name, self->seq_counts);
+		return PyUnicode_FromFormat("<Fasta> %U contains %zd sequences", self->file_obj, self->seq_counts);
 	} else {
-		return PyUnicode_FromFormat("<Fasta> %s", self->file_name);
+		return PyUnicode_FromFormat("<Fasta> %U", self->file_obj);
 	}
 }
 
@@ -1106,7 +1108,7 @@ PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
 PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 	int l;
 	int ret;
-	int i, j;
+	int i;
 
 	char *alphabets;
 	char *retval;
@@ -1114,7 +1116,6 @@ PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 
 	sqlite3_stmt *stmt;
 
-	Py_ssize_t c;
 	Py_ssize_t n;
 
 	pyfastx_fasta_calc_composition(self);
@@ -1125,7 +1126,7 @@ PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 		ret = sqlite3_step(stmt);
 	);
 
-	j = 0;
+	i = 0;
 	alphabets = (char *)malloc(128);
 
 	while (ret == SQLITE_ROW) {
@@ -1136,11 +1137,11 @@ PyObject *pyfastx_fasta_guess_type(pyfastx_Fasta *self, void* closure) {
 		);
 
 		if (l > 32 && l < 127 && n > 0) {
-			alphabets[j++] = l;
+			alphabets[i++] = l;
 		}
 	}
 
-	alphabets[j] = '\0';
+	alphabets[i] = '\0';
 	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
 
 	if (is_subset("ACGTNacgtn", alphabets) || is_subset("abcdghkmnrstvwyABCDGHKMNRSTVWY*-", alphabets)) {
@@ -1170,7 +1171,7 @@ static PyGetSetDef pyfastx_fasta_getsets[] = {
 };
 
 static PyMemberDef pyfastx_fasta_members[] = {
-	{"file_name", T_STRING, offsetof(pyfastx_Fasta, file_name), READONLY},
+	{"file_name", T_OBJECT, offsetof(pyfastx_Fasta, file_obj), READONLY},
 	{"size", T_PYSSIZET, offsetof(pyfastx_Fasta, seq_length), READONLY},
 	{NULL}
 };

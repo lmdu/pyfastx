@@ -6,8 +6,6 @@
 #ifdef _WIN32
 #include "windows.h"
 #include "io.h"
-#define fopen _Py_wfopen
-
 /*int mkstemp(char *template) {
 	if (_mktemp_s(template, strlen(template) + 1) != 0) {
 		return -1;
@@ -22,17 +20,16 @@ static uint32_t max(uint32_t a, uint32_t b) {
   if (a > b) return a;
   else       return b;
 }
-#define fopen _Py_fopen
 #endif
 
 //const char ZRAN_INDEX_FILE_ID[] = {'G', 'Z', 'I', 'D', 'X'};
 //const uint8_t ZRAN_INDEX_FILE_VERSION = 1;
 
 //check file is whether exists in disk
-int file_exists(char *file_name){
+int file_exists(PyObject *file_obj){
 	FILE *file;
 
-	if((file = fopen(file_name, "r"))){
+	if((file = _Py_fopen_obj(file_obj, "r"))){
 		fclose(file);
 		return 1;
 	}
@@ -253,12 +250,12 @@ int is_subset(char *seq1, char *seq2) {
 @para file_name str, input file path string
 @return bool, 1 is gzip formmat file, 0 is not gzip
 */
-int is_gzip_format(char* file_name){
+int is_gzip_format(PyObject* file_obj){
 	int ret;
 	FILE* fd;
 	unsigned char magic[4] = {0};
 
-	fd = fopen(file_name, "rb");
+	fd = _Py_fopen_obj(file_obj, "rb");
 	ret = fread(magic, sizeof(magic), 1, fd);
 	fclose(fd);
 

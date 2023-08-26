@@ -232,12 +232,17 @@ void pyfastx_fastq_load_index(pyfastx_Fastq *self) {
 	}
 }
 
-PyObject *pyfastx_fastq_build_index(pyfastx_Fastq *self){
-	if (file_exists(self->index_file)) {
+PyObject *pyfastx_fastq_build_index(pyfastx_Fastq *self) {
+	PyObject *index_obj;
+	index_obj = PyUnicode_FromString(self->index_file);
+
+	if (file_exists(index_obj)) {
 		pyfastx_fastq_load_index(self);
 	} else {
 		pyfastx_fastq_create_index(self);
 	}
+
+	Py_DECREF(index_obj);
 
 	Py_RETURN_TRUE;
 }
@@ -253,20 +258,23 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	int full_index = 0;
 	int full_name = 0;
 
-	char *file_name;
+	char *index_file;
 
-	Py_ssize_t file_len;
+	PyObject *file_obj;
+	PyObject *index_obj = NULL;
 
-	static char* keywords[] = {"file_name", "phred", "build_index", "full_index", "full_name", NULL};
+	Py_ssize_t index_len;
+
+	static char* keywords[] = {"file_name", "index_file", "phred", "build_index", "full_index", "full_name", NULL};
 
 	pyfastx_Fastq *obj;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiii", keywords, &file_name, &file_len, &phred, &build_index, &full_index, &full_name)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Oiiii", keywords, &file_obj, &index_obj, &phred, &build_index, &full_index, &full_name)) {
 		return NULL;
 	}
 
-	if (!file_exists(file_name)) {
-		PyErr_Format(PyExc_FileExistsError, "input fastq file %s does not exists", file_name);
+	if (!file_exists(file_obj)) {
+		PyErr_Format(PyExc_FileExistsError, "input fastq file %U does not exists", file_obj);
 		return NULL;
 	}
 
@@ -277,29 +285,40 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	obj->middle = (pyfastx_FastqMiddleware *)malloc(sizeof(pyfastx_FastqMiddleware));
 
-	obj->file_name = (char *)malloc((int)file_len + 1);
-	strcpy(obj->file_name, file_name);
+	//obj->file_name = (char *)malloc((int)file_len + 1);
+	//strcpy(obj->file_name, file_name);
+	Py_INCREF(file_obj);
+	obj->file_obj = file_obj;
 
 	//check input file is gzip or not
-	obj->middle->gzip_format = is_gzip_format(file_name);
+	obj->middle->gzip_format = is_gzip_format(file_obj);
 
 	//initial kstream and kseq
-	obj->middle->gzfd = gzopen(file_name, "rb");
+	obj->middle->gzfd = gzopen(PyUnicode_AsUTF8(file_obj), "rb");
 	obj->ks = ks_init(obj->middle->gzfd);
 	obj->middle->kseq = kseq_init(obj->middle->gzfd);
 
 	//check is correct fastq format
 	if (!fastq_validator(obj->middle->gzfd)) {
-		PyErr_Format(PyExc_RuntimeError, "%s is not plain or gzip compressed fastq formatted file", file_name);
+		PyErr_Format(PyExc_RuntimeError, "%U is not plain or gzip compressed fastq formatted file", file_obj);
 		return NULL;
 	}
 
 	//create index file
-	obj->index_file = (char *)malloc((int)file_len + 5);
-	strcpy(obj->index_file, file_name);
-	strcat(obj->index_file, ".fxi");
+	if (index_obj) {
+		index_file = (char *)PyUnicode_AsUTF8AndSize(index_obj, &index_len);
+		obj->index_file = (char *)malloc(index_len);
+		memcpy(obj->index_file, index_file, index_len);
+		obj->index_file[index_len] = '\0';
+	} else {
+		index_file = (char *)PyUnicode_AsUTF8AndSize(file_obj, &index_len);
+		index_len += 5;
+		obj->index_file = (char *)malloc(index_len);
+		strcpy(obj->index_file, index_file);
+		strcat(obj->index_file, ".fxi");
+	}
 
-	obj->middle->fd = fopen(file_name, "rb");
+	obj->middle->fd = _Py_fopen_obj(obj->file_obj, "rb");
 
 	//initail index connection
 	obj->index_db = 0;
@@ -324,11 +343,15 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		zran_init(obj->middle->gzip_index, obj->middle->fd, NULL, 1048576, 32768, 16384, ZRAN_AUTO_BUILD);
 	}
 
-	if (file_exists(obj->index_file)) {
+	index_obj = PyUnicode_FromString(obj->index_file);
+
+	if (file_exists(index_obj)) {
 		pyfastx_fastq_load_index(obj);
 	} else if (build_index) {
 		pyfastx_fastq_create_index(obj);
 	}
+
+	Py_DECREF(index_obj);
 
 	//prepare sql
 	PYFASTX_SQLITE_CALL(
@@ -522,9 +545,9 @@ PyObject* pyfastx_fastq_subscript(pyfastx_Fastq *self, PyObject *item) {
 
 PyObject* pyfastx_fastq_repr(pyfastx_Fastq *self) {
 	if (self->has_index) {
-		return PyUnicode_FromFormat("<Fastq> %s contains %ld reads", self->file_name, self->read_counts);
+		return PyUnicode_FromFormat("<Fastq> %U contains %zd reads", self->file_obj, self->read_counts);
 	} else {
-		return PyUnicode_FromFormat("<Fastq> %s", self->file_name);
+		return PyUnicode_FromFormat("<Fastq> %U", self->file_obj);
 	}
 }
 
@@ -1059,7 +1082,7 @@ static PyGetSetDef pyfastx_fastq_getsets[] = {
 };
 
 static PyMemberDef pyfastx_fastq_members[] = {
-	{"file_name", T_STRING, offsetof(pyfastx_Fastq, file_name), READONLY},
+	{"file_name", T_OBJECT, offsetof(pyfastx_Fastq, file_obj), READONLY},
 	{"size", T_PYSSIZET, offsetof(pyfastx_Fastq, seq_length), READONLY},
 	{"avglen", T_DOUBLE, offsetof(pyfastx_Fastq, avg_length), READONLY},
 	{NULL}

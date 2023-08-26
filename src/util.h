@@ -8,14 +8,14 @@
 #include "zlib.h"
 #include "time.h"
 
-int file_exists(char *file_name);
+int file_exists(PyObject *file_obj);
 void upper_string(char *str, Py_ssize_t len);
 Py_ssize_t remove_space(char *str, Py_ssize_t len);
 Py_ssize_t remove_space_uppercase(char *str, Py_ssize_t len);
 void reverse_seq(char *seq);
 void reverse_complement_seq(char *seq);
 
-int is_gzip_format(char *file_name);
+int is_gzip_format(PyObject *file_obj);
 //void truncate_seq(char *seq, uint32_t start, uint32_t end);
 void complement_seq(char *seq);
 void reverse_seq(char *seq);

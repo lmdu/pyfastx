@@ -8,7 +8,7 @@ typedef struct {
 	PyObject_HEAD
 
 	//fasta or fastq file path and name
-	char* file_name;
+	PyObject* file_obj;
 
 	//always output uppercase sequence
 	int uppercase;
