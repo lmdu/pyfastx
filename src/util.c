@@ -22,7 +22,7 @@ static uint32_t max(uint32_t a, uint32_t b) {
   if (a > b) return a;
   else       return b;
 }
-#define fopen _Py_open
+#define fopen _Py_fopen
 #endif
 
 //const char ZRAN_INDEX_FILE_ID[] = {'G', 'Z', 'I', 'D', 'X'};
