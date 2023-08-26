@@ -6,7 +6,7 @@
 #ifdef _WIN32
 #include "windows.h"
 #include "io.h"
-#define fopen _wfopen_s
+#define fopen _wfopen
 
 /*int mkstemp(char *template) {
 	if (_mktemp_s(template, strlen(template) + 1) != 0) {
