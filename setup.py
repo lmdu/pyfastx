@@ -19,7 +19,7 @@ def prepare_zlib():
 
     zlib_dir = os.path.join(root_dir, "zlib-1.2.13")
     zlib_file = os.path.join(root_dir, "zlib-1.2.13.zip")
-    url = "https://zlib.net/zlib1213.zip"
+    url = "https://github.com/madler/zlib/releases/download/v1.2.13/zlib1213.zip"
 
     if not os.path.exists(zlib_dir):
         urllib.request.urlretrieve(url, zlib_file)
