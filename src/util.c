@@ -6,7 +6,7 @@
 #ifdef _WIN32
 #include "windows.h"
 #include "io.h"
-#define fopen _wfopen
+#define fopen _Py_wfopen
 
 /*int mkstemp(char *template) {
 	if (_mktemp_s(template, strlen(template) + 1) != 0) {
@@ -22,6 +22,7 @@ static uint32_t max(uint32_t a, uint32_t b) {
   if (a > b) return a;
   else       return b;
 }
+#define fopen _Py_open
 #endif
 
 //const char ZRAN_INDEX_FILE_ID[] = {'G', 'Z', 'I', 'D', 'X'};
