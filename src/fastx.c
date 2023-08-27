@@ -33,7 +33,6 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	int uppercase = 0;
 	int comment = 0;
 
-	char *file_name;
 	char *format = "auto";
 
 	PyObject *file_obj;
@@ -108,9 +107,9 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 }
 
 void pyfastx_fastx_dealloc(pyfastx_Fastx *self) {
-	Py_DECREF(self->file_obj);
 	kseq_destroy(self->kseqs);
 	gzclose(self->gzfd);
+	Py_DECREF(self->file_obj);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 

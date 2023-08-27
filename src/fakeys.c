@@ -162,7 +162,7 @@ Py_ssize_t pyfastx_fasta_keys_length(pyfastx_FastaKeys *self) {
 }
 
 PyObject *pyfastx_fasta_keys_repr(pyfastx_FastaKeys *self) {
-	return PyUnicode_FromFormat("<FastaKeys> contains %ld keys", self->seq_counts);
+	return PyUnicode_FromFormat("<FastaKeys> contains %zd keys", self->seq_counts);
 }
 
 PyObject *pyfastx_fasta_keys_subscript(pyfastx_FastaKeys *self, PyObject *item) {

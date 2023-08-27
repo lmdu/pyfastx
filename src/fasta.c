@@ -57,7 +57,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	PyObject *index_obj = NULL;
 
 	//key function for seperating name
-	PyObject *key_func = Py_None;
+	PyObject *key_func = NULL;
 
 	pyfastx_Fasta *obj;
 
@@ -68,7 +68,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		return NULL;
 	}
 
-	if ((key_func != Py_None) && !PyCallable_Check(key_func)) {
+	if ((key_func) && !PyCallable_Check(key_func)) {
 		PyErr_SetString(PyExc_TypeError, "key_func must be a callable function");
 		return NULL;
 	}
@@ -101,7 +101,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	//create index
 
-	obj->index = pyfastx_init_index((PyObject *)obj, obj->file_obj, index_obj, uppercase, full_name, memory_index, key_func);
+	obj->index = pyfastx_init_index((PyObject *)obj, file_obj, index_obj, uppercase, full_name, memory_index, key_func);
 	
 	//iter function
 	obj->func = pyfastx_index_next_null;
@@ -132,9 +132,8 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 void pyfastx_fasta_dealloc(pyfastx_Fasta *self){
 	//free(self->file_name);
-	Py_DECREF(self->file_obj);
-
 	pyfastx_index_free(self->index);
+	Py_DECREF(self->file_obj);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 

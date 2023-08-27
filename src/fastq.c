@@ -408,6 +408,8 @@ void pyfastx_fastq_dealloc(pyfastx_Fastq *self) {
 	fclose(self->middle->fd);
 	gzclose(self->middle->gzfd);
 
+	Py_DECREF(self->file_obj);
+
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 

@@ -22,6 +22,9 @@ pyfastx_Index* pyfastx_init_index(PyObject *obj, PyObject* file_obj, PyObject* i
 	index->uppercase = uppercase;
 
 	//key function
+	if (key_func) {
+		Py_INCREF(key_func);
+	}
 	index->key_func = key_func;
 
 	//full name
@@ -161,7 +164,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 	PYFASTX_SQLITE_CALL(ret = sqlite3_open(self->index_file, &self->index_db));
 	
 	if (ret != SQLITE_OK) {
-		PyErr_Format(PyExc_ConnectionError, "Can not open index file %s", self->index_file);
+		PyErr_Format(PyExc_ConnectionError, "Could not open index file %s", self->index_file);
 		return;
 	}
 	
@@ -269,7 +272,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			//remove > sign at the start position
 			header_pos = line.s + 1;
 
-			if (self->key_func == Py_None) {
+			if (self->key_func == NULL) {
 				if (self->full_name) {
 					chrom.l = desc_len;
 					memcpy(chrom.s, header_pos, chrom.l);
