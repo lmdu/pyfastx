@@ -25,6 +25,7 @@ int is_subset(char *seq1, char *seq2);
 //PyObject* make_large_sequence(char *seq);
 //int integer_check(PyObject* num);
 //int64_t integer_to_long(PyObject* num);
+gzFile pyfastx_gzip_open(PyObject *path, const char *mode);
 
 //PyObject* clean_seq(PyObject *self, PyObject *args);
 //PyObject* sub_seq(PyObject *self, PyObject *args);

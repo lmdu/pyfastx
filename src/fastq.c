@@ -294,7 +294,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->middle->gzip_format = is_gzip_format(file_obj);
 
 	//initial kstream and kseq
-	obj->middle->gzfd = gzopen(PyUnicode_AsUTF8(file_obj), "rb");
+	obj->middle->gzfd = pyfastx_gzip_open(file_obj, "rb");
 	obj->ks = ks_init(obj->middle->gzfd);
 	obj->middle->kseq = kseq_init(obj->middle->gzfd);
 

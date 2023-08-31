@@ -56,7 +56,7 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj->file_obj = file_obj;
 
 	//open the sequence file
-	obj->gzfd = gzopen(PyUnicode_AsUTF8(file_obj), "rb");
+	obj->gzfd = pyfastx_gzip_open(file_obj, "rb");
 
 	//set file format
 	if (strcmp(format, "auto") == 0) {

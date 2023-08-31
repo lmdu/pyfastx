@@ -13,12 +13,65 @@
 
 	return open(template, _O_CREAT | _O_EXCL, _S_IWRITE);
 }*/
+gzFile pyfastx_gzip_open(PyObject *path, const char *mode) {
+	gzFile f;
+	wchar_t wmode[10];
+	int usize;
+
+	if (!PyUnicode_Check(path)) {
+		PyErr_Format(PyExc_TypeError,
+					"str file path expected under Windows, got %R",
+					Py_TYPE(path));
+		return NULL;
+	}
+
+	wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
+	if (wpath == NULL) {
+		return NULL;
+	}
+
+	usize = MultiByteToWideChar(CP_ACP, 0, mode, -1, wmode, Py_ARRAY_LENGTH(wmode));
+	if (usize == 0) {
+		PyErr_SetFromWindowsErr(0);
+		PyMem_Free(wpath);
+		return NULL;
+	}
+
+	Py_BEGIN_ALLOW_THREADS
+	f = gzopen_w(wpath, wmode);
+	Py_END_ALLOW_THREADS
+
+	PyMem_Free(wpath);
+
+	return f;
+}
+
 #else
 #include <fcntl.h>
 static uint32_t max(uint32_t a, uint32_t b) {
 
   if (a > b) return a;
   else       return b;
+}
+
+gzFile pyfastx_gzip_open(PyObject *path, const char *mode) {
+	gzFile f;
+	const char *path_str;
+	PyObject *bytes;
+
+	if (!PyUnicode_FSConverter(path, &bytes)) {
+		return NULL;
+	}
+
+	path_str = PyBytes_AS_STRING(bytes);
+
+	Py_BEGIN_ALLOW_THREADS
+	f = gzopen(path_str, mode);
+	Py_END_ALLOW_THREADS
+
+	Py_DECREF(bytes);
+
+	return f;
 }
 #endif
 
@@ -34,6 +87,7 @@ int file_exists(PyObject *file_obj){
 		return 1;
 	}
 
+	PyErr_Clear();
 	return 0;
 }
 

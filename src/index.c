@@ -34,12 +34,13 @@ pyfastx_Index* pyfastx_init_index(PyObject *obj, PyObject* file_obj, PyObject* i
 	index->gzip_format = is_gzip_format(file_obj);
 
 	//initial kseqs
-	index->gzfd = gzopen(PyUnicode_AsUTF8(file_obj), "rb");
+	index->gzfd = pyfastx_gzip_open(file_obj, "rb");
 	index->kseqs = kseq_init(index->gzfd);
 
 	//create index file or memory index
 	if (memory_index) {
-		index->index_file = ":memory:";
+		index->index_file = (char *)malloc(sizeof(char)*9);
+		strcpy(index->index_file, ":memory:");
 	} else {
 		if (index_obj) {
 			index_file = (char *)PyUnicode_AsUTF8AndSize(index_obj, &index_len);
