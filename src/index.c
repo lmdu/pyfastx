@@ -584,7 +584,7 @@ PyObject *pyfastx_index_get_seq_by_id(pyfastx_Index *self, Py_ssize_t chrom){
 		);
 
 		return (PyObject *)obj;
-	} else { 
+	} else {
 		PYFASTX_SQLITE_CALL(sqlite3_reset(self->uid_stmt));
 		PyErr_SetString(PyExc_IndexError, "Index Error");
 		return NULL;

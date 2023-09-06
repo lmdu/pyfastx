@@ -26,14 +26,28 @@ pyfastx.version
 
 	:rtype: bool
 
+.. py:function:: pyfastx.reverse_complement(seq)
+
+	New in pyfastx 2.0.0
+
+	get reverse complement sequence of given DNA sequence
+
+	:param str seq: DNA sequence
+
+	:return: reverse complement sequence
+
+	:rtype: str
+
 pyfastx.Fasta
 -------------
 
-.. py:class:: pyfastx.Fasta(file_name, uppercase=True, build_index=True, full_index=False, full_name=False, memory_index=False, key_func=None)
+.. py:class:: pyfastx.Fasta(file_name, index_file=None, uppercase=True, build_index=True, full_index=False, full_name=False, memory_index=False, key_func=None)
 
 	Read and parse fasta files. Fasta can be used as dict or list, you can use index or sequence name to get a sequence object, e.g. ``fasta[0]``, ``fasta['seq1']``
 
 	:param str file_name: the file path of input FASTA file
+
+	:param str index_file: the index file of FASTA file, default using index file with extension of .fxi in the same directory of FASTA file, New in 2.0.0
 
 	:param bool uppercase: always output uppercase sequence, default: ``True``
 
@@ -264,11 +278,13 @@ pyfastx.Fastq
 
 New in ``pyfastx`` 0.4.0
 
-.. py:class:: pyfastx.Fastq(file_name, phred=0, build_index=True, full_index=False)
+.. py:class:: pyfastx.Fastq(file_name, index_file=None, phred=0, build_index=True, full_index=False)
 
 	Read and parse fastq file
 
-	:param str file_name: input fastq file path
+	:param str file_name: input FASTQ file path
+
+	:param str index_file: the index file of FASTQ file, default using the index file with extension of .fxi in the same directory of FASTQ file. New in 2.0.0
 
 	:param bool build_index: build index for random access to FASTQ reads, default: ``True``. If build_index is False, iteration will return a tuple (name, seq, qual); If build_index is True, iteration will return a read object
 

@@ -41,9 +41,27 @@ PyObject *pyfastx_gzip_check(PyObject *self, PyObject *args) {
 	Py_RETURN_FALSE;
 }
 
+PyObject *pyfastx_reverse_complement(PyObject *self, PyObject *args) {
+	const char *s;
+
+	PyObject *seq_obj;
+	PyObject *rc_obj;
+
+	if (!PyArg_ParseTuple(args, "O", &seq_obj)) {
+		return NULL;
+	}
+
+	s = PyUnicode_AsUTF8(seq_obj);
+	rc_obj = PyUnicode_FromString(s);
+	s = PyUnicode_AsUTF8(rc_obj);
+	reverse_complement_seq(s);
+	return rc_obj;
+}
+
 static PyMethodDef module_methods[] = {
 	{"version", (PyCFunction)pyfastx_version, METH_VARARGS | METH_KEYWORDS, NULL},
 	{"gzip_check", (PyCFunction)pyfastx_gzip_check, METH_VARARGS, NULL},
+	{"reverse_complement", (PyCFunction)pyfastx_reverse_complement, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL}
 };
 

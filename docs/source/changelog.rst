@@ -1,6 +1,19 @@
 Changelog
 =========
 
+Version 2.0.0 (2023-09-05)
+--------------------------
+
+- Added support for file name with wide char
+- Added support for specifying index file path
+- Added support for more characters in DNA sequence
+- Added reverse complement function for DNA conversion
+- Improved the performance of kseq library
+- Optimized gzip index importing and saving without temp file
+- Fixed segmentation fault when using sequence composition
+- Fixed memory leak in Fastq read quality integer
+- Fixed zlib download url broken error when building
+
 Version 1.1.0 (2023-04-19)
 --------------------------
 
@@ -33,21 +46,24 @@ Version 0.9.0 (2022-12-30)
 - Fixed the quality score parsing error from fastq
 - Fixed the reference of sequence returned from function
 
+Older versions
+--------------
+
 Version 0.8.4 (2021-06-30)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Added slice feature to FastaKeys
 - Fixed FastaKeys and FastqKeys iteration memory leak
 - Optimized FastaKeys and FastqKeys creation
 
 Version 0.8.3 (2021-04-25)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed Fastx iteration for next function
 - Fixed Fastx uppercase for reading fasta
 
 Version 0.8.2 (2021-01-02)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed sample segfault error caused by fastq iteration error
 - Fixed gzip index import error in multiple processes
@@ -55,13 +71,13 @@ Version 0.8.2 (2021-01-02)
 - Fixed all objects iteration to support built-in next function
 
 Version 0.8.1 (2020-12-16)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed pip install error from source code
 - Removed support for python39 32bit due to dll load error
 
 Version 0.8.0 (2020-12-15)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Added Fastx object as a simple sequence iterator
 - Added FastqKeys object to obtain read names
@@ -72,7 +88,7 @@ Version 0.8.0 (2020-12-15)
 - Changed Identifier object to FastaKeys object
 
 Version 0.7.0 (2020-09-20)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Added support for extracting flank sequences
 - Added support for indexing super large gzip file
@@ -80,9 +96,6 @@ Version 0.7.0 (2020-09-20)
 - Improved the speed of random access to reads from fastq
 - Fixed sequence dealloc error cuasing no fasta delloc trigger
 - Fixed fastq max and min quality score return value
-
-Older versions
---------------
 
 Version 0.6.17 (2020-08-31)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
