@@ -240,7 +240,7 @@ Version 0.6.0 (2020-01-02)
 - Disabled export gzip index when building memory index
 
 Version 0.5.10 (2019-11-20)
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Added identifier filter function
 - Remove tp_new for Read, Sequence and Identifier
@@ -335,7 +335,7 @@ Version 0.4.0 (2019-09-29)
 - Added random access to reads from FASTQ
 
 Version 0.3.10 (2019-09-27)
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed GC skew exception caused by mixing unsigned with signed for division  
 
@@ -409,12 +409,12 @@ Version 0.3.0 (2019-09-07)
 - removed support for Python34
 
 Version 0.2.11 (2019-08-31)
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Support for Python 3.4
 
 Version 0.2.10 (2019-08-28)
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Changed fseek and fread into gzseek and gzread
 - Fixed sequence cache name comparision

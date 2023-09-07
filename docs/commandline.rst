@@ -13,7 +13,7 @@ New in ``pyfastx`` 0.5.0
 
     optional arguments:
       -h, --help     show this help message and exit
-      -v, --version  show program's version number and exit
+      -v, --version  show program version number and exit
 
     Commands:
 

@@ -403,7 +403,7 @@ New in ``pyfastx`` 0.4.0
 
 		get read quality ascii string
 
-	.. py:attriubte:: quali
+	.. py:attribute:: quali
 
 		get read quality integer value (ascii - phred), return a list
 
