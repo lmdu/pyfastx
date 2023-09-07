@@ -5,12 +5,7 @@ You can install pyfastx via the Python Package Index (PyPI) (**recommended**) or
 
 Make sure you have installed both `pip <https://pip.pypa.io/en/stable/installing/>`_ and Python before starting.
 
-Currently, ``pyfastx`` supports Python 3.5, 3.6, 3.7, 3.8, 3.9 and can work on Windows, Linux, MacOS.
-
-.. warning::
-	
-	Python 2.7 has been retired. Python 3.4 has now reached its end-of-life and has been retired
-
+Currently, ``pyfastx`` supports Python 3.6, 3.7, 3.8, 3.9, 3.10, 3.11 and can work on Windows, Linux, MacOS.
 
 Install from PyPI
 -----------------
@@ -44,12 +39,7 @@ On Ubuntu
 	apt install zlib1g-dev
 	apt install libsqlite3-dev
 
-On MacOS
-
-::
-
-	brew install zlib
-	brew install sqlite3
+On Windows and MacOS, it will automatically download zlib and sqlite3 library to build.
 
 
 Second, clone pyfastx using ``git`` or download latest `release <https://github.com/lmdu/pyfastx/releases>`_:
