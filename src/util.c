@@ -448,6 +448,10 @@ int pyfastx_gzip_index_export(zran_index_t* gzip_index, sqlite3* index_db) {
 
 	sqlite3_stmt *stmt;
 
+	char *sql = "PRAGMA synchronous=OFF; BEGIN TRANSACTION;";
+	PYFASTX_SQLITE_CALL(ret = sqlite3_exec(index_db, sql, NULL, NULL, NULL));
+	if (ret != SQLITE_OK) goto fail;
+
 	PYFASTX_SQLITE_CALL(
 		ret = sqlite3_prepare_v2(index_db, "INSERT INTO gzindex VALUES (?,?)", -1, &stmt, NULL);
 	);	
@@ -526,6 +530,8 @@ int pyfastx_gzip_index_export(zran_index_t* gzip_index, sqlite3* index_db) {
 
 	PYFASTX_SQLITE_CALL(ret = sqlite3_finalize(stmt));
 	if (ret != SQLITE_OK) goto fail;
+
+	PYFASTX_SQLITE_CALL(sqlite3_exec(index_db, "COMMIT;", NULL, NULL, NULL));
 
 	return ZRAN_EXPORT_OK;
 

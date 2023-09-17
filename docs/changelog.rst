@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Version 2.0.1 (2023-09-18)
+
+- Speedup the gzip index writing to index file
+
 Version 2.0.0 (2023-09-05)
 --------------------------
 

@@ -91,10 +91,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	if (!obj) return NULL;
 
 	//initial sequence file name
-	//obj->file_name = (char *)malloc((int)file_len + 1);
-	//strcpy(obj->file_name, file_name);
-	Py_INCREF(file_obj);
-	obj->file_obj = file_obj;
+	obj->file_obj = Py_NewRef(file_obj);
 
 	obj->uppercase = uppercase;
 	obj->has_index = build_index;

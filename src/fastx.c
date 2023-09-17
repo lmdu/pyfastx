@@ -52,8 +52,7 @@ PyObject *pyfastx_fastx_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 	obj = (pyfastx_Fastx *)type->tp_alloc(type, 0);
 	if (!obj) return NULL;
 
-	Py_INCREF(file_obj);
-	obj->file_obj = file_obj;
+	obj->file_obj = Py_NewRef(file_obj);
 
 	//open the sequence file
 	obj->gzfd = pyfastx_gzip_open(file_obj, "rb");

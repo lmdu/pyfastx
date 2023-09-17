@@ -285,10 +285,7 @@ PyObject *pyfastx_fastq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 
 	obj->middle = (pyfastx_FastqMiddleware *)malloc(sizeof(pyfastx_FastqMiddleware));
 
-	//obj->file_name = (char *)malloc((int)file_len + 1);
-	//strcpy(obj->file_name, file_name);
-	Py_INCREF(file_obj);
-	obj->file_obj = file_obj;
+	obj->file_obj = Py_NewRef(file_obj);
 
 	//check input file is gzip or not
 	obj->middle->gzip_format = is_gzip_format(file_obj);

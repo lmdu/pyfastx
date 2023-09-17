@@ -23,9 +23,10 @@ pyfastx_Index* pyfastx_init_index(PyObject *obj, PyObject* file_obj, PyObject* i
 
 	//key function
 	if (key_func) {
-		Py_INCREF(key_func);
+		index->key_func = Py_NewRef(key_func);
+	} else {
+		index->key_func = NULL;
 	}
-	index->key_func = key_func;
 
 	//full name
 	index->full_name = full_name;
