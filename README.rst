@@ -45,7 +45,8 @@ pyfastx
    :target: http://bioconda.github.io/recipes/pyfastx/README.html
    :alt: Bioconda
 
-*a robust python module for fast random access to sequences from plain and gzipped FASTA/Q file*
+**Citation:** 
+`Lianming Du, Qin Liu, Zhenxin Fan, Jie Tang, Xiuyue Zhang, Megan Price, Bisong Yue, Kelei Zhao. Pyfastx: a robust Python package for fast random access to sequences from plain and gzipped FASTA/Q files. Briefings in Bioinformatics, 2021, 22(4):bbaa368 <https://doi.org/10.1093/bib/bbaa368>`_.
 
 .. contents:: Table of Contents
 
