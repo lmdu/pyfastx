@@ -1,7 +1,6 @@
 import os
 import sys
 import glob
-import tarfile
 import zipfile
 import urllib.request
 from setuptools import setup, Extension
@@ -17,9 +16,9 @@ def prepare_zlib():
     global include_dirs
     global sources
 
-    zlib_dir = os.path.join(root_dir, "zlib-1.2.13")
-    zlib_file = os.path.join(root_dir, "zlib-1.2.13.zip")
-    url = "https://github.com/madler/zlib/releases/download/v1.2.13/zlib1213.zip"
+    zlib_dir = os.path.join(root_dir, "zlib-1.3")
+    zlib_file = os.path.join(root_dir, "zlib-1.3.zip")
+    url = "https://zlib.net/zlib13.zip"
 
     if not os.path.exists(zlib_dir):
         urllib.request.urlretrieve(url, zlib_file)
