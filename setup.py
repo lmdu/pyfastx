@@ -75,7 +75,7 @@ else:
     ])
 
     if sys.platform.startswith('linux'):
-        link_args.extend(['-lz', '-lsqlite3'])
+        link_args.extend(['-lsqlite3'])
         comp_args.extend([
             '-D_LFS64_LARGEFILE',
             '-D_LARGEFILE64_SOURCE',
@@ -85,9 +85,9 @@ else:
         comp_args.append('-DHAVE_UNISTD_H')
 
 if not sys.platform.startswith('linux'):
-    prepare_zlib()
     prepare_sqlite3()
 
+prepare_zlib()
 prepare_indexed_gzip()
 
 extension = Extension('pyfastx',

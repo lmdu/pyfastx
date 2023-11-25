@@ -457,16 +457,18 @@ PyObject *pyfastx_sequence_subscript(pyfastx_Sequence* self, PyObject* item){
 		//	return NULL;
 		//}
 
-		if (slice_len <= 0) {
-			Py_RETURN_NONE;
-		}
+		//if (slice_len <= 0) {
+		//	Py_RETURN_NONE;
+		//}
 
 		if (slice_step == 0) {
 			PyErr_SetString(PyExc_ValueError, "slice step cannot be zero");
+			return NULL;
 		}
 
 		if (slice_step != 1) {
-			Py_RETURN_NONE;
+			PyErr_SetString(PyExc_ValueError, "slice step cannot > 1");
+			return NULL;
 		}
 
 		//create a new sequence
