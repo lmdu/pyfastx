@@ -40,8 +40,8 @@ jobs:
 
       - name: Upload wheels to artifact
         uses: actions/upload-artifact@v3
-        name: artifact-${{ matrix.os }}
         with:
+          name: artifact-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
   build_sdist:
