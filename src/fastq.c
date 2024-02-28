@@ -628,7 +628,7 @@ PyObject *pyfastx_fastq_iter(pyfastx_Fastq *self) {
 		self->middle->iterating = 1;
 
 		if (!self->middle->cache_buff) {
-			self->middle->cache_buff = (char *)malloc(1048576);
+			self->middle->cache_buff = (char *)malloc(CACHE_SIZE);
 		}
 		self->middle->cache_soff = 0;
 		self->middle->cache_eoff = 0;

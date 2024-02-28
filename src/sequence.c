@@ -734,14 +734,14 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	d = PyDict_New();
 	
 	if (ret == SQLITE_ROW && self->start == 1 && self->end == self->seq_len) {
-		for (i = 1; i < 128; ++i) {
+		while (ret == SQLITE_ROW) {
 			PYFASTX_SQLITE_CALL(
 				l = sqlite3_column_int(stmt, 2);
 				n = sqlite3_column_int64(stmt, 3);
 				ret = sqlite3_step(stmt);
 			);
 
-			if (n > 0 && l != 13) {
+			if (n > 0 && l >= 32 && l < 127) {
 				b = Py_BuildValue("C", l);
 				c = Py_BuildValue("n", n);
 				PyDict_SetItem(d, b, c);
@@ -756,10 +756,10 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 			++seq_comp[(unsigned char)seq[i]];
 		}
 
-		for (l = 0; l < 128; ++l) {
+		for (l = 32; l < 127; ++l) {
 			n = seq_comp[l];
 
-			if (n > 0 && l != 13) {
+			if (n > 0) {
 				b = Py_BuildValue("C", l);
 				c = Py_BuildValue("i", n);
 				PyDict_SetItem(d, b, c);

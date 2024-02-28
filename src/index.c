@@ -189,7 +189,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 			avglen REAL, --average seq length \n \
 			medlen REAL, --median seq length \n \
 			n50 INTEGER, --N50 seq length \n \
-			l50 INTEGER --N50 seq count \n \
+			l50 INTEGER --L50 seq count \n \
 		); \
 		CREATE TABLE comp ( \
 			ID INTEGER PRIMARY KEY, --comp identifier\n \

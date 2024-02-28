@@ -1055,6 +1055,7 @@ PyObject *pyfastx_fasta_gc_skew(pyfastx_Fasta *self, void* closure) {
 }
 
 PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
+	int i;
 	int l;
 	int ret;
 	const char *sql;
@@ -1085,7 +1086,7 @@ PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
 			ret = sqlite3_step(stmt);
 		);
 
-		if (n > 0 && l != 13) {
+		if (n > 0 && l >= 32 && l < 127) {
 			b = Py_BuildValue("C", l);
 			c = Py_BuildValue("n", n);
 			PyDict_SetItem(d, b, c);

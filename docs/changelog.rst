@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 2.1.0 (2024-02-28)
+--------------------------
+
+- Added support for Python 3.12
+- Fixed fasta sequence composition error
+- Fixed fastq continuous reading error
+
 Version 2.0.2 (2023-11-25)
 --------------------------
 

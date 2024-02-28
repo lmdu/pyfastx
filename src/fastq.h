@@ -8,6 +8,8 @@
 #include "util.h"
 #include "sqlite3.h"
 
+#define CACHE_SIZE 1048576
+
 typedef struct {
 	PyObject_HEAD
 
