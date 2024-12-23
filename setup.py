@@ -74,7 +74,7 @@ else:
         '-D_FILE_OFFSET_BITS=64'
     ])
 
-    if sys.platform.startswith('linux'):
+    if sys.platform.startswith(('linux', 'gnu')):
         link_args.extend(['-lsqlite3'])
         comp_args.extend([
             '-D_LFS64_LARGEFILE',
@@ -84,7 +84,7 @@ else:
     elif sys.platform.startswith('darwin'):
         comp_args.append('-DHAVE_UNISTD_H')
 
-if not sys.platform.startswith('linux'):
+if not sys.platform.startswith(('linux', 'gnu')):
     prepare_sqlite3()
 
 prepare_zlib()
