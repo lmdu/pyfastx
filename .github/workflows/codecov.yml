@@ -23,6 +23,7 @@ jobs:
       - name: Generate coverage report
         run: |
           python setup.py build_ext -i --debug
+          pytest tests
           gcovr --filter src --xml -o coverage.xml
 
       - name: Upload Coverage to CodeCov
