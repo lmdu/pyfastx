@@ -38,8 +38,8 @@ def prepare_sqlite3():
     global include_dirs
     global sources
 
-    sqlite_dir = os.path.join(root_dir, "sqlite-3.47.2")
-    sqlite_file = os.path.join(root_dir, "sqlite-3.47.2.zip")
+    sqlite_dir = os.path.join(root_dir, "sqlite-amalgamation-3470200")
+    sqlite_file = os.path.join(root_dir, "sqlite-amalgamation-3470200.zip")
     url = "https://www.sqlite.org/2024/sqlite-amalgamation-3470200.zip"
 
     if not os.path.exists(sqlite_dir):
