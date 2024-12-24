@@ -19,7 +19,7 @@ int is_gzip_format(PyObject *file_obj);
 //void truncate_seq(char *seq, uint32_t start, uint32_t end);
 void complement_seq(char *seq);
 void reverse_seq(char *seq);
-Py_ssize_t sum_array(Py_ssize_t arr[], int num);
+//Py_ssize_t sum_array(Py_ssize_t arr[], int num);
 //char *int_to_str(int c);
 int is_subset(char *seq1, char *seq2);
 //PyObject* make_large_sequence(char *seq);

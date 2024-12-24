@@ -57,7 +57,8 @@ class FastaTest(unittest.TestCase):
 			version = fh.read().split()[2].strip('"')
 			self.assertEqual(version, pyfastx.version())
 
-		print(pyfastx.version(debug=True))
+		#reverse complement
+		self.assertEqual(pyfastx.reverse_complement('ATGC'), 'GCAT')
 
 	def test_build(self):
 		self.fastx = pyfastx.Fasta(gzip_fasta, build_index=False)

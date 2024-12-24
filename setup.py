@@ -7,8 +7,6 @@ import urllib.request
 from setuptools import setup, Extension
 from setuptools.command import build_ext
 
-DEBUG_MODE = False
-
 root_dir = os.path.dirname(os.path.abspath(__file__))
 
 sources = glob.glob(os.path.join(root_dir, 'src', '*.c'))
@@ -94,7 +92,7 @@ else:
 class CustomBuildExt(build_ext.build_ext):
     def build_extensions(self):
         if not sys.platform.startswith(('win', 'darwin')):
-            if DEBUG_MODE:
+            if '--debug' in sys.argv:
                 self.compiler.compiler_so = [
                     opt
                     for opt in self.compiler.compiler_so

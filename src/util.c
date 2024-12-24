@@ -268,7 +268,7 @@ void complement_seq(char *seq) {
 	}
 }
 
-Py_ssize_t sum_array(Py_ssize_t arr[], int num) {
+/*Py_ssize_t sum_array(Py_ssize_t arr[], int num) {
 	int i;
 	Py_ssize_t sum=0;
 
@@ -277,7 +277,7 @@ Py_ssize_t sum_array(Py_ssize_t arr[], int num) {
 	}
 
 	return sum;
-}
+}*/
 
 int is_subset(char *seq1, char *seq2) {
 	size_t i, j, m, n;
