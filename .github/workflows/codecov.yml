@@ -8,9 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@main
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@main
         with:
           python-version: '3.10'
 
@@ -18,18 +18,20 @@ jobs:
         run: |
           pip install pyfaidx==0.5.8
           pip install pytest
-          pip install gcovr
+          pip install pytest-cov
 
       - name: Generate coverage report
         run: |
           python setup.py build_ext -i
-          pytest tests
-          gcovr --filter src/ --xml -o coverage.xml
-        env:
-          CFLAGS: --coverage
+          pytest --cov=./src --cov-report=xml tests
 
       - name: Upload Coverage to CodeCov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
-          files: ./coverage.xml
+          directory: ./coverage/reports/
+          env_vars: OS,PYTHON
           fail_ci_if_error: true
+          files: ./coverage1.xml,./coverage2.xml,!./cache
+          flags: unittests
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
