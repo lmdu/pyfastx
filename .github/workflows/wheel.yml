@@ -30,7 +30,7 @@ jobs:
           CIBW_BUILD_VERBOSITY: 0
           #CIBW_ARCHS_LINUX: auto aarch64
           #CIBW_ARCHS_MACOS: x86_64 arm64 universal2
-          CIBW_TEST_COMMAND: python {project}/setup.py test
+          CIBW_TEST_COMMAND: python {project}/setup.py build_ext -i && pytest {project}/tests
           CIBW_TEST_REQUIRES: pyfaidx==0.5.8 pytest
 
       - name: Display wheel
