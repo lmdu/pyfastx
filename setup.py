@@ -5,6 +5,9 @@ import tarfile
 import zipfile
 import urllib.request
 from setuptools import setup, Extension
+from setuptools.command import build_ext
+
+DEBUG_MODE = False
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -17,12 +20,14 @@ def prepare_zlib():
     global include_dirs
     global sources
 
-    zlib_dir = os.path.join(root_dir, "zlib-1.2.13")
-    zlib_file = os.path.join(root_dir, "zlib-1.2.13.zip")
-    url = "https://github.com/madler/zlib/releases/download/v1.2.13/zlib1213.zip"
+    zlib_dir = os.path.join(root_dir, "zlib-1.3.1")
+    zlib_file = os.path.join(root_dir, "zlib-1.3.1.zip")
+    url = "https://github.com/madler/zlib/releases/download/v1.3.1/zlib131.zip"
 
     if not os.path.exists(zlib_dir):
-        urllib.request.urlretrieve(url, zlib_file)
+        if not os.path.isfile(zlib_file):
+            urllib.request.urlretrieve(url, zlib_file)
+
         with zipfile.ZipFile(zlib_file) as _zip:
             _zip.extractall()
 
@@ -33,12 +38,14 @@ def prepare_sqlite3():
     global include_dirs
     global sources
 
-    sqlite_dir = os.path.join(root_dir, "sqlite-amalgamation-3400100")
-    sqlite_file = os.path.join(root_dir, "sqlite-amalgamation-3400100.zip")
-    url = "https://www.sqlite.org/2022/sqlite-amalgamation-3400100.zip"
+    sqlite_dir = os.path.join(root_dir, "sqlite-3.47.2")
+    sqlite_file = os.path.join(root_dir, "sqlite-3.47.2.zip")
+    url = "https://www.sqlite.org/2024/sqlite-amalgamation-3470200.zip"
 
     if not os.path.exists(sqlite_dir):
-        urllib.request.urlretrieve(url, sqlite_file)
+        if not os.path.isfile(sqlite_file):
+            urllib.request.urlretrieve(url, sqlite_file)
+
         with zipfile.ZipFile(sqlite_file) as _zip:
             _zip.extractall()
 
@@ -49,12 +56,14 @@ def prepare_indexed_gzip():
     global include_dirs
     global sources
 
-    igzip_dir = os.path.join(root_dir, "indexed_gzip-1.7.0", "indexed_gzip")
-    igzip_file = os.path.join(root_dir, "indexed_gzip-1.7.0.zip")
-    url = "https://github.com/pauldmccarthy/indexed_gzip/archive/refs/tags/v1.7.0.zip"
+    igzip_dir = os.path.join(root_dir, "indexed_gzip-1.9.4", "indexed_gzip")
+    igzip_file = os.path.join(root_dir, "indexed_gzip-1.9.4.zip")
+    url = "https://github.com/pauldmccarthy/indexed_gzip/archive/refs/tags/v1.9.4.zip"
 
     if not os.path.exists(igzip_dir):
-        urllib.request.urlretrieve(url, igzip_file)
+        if not os.path.isfile(igzip_file):
+            urllib.request.urlretrieve(url, igzip_file)
+
         with zipfile.ZipFile(igzip_file) as _zip:
             _zip.extractall()
 
@@ -74,19 +83,48 @@ else:
         '-D_FILE_OFFSET_BITS=64'
     ])
 
-    if sys.platform.startswith(('linux', 'gnu')):
-        link_args.extend(['-lsqlite3'])
+    if sys.platform.startswith('darwin'):
+        comp_args.append('-DHAVE_UNISTD_H')
+    else:
         comp_args.extend([
             '-D_LFS64_LARGEFILE',
-            '-D_LARGEFILE64_SOURCE',
+            '-D_LARGEFILE64_SOURCE'
         ])
 
-    elif sys.platform.startswith('darwin'):
-        comp_args.append('-DHAVE_UNISTD_H')
+class CustomBuildExt(build_ext.build_ext):
+    def build_extensions(self):
+        if DEBUG_MODE:
+            self.compiler.compiler_so = [
+                opt
+                for opt in self.compiler.compiler_so
+                if opt != '-O2'
+            ]
+            self.compiler.compiler_so.append('-O0')
 
-if not sys.platform.startswith(('linux', 'gnu')):
-    prepare_sqlite3()
+            self.compiler.linker_so = [
+                opt
+                for opt in self.compiler.linker_so
+                if opt != '-O2'
+            ]
+            self.compiler.linker_so.append('-O0')
 
+        else:
+            self.compiler.compiler_so = [
+                opt
+                for opt in self.compiler.compiler_so
+                if opt != '-g'
+            ]
+
+            self.compiler.linker_so = [
+                opt
+                for opt in self.compiler.linker_so
+                if opt != '-g'
+            ]
+
+        super().build_extensions()
+
+#if not sys.platform.startswith('linux'):
+prepare_sqlite3()
 prepare_zlib()
 prepare_indexed_gzip()
 
@@ -135,6 +173,8 @@ setup(
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
+            "Programming Language :: Python :: 3.12",
+            "Programming Language :: Python :: 3.13",
             "Operating System :: Microsoft :: Windows",
             "Operating System :: POSIX :: Linux",
             "Operating System :: Unix",
@@ -144,5 +184,8 @@ setup(
         'console_scripts': ['pyfastx = pyfastxcli:main']
     },
     py_modules = ["pyfastxcli"],
-    test_suite = "tests"
+    test_suite = "tests",
+    cmdclass = {
+        'build_ext': CustomBuildExt
+    }
 )

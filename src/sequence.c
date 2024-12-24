@@ -44,19 +44,6 @@ void pyfastx_sequence_continue_read(pyfastx_Sequence* self) {
 	}
 	self->raw[bytelen] = '\0';
 
-	/*if (gap > 0 && self->index->gzip_format) {
-		while (gap > 0) {
-			rlen = gap > bytelen ? bytelen : gap;
-			gzread(self->index->gzfd, self->raw, rlen);
-			gap -= rlen;
-		}
-	} else {
-		gzseek(self->index->gzfd, offset, SEEK_SET);
-	}
-
-	gzread(self->index->gzfd, self->raw, bytelen);
-	self->raw[bytelen] = '\0';*/
-
 	self->desc = (char *)malloc(self->desc_len + 1);
 	memcpy(self->desc, self->raw+1, self->desc_len);
 	self->desc[self->desc_len] = '\0';
@@ -98,7 +85,8 @@ char *pyfastx_sequence_get_fullseq(pyfastx_Sequence* self) {
 
 	self->index->cache_chrom = self->id;
 	self->index->cache_start = 1;
-	self->index->cache_end = self->seq_len;
+	//self->index->cache_end = self->seq_len;
+	self->index->cache_end = self->index->cache_seq.l;
 	self->index->cache_full = 1;
 
 	return self->index->cache_seq.s;
@@ -108,7 +96,7 @@ char *pyfastx_sequence_get_subseq(pyfastx_Sequence* self) {
 	if (self->complete || !self->normal) {
 		pyfastx_sequence_get_fullseq(self);
 	}
-	
+
 	if ((self->id == self->index->cache_chrom) && (self->start==self->index->cache_start) && (self->end==self->index->cache_end)){
 		return self->index->cache_seq.s;
 	}
