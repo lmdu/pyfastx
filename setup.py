@@ -83,7 +83,6 @@ else:
         '-D_FILE_OFFSET_BITS=64'
     ])
 
-
     if sys.platform.startswith('darwin'):
         comp_args.append('-DHAVE_UNISTD_H')
     else:
@@ -94,33 +93,34 @@ else:
 
 class CustomBuildExt(build_ext.build_ext):
     def build_extensions(self):
-        if DEBUG_MODE:
-            self.compiler.compiler_so = [
-                opt
-                for opt in self.compiler.compiler_so
-                if opt != '-O2'
-            ]
-            self.compiler.compiler_so.append('-O0')
+        if not sys.platform.startswith(('win', 'darwin')):
+            if DEBUG_MODE:
+                self.compiler.compiler_so = [
+                    opt
+                    for opt in self.compiler.compiler_so
+                    if opt != '-O2'
+                ]
+                self.compiler.compiler_so.append('-O0')
 
-            self.compiler.linker_so = [
-                opt
-                for opt in self.compiler.linker_so
-                if opt != '-O2'
-            ]
-            self.compiler.linker_so.append('-O0')
+                self.compiler.linker_so = [
+                    opt
+                    for opt in self.compiler.linker_so
+                    if opt != '-O2'
+                ]
+                self.compiler.linker_so.append('-O0')
 
-        else:
-            self.compiler.compiler_so = [
-                opt
-                for opt in self.compiler.compiler_so
-                if opt != '-g'
-            ]
+            else:
+                self.compiler.compiler_so = [
+                    opt
+                    for opt in self.compiler.compiler_so
+                    if opt != '-g'
+                ]
 
-            self.compiler.linker_so = [
-                opt
-                for opt in self.compiler.linker_so
-                if opt != '-g'
-            ]
+                self.compiler.linker_so = [
+                    opt
+                    for opt in self.compiler.linker_so
+                    if opt != '-g'
+                ]
 
         super().build_extensions()
 
