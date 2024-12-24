@@ -24,7 +24,7 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.22.2
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_SKIP: pp*
           CIBW_BUILD_VERBOSITY: 0
