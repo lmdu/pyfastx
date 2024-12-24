@@ -23,12 +23,12 @@ jobs:
       - name: Generate coverage report
         run: |
           python setup.py build_ext -i --debug
-          gcovr --filter src/ --xml -o coverage.xml
+          gcovr --filter src --xml -o coverage.xml
 
       - name: Upload Coverage to CodeCov
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
-          files: Coverage.xml
+          files: coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true

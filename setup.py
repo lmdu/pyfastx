@@ -99,6 +99,7 @@ class CustomBuildExt(build_ext.build_ext):
                     if opt != '-O2'
                 ]
                 self.compiler.compiler_so.append('-O0')
+                self.compiler.compiler_so.append('--coverage')
 
                 self.compiler.linker_so = [
                     opt
@@ -106,6 +107,7 @@ class CustomBuildExt(build_ext.build_ext):
                     if opt != '-O2'
                 ]
                 self.compiler.linker_so.append('-O0')
+                self.compiler.linker_so.append('--coverage')
 
             else:
                 self.compiler.compiler_so = [
