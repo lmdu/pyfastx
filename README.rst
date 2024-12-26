@@ -1,8 +1,8 @@
 pyfastx
 #######
 
-.. image:: https://github.com/lmdu/pyfastx/actions/workflows/main.yml/badge.svg
-   :target: https://github.com/lmdu/pyfastx/actions/workflows/main.yml
+.. image:: https://github.com/lmdu/pyfastx/actions/workflows/wheel.yml/badge.svg
+   :target: https://github.com/lmdu/pyfastx/actions/workflows/wheel.yml
    :alt: Action
 
 .. image:: https://readthedocs.org/projects/pyfastx/badge/?version=latest
