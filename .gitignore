@@ -85,3 +85,11 @@ tests/__pycache__/test_fastx.cpython-38.pyc
 tests/__pycache__/test_fqkeys.cpython-38.pyc
 tests/__pycache__/test_sequence_error.cpython-38.pyc
 .DS_Store
+/build
+/indexed_gzip-1.9.4
+/sqlite-amalgamation-3470200
+/zlib-1.3.1
+indexed_gzip-1.9.4.zip
+pyfastx.cpython-39-darwin.so
+sqlite-amalgamation-3470200.zip
+zlib-1.3.1.zip
