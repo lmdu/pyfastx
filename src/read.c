@@ -54,6 +54,10 @@ void pyfastx_read_continue_reader(pyfastx_Read *self) {
     Py_ssize_t offset;
     Py_ssize_t offset1;
 
+    if (self->raw) {
+        return;
+    }
+
     //read raw string offset
     offset = self->seq_offset - self->desc_len - 1;
     offset1 = offset;
@@ -251,12 +255,14 @@ PyObject* pyfastx_read_quali(pyfastx_Read *self, void* closure) {
     PyObject *quals;
     PyObject *q;
 
-    if (self->middle->iterating) {
-        pyfastx_read_continue_reader(self);
-    } else if (!self->qual) {
-        self->qual = (char *)malloc(self->read_len + 1);
-        pyfastx_read_random_reader(self, self->qual, self->qual_offset, self->read_len);
-        self->qual[self->read_len] = '\0';
+    if (!self->qual) {
+        if (self->middle->iterating) {
+            pyfastx_read_continue_reader(self);
+        } else {
+            self->qual = (char *)malloc(self->read_len + 1);
+            pyfastx_read_random_reader(self, self->qual, self->qual_offset, self->read_len);
+            self->qual[self->read_len] = '\0';
+        }
     }
 
     phred = self->middle->phred ? self->middle->phred : 33;

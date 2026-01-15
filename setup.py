@@ -54,9 +54,9 @@ def prepare_indexed_gzip():
     global include_dirs
     global sources
 
-    igzip_dir = os.path.join(root_dir, "indexed_gzip-1.9.4", "indexed_gzip")
-    igzip_file = os.path.join(root_dir, "indexed_gzip-1.9.4.zip")
-    url = "https://github.com/pauldmccarthy/indexed_gzip/archive/refs/tags/v1.9.4.zip"
+    igzip_dir = os.path.join(root_dir, "indexed_gzip-1.10.3", "indexed_gzip")
+    igzip_file = os.path.join(root_dir, "indexed_gzip-1.10.3.zip")
+    url = "https://github.com/pauldmccarthy/indexed_gzip/archive/refs/tags/v1.10.3.zip"
 
     if not os.path.exists(igzip_dir):
         if not os.path.isfile(igzip_file):
@@ -168,14 +168,13 @@ setup(
             "Natural Language :: English",
             "License :: OSI Approved :: MIT License",
             "Programming Language :: C",
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
             "Programming Language :: Python :: 3.12",
             "Programming Language :: Python :: 3.13",
+            "Programming Language :: Python :: 3.14",
             "Operating System :: Microsoft :: Windows",
             "Operating System :: POSIX :: Linux",
             "Operating System :: Unix",

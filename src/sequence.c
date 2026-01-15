@@ -14,6 +14,10 @@ void pyfastx_sequence_continue_read(pyfastx_Sequence* self) {
 	Py_ssize_t gap;
 	Py_ssize_t rlen;
 
+	if (self->raw) {
+		return;
+	}
+
 	//raw string offset and bytelen
 	header_len = self->desc_len + self->end_len + 1;
 	offset = self->offset - header_len;

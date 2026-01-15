@@ -208,6 +208,11 @@ PyObject * pyfastx_fasta_slice_from_cache(pyfastx_Fasta *self, Py_ssize_t start,
 	
 	PyObject *ret;
 
+	if (flank < 0) {
+		PyErr_SetString(PyExc_ValueError, "Flank length must be non-negative");
+		return NULL;
+	}
+
 	slice_start = start - flank - 1;
 	if (slice_start < 0) {
 		slice_len = flank + slice_start;
