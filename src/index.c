@@ -84,6 +84,7 @@ pyfastx_Index* pyfastx_init_index(PyObject *obj, PyObject* file_obj, PyObject* i
 	index->iter_stmt = NULL;
 	index->uid_stmt = NULL;
 	index->seq_stmt = NULL;
+	index->comp_stmt = NULL;
 
 	//cache sequence
 	//index->cache_name = {0,0,0};
@@ -443,6 +444,10 @@ void pyfastx_index_free(pyfastx_Index *self){
 
 	if (self->seq_stmt) {
 		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->seq_stmt));
+	}
+
+	if (self->comp_stmt) {
+		PYFASTX_SQLITE_CALL(sqlite3_finalize(self->comp_stmt));
 	}
 
 	if (self->index_db) {

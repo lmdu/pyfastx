@@ -564,25 +564,20 @@ PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
 	int ret;
 	char *seq;
 
-	sqlite3_stmt *stmt;
-
 	Py_ssize_t i, n;
 	Py_ssize_t a = 0, c = 0, g = 0, t = 0;
-
-	const char *sql = "SELECT * FROM comp WHERE seqid=?";
 	
 	PYFASTX_SQLITE_CALL(
-		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-		sqlite3_bind_int64(stmt, 1, self->id);
-		ret = sqlite3_step(stmt);
+		sqlite3_bind_int64(self->index->comp_stmt, 1, self->id);
+		ret = sqlite3_step(self->index->comp_stmt);
 	);
 
 	if (ret == SQLITE_ROW && self->start == 1 && self->end == self->seq_len) {
 		while (ret == SQLITE_ROW) {
 			PYFASTX_SQLITE_CALL(
-				l = sqlite3_column_int(stmt, 2);
-				n = sqlite3_column_int64(stmt, 3);
-				ret = sqlite3_step(stmt);
+				l = sqlite3_column_int(self->index->comp_stmt, 2);
+				n = sqlite3_column_int64(self->index->comp_stmt, 3);
+				ret = sqlite3_step(self->index->comp_stmt);
 			);
 
 			switch (l) {
@@ -635,7 +630,7 @@ PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
 		}
 	}
 
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+	PYFASTX_SQLITE_CALL(sqlite3_reset(self->index->comp_stmt));
 
 	return Py_BuildValue("f", (float)(g+c)/(a+c+g+t)*100);
 }
@@ -644,25 +639,21 @@ PyObject *pyfastx_sequence_gc_skew(pyfastx_Sequence *self, void* closure) {
 	int l;
 	int ret;
 	char *seq;
-	sqlite3_stmt *stmt;
 
 	Py_ssize_t i, n;
 	Py_ssize_t c = 0, g = 0;
-
-	const char *sql = "SELECT * FROM comp WHERE seqid=?";
 	
 	PYFASTX_SQLITE_CALL(
-		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-		sqlite3_bind_int64(stmt, 1, self->id);
-		ret = sqlite3_step(stmt);
+		sqlite3_bind_int64(self->index->comp_stmt, 1, self->id);
+		ret = sqlite3_step(self->index->comp_stmt);
 	);
 
 	if (ret == SQLITE_ROW && self->start == 1 && self->end == self->seq_len) {
 		while (ret == SQLITE_ROW) {
 			PYFASTX_SQLITE_CALL(
-				l = sqlite3_column_int(stmt, 2);
-				n = sqlite3_column_int64(stmt, 3);
-				ret = sqlite3_step(stmt);
+				l = sqlite3_column_int(self->index->comp_stmt, 2);
+				n = sqlite3_column_int64(self->index->comp_stmt, 3);
+				ret = sqlite3_step(self->index->comp_stmt);
 			);
 
 			switch (l) {
@@ -695,7 +686,7 @@ PyObject *pyfastx_sequence_gc_skew(pyfastx_Sequence *self, void* closure) {
 		}
 	}
 
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
+	PYFASTX_SQLITE_CALL(sqlite3_reset(self->index->comp_stmt));
 
 	return Py_BuildValue("f", (float)(g-c)/(g+c));
 }
@@ -705,8 +696,6 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	int l;
 	int ret;
 	char *seq;
-
-	sqlite3_stmt *stmt;
 	
 	Py_ssize_t n;
 	Py_ssize_t seq_comp[128] = {0};
@@ -715,12 +704,9 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	PyObject *b;
 	PyObject *c;
 
-	const char *sql = "SELECT * FROM comp WHERE ID=?";
-
 	PYFASTX_SQLITE_CALL(
-		sqlite3_prepare_v2(self->index->index_db, sql, -1, &stmt, NULL);
-		sqlite3_bind_int64(stmt, 1, self->id);
-		ret = sqlite3_step(stmt);
+		sqlite3_bind_int64(self->index->stmt, 1, self->id);
+		ret = sqlite3_step(self->index->stmt);
 	);
 
 	d = PyDict_New();
@@ -728,9 +714,9 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	if (ret == SQLITE_ROW && self->start == 1 && self->end == self->seq_len) {
 		while (ret == SQLITE_ROW) {
 			PYFASTX_SQLITE_CALL(
-				l = sqlite3_column_int(stmt, 2);
-				n = sqlite3_column_int64(stmt, 3);
-				ret = sqlite3_step(stmt);
+				l = sqlite3_column_int(self->index->stmt, 2);
+				n = sqlite3_column_int64(self->index->stmt, 3);
+				ret = sqlite3_step(self->index->stmt);
 			);
 
 			if (n > 0 && l >= 32 && l < 127) {
@@ -761,8 +747,7 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 		}
 	}
 
-	PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-
+	PYFASTX_SQLITE_CALL(sqlite3_reset(self->index->stmt));
 	return d;
 }
 

@@ -65,6 +65,7 @@ typedef struct {
 	sqlite3_stmt *iter_stmt;
 	sqlite3_stmt *uid_stmt;
 	sqlite3_stmt *seq_stmt;
+	sqlite3_stmt *comp_stmt;
 
 	//parent fasta object
 	PyObject *fasta;

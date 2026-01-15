@@ -121,6 +121,7 @@ PyObject *pyfastx_fasta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs
 		PYFASTX_SQLITE_CALL(
 			sqlite3_prepare_v2(obj->index->index_db, "SELECT * FROM seq WHERE chrom=? LIMIT 1;", -1, &obj->index->seq_stmt, NULL);
 			sqlite3_prepare_v2(obj->index->index_db, "SELECT * FROM seq WHERE ID=? LIMIT 1;", -1, &obj->index->uid_stmt, NULL);
+			sqlite3_prepare_v2(obj->index->index_db, "SELECT * FROM comp WHERE ID=? LIMIT 1;", -1, &obj->index->comp_stmt, NULL);
 		);
 	}
 
@@ -1060,7 +1061,6 @@ PyObject *pyfastx_fasta_gc_skew(pyfastx_Fasta *self, void* closure) {
 }
 
 PyObject *pyfastx_fasta_composition(pyfastx_Fasta *self, void* closure) {
-	int i;
 	int l;
 	int ret;
 	const char *sql;
