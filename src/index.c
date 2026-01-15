@@ -31,6 +31,9 @@ pyfastx_Index* pyfastx_init_index(PyObject *obj, PyObject* file_obj, PyObject* i
 	//full name
 	index->full_name = full_name;
 
+	//full index
+	index->full_index = 0;
+
 	//check input file is gzip or not
 	index->gzip_format = is_gzip_format(file_obj);
 
@@ -477,7 +480,7 @@ pyfastx_Sequence* pyfastx_index_new_seq(pyfastx_Index *self) {
 
 	//position
 	seq->start = 1;
-	seq->end = seq->seq_len;
+	seq->end = 0;
 
 	//index
 	seq->index = self;
@@ -516,6 +519,7 @@ PyObject *pyfastx_index_make_seq(pyfastx_Index *self, sqlite3_stmt *stmt){
 		seq->normal = sqlite3_column_int(stmt, 7);
 		seq->desc_len = sqlite3_column_int(stmt, 8);
 	);
+	seq->end = seq->seq_len;
 
 	return (PyObject *)seq;
 }

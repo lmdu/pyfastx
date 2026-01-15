@@ -574,6 +574,7 @@ PyObject *pyfastx_sequence_gc_content(pyfastx_Sequence *self, void* closure) {
 
 	if (ret == SQLITE_ROW && self->start == 1 && self->end == self->seq_len) {
 		while (ret == SQLITE_ROW) {
+			
 			PYFASTX_SQLITE_CALL(
 				l = sqlite3_column_int(self->index->comp_stmt, 2);
 				n = sqlite3_column_int64(self->index->comp_stmt, 3);
@@ -705,8 +706,8 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	PyObject *c;
 
 	PYFASTX_SQLITE_CALL(
-		sqlite3_bind_int64(self->index->stmt, 1, self->id);
-		ret = sqlite3_step(self->index->stmt);
+		sqlite3_bind_int64(self->index->comp_stmt, 1, self->id);
+		ret = sqlite3_step(self->index->comp_stmt);
 	);
 
 	d = PyDict_New();
@@ -714,9 +715,9 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 	if (ret == SQLITE_ROW && self->start == 1 && self->end == self->seq_len) {
 		while (ret == SQLITE_ROW) {
 			PYFASTX_SQLITE_CALL(
-				l = sqlite3_column_int(self->index->stmt, 2);
-				n = sqlite3_column_int64(self->index->stmt, 3);
-				ret = sqlite3_step(self->index->stmt);
+				l = sqlite3_column_int(self->index->comp_stmt, 2);
+				n = sqlite3_column_int64(self->index->comp_stmt, 3);
+				ret = sqlite3_step(self->index->comp_stmt);
 			);
 
 			if (n > 0 && l >= 32 && l < 127) {
@@ -747,7 +748,7 @@ PyObject *pyfastx_sequence_composition(pyfastx_Sequence *self, void* closure) {
 		}
 	}
 
-	PYFASTX_SQLITE_CALL(sqlite3_reset(self->index->stmt));
+	PYFASTX_SQLITE_CALL(sqlite3_reset(self->index->comp_stmt));
 	return d;
 }
 

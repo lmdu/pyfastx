@@ -19,6 +19,9 @@ typedef struct {
 	//full name
 	int full_name;
 
+	//full index
+	int full_index;
+
 	//is gzip compressed file
 	//0 not gzip file
 	//1 is gzip file
