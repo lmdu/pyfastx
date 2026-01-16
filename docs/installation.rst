@@ -5,7 +5,7 @@ You can install pyfastx via the Python Package Index (PyPI) (**recommended**) or
 
 Make sure you have installed both `pip <https://pip.pypa.io/en/stable/installing/>`_ and Python before starting.
 
-Currently, ``pyfastx`` supports Python 3.6, 3.7, 3.8, 3.9, 3.10, 3.11 and can work on Windows, Linux, MacOS.
+Currently, ``pyfastx`` supports Python 3.8, 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 and can work on Windows, Linux, MacOS.
 
 Install from PyPI
 -----------------
@@ -23,26 +23,10 @@ Update pyfastx using ``pip``
 Install from source
 -------------------
 
-``pyfastx`` depends on `zlib <https://zlib.net/>`_ and `sqlite3 <https://www.sqlite.org/index.html>`_. If you want to compile and install pyfastx from source code. First, you should install zlib and sqlite3.
-
-On Centos
-
-::
-
-	yum install zlib-devel
-	yum install sqlite-devel
-
-On Ubuntu
-
-::
-
-	apt install zlib1g-dev
-	apt install libsqlite3-dev
-
-On Windows and MacOS, it will automatically download zlib and sqlite3 library to build.
+``pyfastx`` depends on `zlib <https://zlib.net/>`_, `sqlite3 <https://www.sqlite.org/index.html>`_ and `indexed_gzip <https://github.com/pauldmccarthy/indexed_gzip>`_. In latest version, pyfastx will automatically download these libraries to build.
 
 
-Second, clone pyfastx using ``git`` or download latest `release <https://github.com/lmdu/pyfastx/releases>`_:
+First, clone pyfastx using ``git`` or download latest `release <https://github.com/lmdu/pyfastx/releases>`_:
 
 ::
 
@@ -54,3 +38,10 @@ Then, ``cd`` to the pyfastx folder and run install command:
 
 	cd pyfastx
 	python setup.py install
+
+Or just build:
+
+::
+
+	cd pyfastx
+	python setup.py build_ext -i
