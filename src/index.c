@@ -240,7 +240,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 					sqlite3_bind_null(stmt, 1);
 					sqlite3_bind_text(stmt, 2, chrom.s, chrom.l, SQLITE_STATIC);
 					sqlite3_bind_int64(stmt, 3, start);
-					sqlite3_bind_int(stmt, 4, position-start-line.l-1);
+					sqlite3_bind_int64(stmt, 4, position-start-line.l-1);
 					sqlite3_bind_int64(stmt, 5, seq_len);
 					sqlite3_bind_int64(stmt, 6, line_len);
 					sqlite3_bind_int(stmt, 7, line_end);
@@ -345,7 +345,7 @@ void pyfastx_create_index(pyfastx_Index *self){
 		sqlite3_bind_null(stmt, 1);
 		sqlite3_bind_text(stmt, 2, chrom.s, chrom.l, SQLITE_STATIC);
 		sqlite3_bind_int64(stmt, 3, start);
-		sqlite3_bind_int(stmt, 4, position-start);
+		sqlite3_bind_int64(stmt, 4, position-start);
 		sqlite3_bind_int64(stmt, 5, seq_len);
 		sqlite3_bind_int64(stmt, 6, line_len);
 		sqlite3_bind_int(stmt, 7, line_end);
