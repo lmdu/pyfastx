@@ -14,7 +14,6 @@ readme = "README.rst"
 requires-python = ">= 3.8"
 authors = [{name = "Lianming Du", email = "adullb@qq.com"}]
 license = "MIT"
-license-files = ["LICEN[CS]E"]
 keywords = ["fasta", "fastq", "sequence", "genome", "bioinformatics"]
 classifiers = [
 	"Development Status :: 5 - Production/Stable",
