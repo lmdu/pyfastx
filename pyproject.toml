@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-	"setuptools>=40.8.0",
+	"setuptools>=70.0.0",
 	"setuptools-scm"
 ]
 
