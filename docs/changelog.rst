@@ -1,6 +1,27 @@
 Changelog
 =========
 
+Version 2.3.1 (2026-06-10)
+--------------------------
+
+- Fixed FASTQ read name fetching error
+- Fixed seq byte length error when reading sequences > 2 GB
+
+Version 2.3.0 (2026-01-16)
+--------------------------
+
+- Added support for Python 3.14
+- Fixed fasta sequence reading error
+- Fixed fastq sequence reading error
+- Improved performance for calculating gc content
+
+Version 2.2.0 (2024-12-24)
+--------------------------
+
+- Added support for Python 3.13
+- Fixed sub sequence error for non-standard fasta
+- Upgraded the zlib to 1.3.1 and sqlite 3.47.2
+
 Version 2.1.0 (2024-02-28)
 --------------------------
 
@@ -47,14 +68,17 @@ Version 1.0.0 (2023-03-24)
 - Added support for fasta header without space
 - Fixed some files missing in pypi tar.gz file
 
+Older versions
+--------------
+
 Version 0.9.1 (2022-12-31)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed unicode decode error when parsing large fasta/q file
 - Fixed sequence retrival error when using sequence object from loop after break
 
 Version 0.9.0 (2022-12-30)
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Added support for Python3.10, 3.11
 - Added support for aarch64 and musllinux
@@ -62,9 +86,6 @@ Version 0.9.0 (2022-12-30)
 - Fixed repeat sequence comment error
 - Fixed the quality score parsing error from fastq
 - Fixed the reference of sequence returned from function
-
-Older versions
---------------
 
 Version 0.8.4 (2021-06-30)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

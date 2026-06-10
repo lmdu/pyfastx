@@ -108,10 +108,12 @@ void pyfastx_fastq_create_index(pyfastx_Fastq *self) {
 					--name.l;
 				}
 
+				name.s[name.l] = '\0';
 				space = strchr(name.s, ' ');
 
 				if (space != NULL) {
 					name.l = space - name.s;
+					name.s[name.l] = '\0';
 				}
 
 				break;
