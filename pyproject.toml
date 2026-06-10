@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-	"setuptools>=77.0.0",
+	"setuptools>=75.0.0",
 	"setuptools-scm"
 ]
 
@@ -13,8 +13,6 @@ description = "Fast random access to sequences from plain and gzipped FASTA/Q fi
 readme = "README.rst"
 requires-python = ">= 3.8"
 authors = [{name = "Lianming Du", email = "adullb@qq.com"}]
-license = "MIT"
-license-files = ["LICENSE"]
 keywords = ["fasta", "fastq", "sequence", "genome", "bioinformatics"]
 classifiers = [
 	"Development Status :: 5 - Production/Stable",
