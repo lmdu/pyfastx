@@ -9,7 +9,7 @@ from setuptools.command import build_ext
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 
-sources = glob.glob('src/*.c')
+sources = glob.glob(os.path.join(root_dir, 'src', '*.c'))
 link_args = []
 comp_args = []
 include_dirs = []
@@ -18,7 +18,7 @@ def prepare_zlib():
 	global include_dirs
 	global sources
 
-	zlib_dir = "zlib-1.3.1"
+	zlib_dir = os.path.join(root_dir, "zlib-1.3.1")
 	zlib_file = os.path.join(root_dir, "zlib-1.3.1.zip")
 	url = "https://github.com/madler/zlib/releases/download/v1.3.1/zlib131.zip"
 
@@ -36,7 +36,7 @@ def prepare_sqlite3():
 	global include_dirs
 	global sources
 
-	sqlite_dir = "sqlite-amalgamation-3470200"
+	sqlite_dir = os.path.join(root_dir, "sqlite-amalgamation-3470200")
 	sqlite_file = os.path.join(root_dir, "sqlite-amalgamation-3470200.zip")
 	url = "https://www.sqlite.org/2024/sqlite-amalgamation-3470200.zip"
 
@@ -54,7 +54,7 @@ def prepare_indexed_gzip():
 	global include_dirs
 	global sources
 
-	igzip_dir = os.path.join("indexed_gzip-1.10.3", "indexed_gzip")
+	igzip_dir = os.path.join(root_dir, "indexed_gzip-1.10.3", "indexed_gzip")
 	igzip_file = os.path.join(root_dir, "indexed_gzip-1.10.3.zip")
 	url = "https://github.com/pauldmccarthy/indexed_gzip/archive/refs/tags/v1.10.3.zip"
 
