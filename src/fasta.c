@@ -408,7 +408,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 	}
 
 	// Snapshot lists before integer conversion, which may call Python __index__.
-	outer = PySequence_Tuple(intervals);
+	outer = PyList_Check(intervals) ? PyList_AsTuple(intervals) : Py_NewRef(intervals);
 	if (!outer) {
 		return NULL;
 	}
@@ -444,7 +444,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 			PyErr_SetString(PyExc_ValueError, "each interval must include start and end");
 			goto error;
 		}
-		pair = PySequence_Tuple(item);
+		pair = PyList_Check(item) ? PyList_AsTuple(item) : Py_NewRef(item);
 		if (!pair) {
 			goto error;
 		}

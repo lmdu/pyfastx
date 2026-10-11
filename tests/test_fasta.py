@@ -293,6 +293,19 @@ class FastaTest(unittest.TestCase):
 		intervals = [interval]
 		self.assertEqual(self.fasta.fetch(name, intervals), sequence[:2])
 
+		# Snapshot stored coordinates without invoking container iteration overrides.
+		class StoredList(list):
+			def __iter__(self):
+				raise RuntimeError("coordinates must use stored list items")
+
+		class StoredTuple(tuple):
+			def __iter__(self):
+				raise RuntimeError("coordinates must use stored tuple items")
+
+		for container in (StoredList, StoredTuple):
+			for intervals in (container((1, 2)), container(((1, 2),)), [container((1, 2))]):
+				self.assertEqual(self.fasta.fetch(name, intervals), sequence[:2])
+
 	def test_seq_flank(self):
 		idx = self.get_random_index()
 		name = list(self.faidx.keys())[idx]
