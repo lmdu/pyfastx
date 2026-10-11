@@ -382,45 +382,104 @@ PyObject *pyfastx_fasta_flank(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 }
 
 PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwargs){
-	static char* keywords[] = {"chrom", "intervals", "strand", NULL};
-
 	char *name;
 	char *seq;
-	char* sub_seq;
+	char *sub_seq = NULL;
+	static char* keywords[] = {"chrom", "intervals", "strand", NULL};
 	const char* sql;
-
 	int ret;
 	int strand = '+';
-
 	sqlite3_stmt *stmt;
-	
-	Py_ssize_t start;
-	Py_ssize_t end;
-	Py_ssize_t size;
-	Py_ssize_t chrom;
-	Py_ssize_t seq_len;
-	Py_ssize_t offset;
-	Py_ssize_t bytes;
+	Py_ssize_t i, start, end, size, count, length, total = 0, copied = 0;
+	Py_ssize_t chrom, offset, bytes;
+	Py_ssize_t *bounds = NULL;
 	PyObject *intervals;
+	PyObject *outer = NULL;
+	PyObject *pair = NULL;
 	PyObject *item;
+	PyObject *result;
 
-	
-	if(!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|C", keywords, &name, &intervals, &strand)){
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|C", keywords, &name, &intervals, &strand)) {
 		return NULL;
 	}
-
-	if(!PyTuple_Check(intervals) && !PyList_Check(intervals)){
+	if (!PyTuple_Check(intervals) && !PyList_Check(intervals)) {
 		PyErr_SetString(PyExc_ValueError, "intervals must be list or tuple");
 		return NULL;
 	}
 
-	if (PyList_Check(intervals)) {
-		intervals = PyList_AsTuple(intervals);
+	// Snapshot lists before integer conversion, which may call Python __index__.
+	outer = PySequence_Tuple(intervals);
+	if (!outer) {
+		return NULL;
+	}
+	size = PyTuple_GET_SIZE(outer);
+	if (!size) {
+		PyErr_SetString(PyExc_ValueError, "intervals must not be empty");
+		goto error;
+	}
+	item = PyTuple_GET_ITEM(outer, 0);
+	if (PyLong_Check(item)) {
+		if (size != 2) {
+			PyErr_SetString(PyExc_ValueError, "list or tuple should include only start and end");
+			goto error;
+		}
+		count = 1;
+	} else {
+		count = size;
+	}
+	if (count > PY_SSIZE_T_MAX / (2 * sizeof(Py_ssize_t))) {
+		PyErr_NoMemory();
+		goto error;
+	}
+	bounds = PyMem_Malloc(2 * count * sizeof(Py_ssize_t));
+	if (!bounds) {
+		PyErr_NoMemory();
+		goto error;
 	}
 
-	item = PyTuple_GetItem(intervals, 0);
-	size = PyTuple_Size(intervals);
-	
+	// Convert each coordinate once, retaining values for the later copy.
+	for (i=0; i<count; i++) {
+		item = PyLong_Check(PyTuple_GET_ITEM(outer, 0)) ? outer : PyTuple_GET_ITEM(outer, i);
+		if (!PyTuple_Check(item) && !PyList_Check(item)) {
+			PyErr_SetString(PyExc_ValueError, "each interval must include start and end");
+			goto error;
+		}
+		pair = PySequence_Tuple(item);
+		if (!pair) {
+			goto error;
+		}
+		if (PyTuple_GET_SIZE(pair) != 2) {
+			PyErr_SetString(PyExc_ValueError, "each interval must include start and end");
+			goto error;
+		}
+		start = PyLong_AsLong(PyTuple_GET_ITEM(pair, 0));
+		if (PyErr_Occurred()) {
+			goto error;
+		}
+		end = PyLong_AsLong(PyTuple_GET_ITEM(pair, 1));
+		if (PyErr_Occurred()) {
+			goto error;
+		}
+		Py_CLEAR(pair);
+		if (start > end) {
+			PyErr_SetString(PyExc_ValueError, "start position should less than end position");
+			goto error;
+		}
+		if (start < 1) {
+			PyErr_SetString(PyExc_ValueError, "interval is outside the sequence");
+			goto error;
+		}
+		length = end - start + 1;
+		if (length >= PY_SSIZE_T_MAX - total) {
+			PyErr_NoMemory();
+			goto error;
+		}
+		total += length;
+		bounds[2*i] = start;
+		bounds[2*i+1] = end;
+	}
+	Py_CLEAR(outer);
+
 	//select sql statement, chrom indicates seq name or chromomsome
 	if (self->index->cache_name.s && strcmp(self->index->cache_name.s, name) == 0 && self->index->cache_full) {
 		seq = self->index->cache_seq.s;
@@ -443,7 +502,7 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		} else {
 			PyErr_Format(PyExc_NameError, "Sequence %s does not exists", name);
 			PYFASTX_SQLITE_CALL(sqlite3_finalize(stmt));
-			return NULL;
+			goto error;
 		}
 
 		if (strlen(name) >= self->index->cache_name.m) {
@@ -460,58 +519,40 @@ PyObject *pyfastx_fasta_fetch(pyfastx_Fasta *self, PyObject *args, PyObject *kwa
 		seq = self->index->cache_seq.s;
 	}
 
-	if (PyLong_Check(item)) {
-		if (size != 2) {
-			PyErr_SetString(PyExc_ValueError, "list or tuple should include only start and end");
-			return NULL;
+	for (i=0; i<count; i++) {
+		if (bounds[2*i+1] > self->index->cache_seq.l) {
+			PyErr_SetString(PyExc_ValueError, "interval is outside the sequence");
+			goto error;
 		}
-
-		start = PyLong_AsLong(item);
-		item = PyTuple_GetItem(intervals, 1);
-		end = PyLong_AsLong(item);
-
-		if (start > end) {
-			PyErr_SetString(PyExc_ValueError, "start position should less than end position");
-			return NULL;
-		}
-
-		seq_len = end - start + 1;
-
-		sub_seq = (char *)malloc(seq_len + 1);
-		memcpy(sub_seq, seq+start-1, seq_len);
-		sub_seq[seq_len] = '\0';
-	} else {
-		Py_ssize_t i;
-		Py_ssize_t j = 0;
-		sub_seq = (char *)malloc(strlen(seq) + 1);
-
-		for (i=0; i<size; i++) {
-			item = PyTuple_GetItem(intervals, i);
-			
-			if (PyList_Check(item)) {
-				item = PyList_AsTuple(item);
-			}
-
-			start = PyLong_AsLong(PyTuple_GetItem(item, 0));
-			end = PyLong_AsLong(PyTuple_GetItem(item, 1));
-			seq_len = end - start + 1;
-
-			if (start > end) {
-				PyErr_SetString(PyExc_ValueError, "start position should less than end position");
-				return NULL;
-			}
-
-			memcpy(sub_seq+j, seq+start-1, seq_len);
-			j += seq_len;
-		}
-		sub_seq[j] = '\0';
 	}
 
+	// Allocate only the requested output, even for repeated or overlapping intervals.
+	sub_seq = (char *)malloc(total + 1);
+	if (!sub_seq) {
+		PyErr_NoMemory();
+		goto error;
+	}
+	for (i=0; i<count; i++) {
+		start = bounds[2*i];
+		length = bounds[2*i+1] - start + 1;
+		memcpy(sub_seq+copied, seq+start-1, length);
+		copied += length;
+	}
+	sub_seq[copied] = '\0';
 	if (strand == '-') {
 		reverse_complement_seq(sub_seq);
 	}
-	
-	return Py_BuildValue("s", sub_seq);
+	result = Py_BuildValue("s", sub_seq);
+	free(sub_seq);
+	PyMem_Free(bounds);
+	return result;
+
+error:
+	Py_XDECREF(pair);
+	Py_XDECREF(outer);
+	PyMem_Free(bounds);
+	free(sub_seq);
+	return NULL;
 }
 
 PyObject *pyfastx_fasta_keys(pyfastx_Fasta *self) {
