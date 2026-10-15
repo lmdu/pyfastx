@@ -91,12 +91,25 @@ int file_exists(PyObject *file_obj){
 	return 0;
 }
 
-//check file is fasta file
+//skip the rest of a line
+static void skip_line(gzFile fd) {
+	int c;
+
+	while ((c=gzgetc(fd)) != -1 && c != '\n');
+}
+
+//check file is fasta file, lines starting with ';' (the original
+//fasta comment convention) are allowed before the first record
 int fasta_validator(gzFile fd) {
 	int c;
 
 	while ((c=gzgetc(fd)) != -1) {
 		if (isspace(c)) {
+			continue;
+		}
+
+		if (c == ';') {
+			skip_line(fd);
 			continue;
 		}
 
@@ -128,18 +141,26 @@ int fastq_validator(gzFile fd) {
 	return 0;
 }
 
-//check file is fasta or fastq file
+//check file is fasta or fastq file, comment lines starting with ';'
+//may only come before the first record of a fasta file
 int fasta_or_fastq(gzFile fd) {
 	int c;
+	int comment = 0;
 
 	while ((c=gzgetc(fd)) != -1) {
 		if (isspace(c)) {
 			continue;
 		}
 
+		if (c == ';') {
+			comment = 1;
+			skip_line(fd);
+			continue;
+		}
+
 		if (c == '>') {
 			return 1;
-		} else if ( c == '@') {
+		} else if (c == '@' && !comment) {
 			return 2;
 		} else {
 			return 0;
