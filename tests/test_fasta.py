@@ -254,6 +254,58 @@ class FastaTest(unittest.TestCase):
 
 		self.assertEqual(expect, result)
 
+
+		# Repeated intervals can produce more sequence than the chromosome contains.
+		for fasta in (self.fastx, self.fasta):
+			name = fasta[0].name
+			sequence = str(fasta[name])
+			intervals = [(1, len(sequence))] * 3
+			self.assertEqual(fasta.fetch(name, intervals), sequence * 3)
+			self.assertEqual(fasta.fetch(name, [list(x) for x in intervals]), sequence * 3)
+			for invalid in ([], [(0, 1)], [(1, len(sequence) + 1)], [(1,)]):
+				with self.assertRaises(ValueError):
+					fasta.fetch(name, invalid)
+
+		class Coordinate:
+			def __init__(self, value):
+				self.value = value
+				self.calls = 0
+
+			def __index__(self):
+				self.calls += 1
+				if self.calls > 1:
+					raise RuntimeError("coordinate converted more than once")
+				return self.value
+
+		start, end = Coordinate(1), Coordinate(2)
+		self.assertEqual(self.fasta.fetch(chrom=name, intervals=[(start, end)], strand="+"), sequence[:2])
+		self.assertEqual((start.calls, end.calls), (1, 1))
+
+		class MutatingCoordinate:
+			def __index__(inner):
+				interval.clear()
+				intervals.clear()
+				# A coordinate may reenter fetch and replace the chromosome cache.
+				self.fasta.fetch(self.fasta[1].name, (1, 2))
+				return 1
+
+		interval = [MutatingCoordinate(), 2]
+		intervals = [interval]
+		self.assertEqual(self.fasta.fetch(name, intervals), sequence[:2])
+
+		# Snapshot stored coordinates without invoking container iteration overrides.
+		class StoredList(list):
+			def __iter__(self):
+				raise RuntimeError("coordinates must use stored list items")
+
+		class StoredTuple(tuple):
+			def __iter__(self):
+				raise RuntimeError("coordinates must use stored tuple items")
+
+		for container in (StoredList, StoredTuple):
+			for intervals in (container((1, 2)), container(((1, 2),)), [container((1, 2))]):
+				self.assertEqual(self.fasta.fetch(name, intervals), sequence[:2])
+
 	def test_seq_flank(self):
 		idx = self.get_random_index()
 		name = list(self.faidx.keys())[idx]
